@@ -1,0 +1,7 @@
+{
+  "navigation": { "home": "Home", "cart": "Cart", "admin": "Admin Panel" },
+  "product": { "add_to_cart": "Add to Cart", "out_of_stock": "Out of Stock", "price": "Price" },
+  "cart": { "title": "Your Cart", "empty": "Your cart is empty.", "total": "Total", "checkout": "Checkout", "quantity": "Qty" },
+  "checkout": { "title": "Complete Order", "name": "Full Name", "phone": "Phone Number", "instagram": "Instagram", "address": "Delivery Address", "submit_whatsapp": "Order via WhatsApp", "submit_instagram": "Order via Instagram", "processing": "Processing..." },
+  "admin": { "dashboard": "Dashboard", "orders": "Orders", "status_pending": "Pending", "status_completed": "Completed", "login": "Log In" }
+}

@@ -1,0 +1,7 @@
+{
+  "navigation": { "home": "Главная", "cart": "Корзина", "admin": "Панель администратора" },
+  "product": { "add_to_cart": "В корзину", "out_of_stock": "Нет в наличии", "price": "Цена" },
+  "cart": { "title": "Ваша корзина", "empty": "Ваша корзина пуста.", "total": "Итого", "checkout": "Оформить заказ", "quantity": "Кол-во" },
+  "checkout": { "title": "Оформление заказа", "name": "Имя и Фамилия", "phone": "Номер телефона", "instagram": "Instagram", "address": "Адрес доставки", "submit_whatsapp": "Заказать через WhatsApp", "submit_instagram": "Заказать через Instagram", "processing": "Обработка..." },
+  "admin": { "dashboard": "Панель", "orders": "Заказы", "status_pending": "В ожидании", "status_completed": "Завершено", "login": "Войти" }
+}

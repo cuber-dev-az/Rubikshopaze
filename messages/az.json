@@ -1,0 +1,7 @@
+{
+  "navigation": { "home": "Ana Səhifə", "cart": "Səbət", "admin": "İdarəetmə Paneli" },
+  "product": { "add_to_cart": "Səbətə At", "out_of_stock": "Bitib", "price": "Qiymət" },
+  "cart": { "title": "Sizin Səbətiniz", "empty": "Səbətiniz boşdur.", "total": "Cəmi", "checkout": "Sifariş ver", "quantity": "Say" },
+  "checkout": { "title": "Sifarişi Rəsmiləşdir", "name": "Ad və Soyad", "phone": "Mobil Nömrə", "instagram": "Instagram", "address": "Çatdırılma Ünvanı", "submit_whatsapp": "WhatsApp ilə Sifariş Et", "submit_instagram": "Instagram ilə Sifariş Et", "processing": "Gözləyin..." },
+  "admin": { "dashboard": "İdarəetmə", "orders": "Sifarişlər", "status_pending": "Gözləyir", "status_completed": "Tamamlandı", "login": "Sistemə Daxil Ol" }
+}
