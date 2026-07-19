@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   ArrowLeft, 
   Save, 
@@ -33,6 +34,8 @@ interface ProductFormClientProps {
 }
 
 export default function ProductFormClient({ isNew, productId }: ProductFormClientProps) {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'az';
   const [activeTab, setActiveTab] = useState('core');
   
   // Form State Placeholders
@@ -49,6 +52,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [status, setStatus] = useState('draft');
   const [imageUrl, setImageUrl] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
+  const [stock_quantity, setStock_quantity] = useState<number>(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [tags, setTags] = useState('gan, flagship, maglev');
   
@@ -124,6 +128,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setStatus(prod.status || (prod.is_active ? 'publish' : 'draft'));
             setImageUrl(prod.image_url || '');
             setVideoUrl(prod.video_url || '');
+            setStock_quantity(prod.stock_quantity !== undefined && prod.stock_quantity !== null ? Number(prod.stock_quantity) : 0);
             setIsFeatured(prod.is_featured || false);
             setSelectedBrandId(prod.brand_id || '');
             setProductType(prod.product_type || 'standard');
@@ -252,6 +257,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         status: status,
         image_url: imageUrl || undefined,
         video_url: videoUrl || undefined,
+        stock_quantity: Number(stock_quantity) || 0,
         variants: payloadVariants,
         category_ids: selectedCategoryId ? [selectedCategoryId] : [],
         brand_id: selectedBrandId || undefined,
@@ -285,6 +291,14 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
     }
   };
 
+  const handlePreview = () => {
+    if (!slug) {
+      alert("Zəhmət olmasa, önizləmə etmək üçün əvvəlcə məhsul linkini (slug) daxil edin.");
+      return;
+    }
+    window.open(`/${locale}/product/${slug}`, '_blank');
+  };
+
   const tabs = [
     { id: 'core', label: 'Əsas Məlumatlar', icon: Settings },
     { id: 'media', label: 'Media Mərkəzi', icon: ImageIcon },
@@ -308,7 +322,11 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm rounded-xl transition-colors border border-slate-700">
+          <button 
+            type="button"
+            onClick={handlePreview}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm rounded-xl transition-colors border border-slate-700"
+          >
             <Eye className="w-4 h-4" /> Önizləmə
           </button>
           <button 
@@ -440,7 +458,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Qiymət (AZN)</label>
                     <input
@@ -474,6 +492,18 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       }}
                       className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
                       placeholder="Məs.: 155.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Stok sayı</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={stock_quantity}
+                      onChange={(e) => setStock_quantity(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
+                      placeholder="Məs.: 10"
                     />
                   </div>
 

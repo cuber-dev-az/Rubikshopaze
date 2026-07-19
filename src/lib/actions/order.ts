@@ -32,6 +32,25 @@ export interface OrderPayload {
 
 export async function submitOrderAtomic(payload: OrderPayload) {
   try {
+    // 0. Validate stock quantity before placing the order
+    for (const item of payload.items) {
+      const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (uuidMatch) {
+        const productId = uuidMatch[0];
+        const { data: productData, error: productError } = await supabaseAdmin
+          .from('products')
+          .select('title_az, stock_quantity')
+          .eq('id', productId)
+          .single();
+
+        if (!productError && productData) {
+          if (productData.stock_quantity < item.quantity) {
+            throw new Error(`Sifariş tamamlanmadı: "${productData.title_az}" məhsulunun mövcud stoku (${productData.stock_quantity} ədəd) sifariş etmək istədiyiniz miqdardan (${item.quantity} ədəd) azdır.`);
+          }
+        }
+      }
+    }
+
     // 1. Insert into orders table using active enterprise schema columns
     const formattedPhone = payload.customer_phone;
     const guestEmail = payload.email || `${formattedPhone.replace(/\D/g, '')}@rubikshop.az`;
@@ -113,6 +132,27 @@ export async function submitOrderAtomic(payload: OrderPayload) {
     if (itemsError) {
       console.error('Supabase Order Items Insert Error:', itemsError);
       throw new Error(itemsError.message);
+    }
+
+    // 3. Automatically decrease stock quantity for ordered products
+    for (const item of payload.items) {
+      const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      if (uuidMatch) {
+        const productId = uuidMatch[0];
+        const { data: productData } = await supabaseAdmin
+          .from('products')
+          .select('stock_quantity')
+          .eq('id', productId)
+          .single();
+
+        if (productData) {
+          const newStock = Math.max(0, productData.stock_quantity - item.quantity);
+          await supabaseAdmin
+            .from('products')
+            .update({ stock_quantity: newStock })
+            .eq('id', productId);
+        }
+      }
     }
 
     return { success: true, orderId: orderId };
