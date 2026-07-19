@@ -3,7 +3,19 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
-export default function AdminLoginClient() {
+interface AdminLoginClientProps {
+  locale?: string;
+  userEmail?: string;
+  userRole?: string;
+  initialSessionExists?: boolean;
+}
+
+export default function AdminLoginClient({
+  locale,
+  userEmail,
+  userRole,
+  initialSessionExists,
+}: AdminLoginClientProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
@@ -162,6 +174,10 @@ export default function AdminLoginClient() {
 
   return (
     <div className="w-full max-w-md p-8 bg-[#0d1117] border border-gray-800 rounded-xl shadow-2xl mx-auto mt-20 text-white font-sans">
+      <div style={{background:'#222', color:'#0f0', padding:8, marginBottom:8, fontSize:11, fontFamily:'monospace', wordBreak:'break-all'}}>
+        DEBUG → session: {String(initialSessionExists)} | email: {userEmail || 'yoxdur'} | role: {userRole || 'yoxdur'}
+      </div>
+
       <div className="mb-6 text-center">
         <h1 className="text-2xl font-bold text-orange-500">RUBIK SHOP <span className="text-white">ADMIN</span></h1>
         <p className="text-xs text-gray-400 mt-1">Yalnız səlahiyyətli şəxslər daxil ola bilər</p>
