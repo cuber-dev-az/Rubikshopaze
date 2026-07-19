@@ -750,9 +750,12 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             <h3 className="text-xs font-black text-white uppercase tracking-wider border-b border-slate-800 pb-3">Nəşr Statusu</h3>
             
             <div className="space-y-3">
-              <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
-                status === 'publish' ? 'bg-green-500/10 border-green-500/30' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-              }`}>
+              <label 
+                onClick={() => setStatus('publish')}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
+                  status === 'publish' ? 'bg-green-500/10 border-green-500/30' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${status === 'publish' ? 'border-green-500' : 'border-slate-600'}`}>
                     {status === 'publish' && <div className="w-2 h-2 rounded-full bg-green-500" />}
@@ -764,9 +767,12 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 </div>
               </label>
 
-              <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
-                status === 'draft' ? 'bg-slate-800 border-slate-600' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-              }`}>
+              <label 
+                onClick={() => setStatus('draft')}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
+                  status === 'draft' ? 'bg-slate-800 border-slate-600' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${status === 'draft' ? 'border-slate-400' : 'border-slate-600'}`}>
                     {status === 'draft' && <div className="w-2 h-2 rounded-full bg-slate-400" />}
@@ -778,9 +784,12 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 </div>
               </label>
 
-              <label className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
-                status === 'archive' ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-              }`}>
+              <label 
+                onClick={() => setStatus('archive')}
+                className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-colors ${
+                  status === 'archive' ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${status === 'archive' ? 'border-amber-500' : 'border-slate-600'}`}>
                     {status === 'archive' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
@@ -815,7 +824,10 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-soft-md space-y-4">
             <h3 className="text-xs font-black text-white uppercase tracking-wider border-b border-slate-800 pb-3">Təşkilatlandırma</h3>
             
-            <label className="flex items-center justify-between cursor-pointer p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors">
+            <label 
+              onClick={() => setIsFeatured(!isFeatured)}
+              className="flex items-center justify-between cursor-pointer p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors"
+            >
               <div>
                 <div className="text-sm font-bold text-white">Önə Çıxarılan</div>
                 <div className="text-[10px] text-slate-500">Ana səhifədə göstər</div>

@@ -123,9 +123,26 @@ export async function getProfile(userId: string) {
   }
 }
 
+export async function getAllProfiles() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('full_name', { ascending: true });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('getAllProfiles Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function updateProfile(userId: string, payload: Partial<{
   full_name: string;
   phone: string;
+  role: string;
 }>) {
   try {
     const supabase = await createServerSupabaseClient();
