@@ -4,6 +4,7 @@ export const revalidate = 0;
 import * as React from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getDictionary } from '@/i18n/dictionaries';
 import { ShieldAlert, LogOut, ChevronRight, LayoutDashboard, Globe, ArrowLeft, UserCheck } from 'lucide-react';
@@ -20,6 +21,8 @@ interface AdminLayoutProps {
 export default async function AdminLayout({ children, params }: AdminLayoutProps) {
   const { locale } = await params;
   const dict = await getDictionary(locale);
+
+  const allCookieNames = (await cookies()).getAll().map(c => c.name).join(', ') || 'HEÇ BİR COOKIE YOXDUR';
 
   // Server-side Route Protection Check
   const supabase = await createServerSupabaseClient();
@@ -66,6 +69,7 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
         userEmail={userEmail}
         userRole={userRole}
         initialSessionExists={!!session?.user}
+        debugCookies={allCookieNames}
       />
     );
   }

@@ -8,6 +8,7 @@ interface AdminLoginClientProps {
   userEmail?: string;
   userRole?: string;
   initialSessionExists?: boolean;
+  debugCookies?: string;
 }
 
 export default function AdminLoginClient({
@@ -15,6 +16,7 @@ export default function AdminLoginClient({
   userEmail,
   userRole,
   initialSessionExists,
+  debugCookies,
 }: AdminLoginClientProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -175,7 +177,10 @@ export default function AdminLoginClient({
   return (
     <div className="w-full max-w-md p-8 bg-[#0d1117] border border-gray-800 rounded-xl shadow-2xl mx-auto mt-20 text-white font-sans">
       <div style={{background:'#222', color:'#0f0', padding:8, marginBottom:8, fontSize:11, fontFamily:'monospace', wordBreak:'break-all'}}>
-        DEBUG → session: {String(initialSessionExists)} | email: {userEmail || 'yoxdur'} | role: {userRole || 'yoxdur'}
+        <div>DEBUG → session: {String(initialSessionExists)} | email: {userEmail || 'yoxdur'} | role: {userRole || 'yoxdur'}</div>
+        <div style={{marginTop: 4, fontSize: 10, borderTop: '1px solid #444', paddingTop: 4}}>
+          COOKIES: {debugCookies}
+        </div>
       </div>
 
       <div className="mb-6 text-center">
