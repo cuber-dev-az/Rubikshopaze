@@ -1,26 +1,56 @@
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
-import { createRouteHandlerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase/server';
+import { createAdminSupabaseClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   try {
     const { access_token, refresh_token } = await req.json();
 
     if (!access_token) {
-      // Logout request, clear session cookies directly in the response
-      const response = NextResponse.json({ success: true, message: 'Logged out successfully' });
-      const supabase = await createRouteHandlerSupabaseClient(req, response);
-      await supabase.auth.signOut();
-      return response;
+      return NextResponse.json({ error: 'Access token is required' }, { status: 400 });
     }
 
-    // Temporary response object to collect cookies during setSession call
-    const cookieCollectorResponse = NextResponse.json({ success: true });
-    const supabase = await createRouteHandlerSupabaseClient(req, cookieCollectorResponse);
-    
-    // Set session in Supabase client which triggers cookie setting via setAll onto the cookieCollectorResponse object
+    const host = req.headers.get('host') || '';
+    const referer = req.headers.get('referer') || '';
+    const secFetchDest = req.headers.get('sec-fetch-dest') || '';
+
+    const isIframe = secFetchDest === 'iframe' || referer.includes('ai.studio') || referer.includes('google.com');
+    const isRunApp = host.includes('.run.app');
+    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+
+    const useSameSiteNone = isIframe || isRunApp;
+
+    // Create the final response first
+    const response = NextResponse.json({ status: 'success' });
+
+    // Initialize createServerClient
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return req.cookies.getAll();
+          },
+          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              const secureOptions = {
+                ...options,
+                secure: isLocalhost ? false : true,
+                sameSite: useSameSiteNone ? 'none' as const : 'lax' as const,
+                path: options.path || '/',
+              };
+              response.cookies.set(name, value, secureOptions);
+            });
+          },
+        },
+      }
+    );
+
+    // Explicitly call setSession to bake the authentication cookies into the response headers
     const { data, error } = await supabase.auth.setSession({
       access_token,
       refresh_token: refresh_token || '',
@@ -32,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     const user = data.user;
 
-    // Use admin client to query/insert the profile row, bypassing client-side RLS limits for profile creation
+    // Synchronize the profile row and user roles
     const adminSupabase = createAdminSupabaseClient();
     
     const { data: existingProfile, error: profileError } = await adminSupabase
@@ -44,7 +74,6 @@ export async function POST(req: NextRequest) {
     if (profileError || !existingProfile) {
       console.log(`Creating missing profile for user ${user.id} (${user.email})`);
       
-      // Auto-assign admin if email matches the admin list
       let role = 'customer';
       const adminEmails = ['rubikshopaz@gmail.com', 'mirselimsahbazov2@gmail.com'];
       if (user.email && adminEmails.includes(user.email.toLowerCase())) {
@@ -63,22 +92,17 @@ export async function POST(req: NextRequest) {
 
       if (insertError) {
         console.error('Failed to create user profile during session sync:', insertError.message);
-        const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
         return NextResponse.json({ 
-          error: `Profil yaradıla bilmədi: ${insertError.message}. ${
-            !hasServiceKey ? 'Vercel mühitində SUPABASE_SERVICE_ROLE_KEY təyin edilməyib.' : 'Zəhmət olmasa SUPABASE_SERVICE_ROLE_KEY-in düzgünlüyünü yoxlayın.'
-          }` 
+          error: `Profil yaradıla bilmədi: ${insertError.message}` 
         }, { status: 500 });
       }
     } else {
-      // If profile exists, ensure email is correct
       if (!existingProfile.email && user.email) {
         await adminSupabase
           .from('profiles')
           .update({ email: user.email })
           .eq('id', user.id);
       }
-      // Ensure the role is updated to admin for specified administrator emails
       const adminEmails = ['rubikshopaz@gmail.com', 'mirselimsahbazov2@gmail.com'];
       if (user.email && adminEmails.includes(user.email.toLowerCase()) && existingProfile.role !== 'admin') {
         const { error: updateError } = await adminSupabase
@@ -88,25 +112,17 @@ export async function POST(req: NextRequest) {
 
         if (updateError) {
           console.error('Failed to update user role during session sync:', updateError.message);
-          const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
           return NextResponse.json({ 
-            error: `Admin rolunuz yenilənə bilmədi: ${updateError.message}. ${
-              !hasServiceKey ? 'Vercel mühitində SUPABASE_SERVICE_ROLE_KEY təyin edilməyib.' : 'Zəhmət olmasa SUPABASE_SERVICE_ROLE_KEY-in düzgünlüyünü yoxlayın.'
-            }` 
+            error: `Admin rolunuz yenilənə bilmədi: ${updateError.message}` 
           }, { status: 500 });
         }
       }
     }
 
-    // Prepare the final response and copy the session cookies over to it
-    const finalResponse = NextResponse.json({ success: true, user });
-    cookieCollectorResponse.headers.getSetCookie().forEach((cookie) => {
-      finalResponse.headers.append('Set-Cookie', cookie);
-    });
-
-    return finalResponse;
+    return response;
   } catch (err: any) {
     console.error('Session sync API exception:', err);
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 });
   }
 }
+

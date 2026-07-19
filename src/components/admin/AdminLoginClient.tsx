@@ -79,10 +79,26 @@ export default function AdminLoginClient() {
           setStep('mfa');
         } else {
           await logToDatabase('success', 'Uğurlu giriş (2FA aktiv deyil)', data.user.id);
+          setSuccessMsg('Sessiya sinxronizasiya edilir...');
+
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            const syncRes = await fetch('/api/auth/sync', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+              }),
+            });
+            if (!syncRes.ok) {
+              const syncErr = await syncRes.json();
+              throw new Error(syncErr.error || 'Server sessiyası sinxronizasiya edilə bilmədi.');
+            }
+          }
+
           setSuccessMsg('Giriş uğurludur! Yönləndirilirsiniz...');
-          setTimeout(() => {
-            window.location.href = window.location.pathname;
-          }, 1000);
+          window.location.href = window.location.pathname;
         }
       }
     } catch (err: any) {
@@ -120,14 +136,33 @@ export default function AdminLoginClient() {
           device_id: newDeviceId,
           device_name: navigator.userAgent.substring(0, 50)
         });
-        document.cookie = `deviceId=${newDeviceId}; path=/; max-age=2592000; SameSite=Lax; Secure`;
+
+        const secureFlag = window.location.protocol === 'https:' ? 'Secure;' : '';
+        const sameSiteFlag = window.location.hostname.includes('.run.app') || window.parent !== window ? 'SameSite=None;' : 'SameSite=Lax;';
+        document.cookie = `deviceId=${newDeviceId}; path=/; max-age=2592000; ${sameSiteFlag} ${secureFlag}`;
       }
 
       await logToDatabase('success', '2FA doğrulandı, giriş uğurlu oldu', user?.id);
+      setSuccessMsg('2FA Doğrulandı! Sessiya sinxronizasiya edilir...');
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const syncRes = await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          }),
+        });
+        if (!syncRes.ok) {
+          const syncErr = await syncRes.json();
+          throw new Error(syncErr.error || 'Server sessiyası sinxronizasiya edilə bilmədi.');
+        }
+      }
+
       setSuccessMsg('2FA Doğrulandı! Yönləndirilirsiniz...');
-      setTimeout(() => {
-        window.location.href = window.location.pathname;
-      }, 1000);
+      window.location.href = window.location.pathname;
     } catch (err: any) {
       setError(err.message || '2FA kodu təsdiqlənmədi.');
     } finally {
