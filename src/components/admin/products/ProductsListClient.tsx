@@ -9,6 +9,29 @@ import {
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 
+// Helper to convert AZ/RU characters and spaces into clean URL slugs
+const slugify = (text: string) => {
+  const map: { [key: string]: string } = {
+    'ä': 'a', 'ö': 'o', 'ü': 'u', 'ß': 'ss',
+    'ı': 'i', 'ə': 'e', 'ö': 'o', 'ğ': 'g', 'ç': 'c', 'ş': 's', 'ü': 'u',
+    'I': 'i', 'Ə': 'e', 'Ö': 'o', 'Ğ': 'g', 'Ç': 'c', 'Ş': 's', 'Ü': 'u',
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+    'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts',
+    'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ы': 'y', 'э': 'e', 'ю': 'yu', 'я': 'ya'
+  };
+
+  return text
+    .split('')
+    .map(char => map[char] || char)
+    .join('')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')     // Remove non-alphanumeric except spaces/hyphens
+    .replace(/\s+/g, '-')             // Replace spaces with hyphens
+    .replace(/-+/g, '-');             // Replace multiple hyphens
+};
+
 export default function ProductsListClient() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -87,12 +110,16 @@ export default function ProductsListClient() {
     e.preventDefault();
     setIsSubmitting(true);
     
+    // Auto-generate clean, unique slug from title_az
+    const generatedSlug = slugify(newProduct.title_az) + '-' + Math.floor(1000 + Math.random() * 9000);
+
     // Insert without ID so Supabase generates UUID
     const { data, error } = await supabase.from('products').insert([
       {
         title_az: newProduct.title_az,
         title_en: newProduct.title_en || newProduct.title_az,
         title_ru: newProduct.title_ru || newProduct.title_az,
+        slug: generatedSlug,
         description_az: newProduct.title_az,
         description_en: newProduct.title_en || newProduct.title_az,
         description_ru: newProduct.title_ru || newProduct.title_az,
@@ -131,9 +158,21 @@ export default function ProductsListClient() {
           <p className="text-sm text-slate-400 mt-1">Bütün məhsullarınızı yaradın, redaktə edin və idarə edin.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-500/20">
-            <Plus className="w-4 h-4" /> Yeni Məhsul
+          <button 
+            onClick={() => setIsModalOpen(true)} 
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl transition-all border border-slate-700"
+            title="Tez şəkildə yalnız əsas məlumatları daxil edərək məhsul yarat"
+          >
+            <Plus className="w-4 h-4" /> Tez Əlavə Et (Modal)
           </button>
+          
+          <Link 
+            href="/az/admin/products/new" 
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-500/20"
+            title="SEO, kateqoriya, brend və Rubik kubu xüsusiyyətləri olan tam məhsul yarat"
+          >
+            <Plus className="w-4 h-4" /> Yeni Məhsul (Ətraflı)
+          </Link>
         </div>
       </div>
 
