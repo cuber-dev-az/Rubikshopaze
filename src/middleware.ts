@@ -13,7 +13,8 @@ const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 60; // 60 requests/minute per IP
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const url = request.nextUrl;
+  const { pathname } = url;
   
   // 1. RATE LIMITING & IP CONTROL FOR API ROUTES
   if (pathname.startsWith('/api')) {
@@ -62,20 +63,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. SECURE SESSION & ADMIN PROTECTION FOR ADMIN ROUTES
-  // Check if target is admin
-  const isAdminRoute = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/admin`) || pathname === `/${locale}/admin`
-  ) || pathname.startsWith('/admin');
-
-  const isProtectedAdminRoute = locales.some(
-    (locale) => pathname.startsWith(`/${locale}/admin/`)
-  ) || pathname.startsWith('/admin/');
+  // 3. SECURE SESSION & ROUTING PROTECTION FOR ADMIN ROUTES
+  // Check if target is admin route: /locale/admin/... or /admin/...
+  const isAdminRoute = !!pathname.match(/^\/(az|en|ru)\/admin(\/.*)?$/) || pathname.startsWith('/admin');
+  const isExactAdminRoot = !!pathname.match(/^\/(az|en|ru)\/admin\/?$/) || pathname === '/admin' || pathname === '/admin/';
+  const locale = pathname.split('/')[1] || defaultLocale;
 
   let response = NextResponse.next();
 
   if (isAdminRoute) {
-    // Check user auth state
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
@@ -84,16 +80,11 @@ export async function middleware(request: NextRequest) {
       const referer = request.headers.get('referer') || '';
       const secFetchDest = request.headers.get('sec-fetch-dest') || '';
 
-      // Determine if we are running in the AI Studio preview iframe or localhost
       const isIframe = secFetchDest === 'iframe' || referer.includes('ai.studio') || referer.includes('google.com');
       const isRunApp = host.includes('.run.app');
       const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+      const sameSiteValue = (isIframe || isRunApp) ? 'none' : 'lax';
 
-      // If in AI Studio iframe, we must use sameSite: 'none' and secure: true.
-      // Otherwise, for normal browser access (Vercel/custom domain), use sameSite: 'lax'.
-      const useSameSiteNone = isIframe || isRunApp;
-
-      // Create a server client for Supabase in middleware
       const supabaseServer = createServerClient(supabaseUrl, supabaseAnonKey, {
         cookies: {
           getAll() {
@@ -104,7 +95,7 @@ export async function middleware(request: NextRequest) {
               const secureOptions = {
                 ...options,
                 secure: isLocalhost ? false : true,
-                sameSite: useSameSiteNone ? 'none' as const : 'lax' as const,
+                sameSite: sameSiteValue as any,
                 path: options.path || '/',
               };
               request.cookies.set(name, value, secureOptions);
@@ -118,7 +109,7 @@ export async function middleware(request: NextRequest) {
               const secureOptions = {
                 ...options,
                 secure: isLocalhost ? false : true,
-                sameSite: useSameSiteNone ? 'none' as const : 'lax' as const,
+                sameSite: sameSiteValue as any,
                 path: options.path || '/',
               };
               response.cookies.set(name, value, secureOptions);
@@ -129,76 +120,69 @@ export async function middleware(request: NextRequest) {
 
       try {
         const { data: { user } } = await supabaseServer.auth.getUser();
-        const currentLocale = locales.find((l) => pathname.startsWith(`/${l}`)) || defaultLocale;
 
-        if (isProtectedAdminRoute) {
-          // 1. Force authenticated session
-          if (!user) {
-            return NextResponse.redirect(new URL(`/${currentLocale}/admin`, request.url));
+        if (!user) {
+          if (!isExactAdminRoot) {
+            return NextResponse.redirect(new URL(`/${locale}/admin`, request.url));
           }
+          addSecurityHeaders(response);
+          return response;
+        }
 
-          // 2. Validate Role is Admin or Manager
-          const { data: profile } = await supabaseServer
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single();
+        // Check user role from profiles table
+        const { data: profile } = await supabaseServer
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-          const userRole = profile?.role || user.user_metadata?.role || user.app_metadata?.role;
-          if (userRole !== 'admin' && userRole !== 'manager') {
-            return NextResponse.redirect(new URL(`/${currentLocale}`, request.url));
-          }
+        const userRole = profile?.role || user.user_metadata?.role || user.app_metadata?.role;
+        if (userRole !== 'admin' && userRole !== 'manager') {
+          return NextResponse.redirect(new URL(`/${locale}`, request.url));
+        }
 
-          // 3. Multi-Factor Authentication Check
-          const { data: aalData } = await supabaseServer.auth.mfa.getAuthenticatorAssuranceLevel();
-          const currentAal = aalData?.currentLevel; // 'aal1' or 'aal2'
-          const nextAal = aalData?.nextLevel;       // 'aal1' or 'aal2'
+        // Check Multi-Factor Authentication Assurance Level
+        const { data: aalData } = await supabaseServer.auth.mfa.getAuthenticatorAssuranceLevel();
+        const currentAal = aalData?.currentLevel; // 'aal1' or 'aal2'
+        const nextAal = aalData?.nextLevel;       // 'aal1' or 'aal2'
 
-          // If MFA is configured and required (AAL2 is target), but user is only at AAL1 level
-          if (nextAal === 'aal2' && currentAal !== 'aal2') {
-            const deviceId = request.cookies.get('x-device-id')?.value || request.headers.get('x-device-id');
-            let isDeviceTrusted = false;
+        // If MFA is active/required, but user has only passed AAL1
+        if (nextAal === 'aal2' && currentAal !== 'aal2') {
+          const deviceId = request.cookies.get('deviceId')?.value;
+          let isDeviceTrusted = false;
 
-            if (deviceId) {
-              const { data: trustedDevice } = await supabaseServer
-                .from('trusted_devices')
-                .select('*')
-                .eq('user_id', user.id)
-                .eq('device_id', deviceId)
-                .gt('expires_at', new Date().toISOString())
-                .single();
-
-              if (trustedDevice) {
-                isDeviceTrusted = true;
-                // Update last_used_at timestamp on the trusted device record asynchronously
-                await supabaseServer
-                  .from('trusted_devices')
-                  .update({ last_used_at: new Date().toISOString() })
-                  .eq('id', trustedDevice.id);
-              }
-            }
-
-            // If not verified AAL2 and no active device trust token, kick to admin login
-            if (!isDeviceTrusted) {
-              return NextResponse.redirect(new URL(`/${currentLocale}/admin`, request.url));
-            }
-          }
-        } else {
-          // Accessing the plain login page /admin or /[locale]/admin
-          if (user) {
-            // Verify if user is admin/manager
-            const { data: profile } = await supabaseServer
-              .from('profiles')
-              .select('role')
-              .eq('id', user.id)
+          if (deviceId) {
+            const { data: trustedDevice } = await supabaseServer
+              .from('trusted_devices')
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('device_id', deviceId)
+              .gt('expires_at', new Date().toISOString())
               .single();
 
-            const userRole = profile?.role || user.user_metadata?.role || user.app_metadata?.role;
-            if (userRole === 'admin' || userRole === 'manager') {
-              // Already logged in as Admin, redirect to first sub-dashboard (e.g. cms)
-              return NextResponse.redirect(new URL(`/${currentLocale}/admin/cms`, request.url));
+            if (trustedDevice) {
+              isDeviceTrusted = true;
+              // Update last_used_at timestamp on the trusted device record asynchronously
+              await supabaseServer
+                .from('trusted_devices')
+                .update({ last_used_at: new Date().toISOString() })
+                .eq('id', trustedDevice.id);
             }
           }
+
+          if (!isDeviceTrusted) {
+            if (!isExactAdminRoot) {
+              return NextResponse.redirect(new URL(`/${locale}/admin`, request.url));
+            }
+            addSecurityHeaders(response);
+            return response;
+          }
+        }
+
+        // If authenticated (and AAL2 is verified, or bypassed via device trust, or no MFA configured),
+        // and visiting the exact login root, redirect them to admin CMS page to prevent re-login view.
+        if (isExactAdminRoot) {
+          return NextResponse.redirect(new URL(`/${locale}/admin/cms`, request.url));
         }
       } catch (error) {
         console.error('Middleware Supabase auth check error:', error);
@@ -206,7 +190,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 4. LOCALE REDIRECT CHECK
+  // 4. LOCALE REDIRECT CHECK FOR NON-ADMIN & NON-API STATIC PATHS
   const pathnameHasLocale = locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
@@ -218,7 +202,7 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  // 5. SECURITY HEADERS (CSRF & XSS Protection Headers)
+  // 5. SECURITY HEADERS
   addSecurityHeaders(response);
 
   return response;
