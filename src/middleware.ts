@@ -68,6 +68,10 @@ export async function middleware(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/admin`) || pathname === `/${locale}/admin`
   ) || pathname.startsWith('/admin');
 
+  const isProtectedAdminRoute = locales.some(
+    (locale) => pathname.startsWith(`/${locale}/admin/`)
+  ) || pathname.startsWith('/admin/');
+
   let response = NextResponse.next();
 
   if (isAdminRoute) {
@@ -125,9 +129,15 @@ export async function middleware(request: NextRequest) {
 
       try {
         const { data: { user } } = await supabaseServer.auth.getUser();
-        
-        if (user) {
-          // Verify user role in database or metadata. Let's lookup profiles table.
+        const currentLocale = locales.find((l) => pathname.startsWith(`/${l}`)) || defaultLocale;
+
+        if (isProtectedAdminRoute) {
+          // 1. Force authenticated session
+          if (!user) {
+            return NextResponse.redirect(new URL(`/${currentLocale}/admin`, request.url));
+          }
+
+          // 2. Validate Role is Admin or Manager
           const { data: profile } = await supabaseServer
             .from('profiles')
             .select('role')
@@ -135,14 +145,61 @@ export async function middleware(request: NextRequest) {
             .single();
 
           const userRole = profile?.role || user.user_metadata?.role || user.app_metadata?.role;
-          
           if (userRole !== 'admin' && userRole !== 'manager') {
-            // Logged in but not an admin -> redirect to home page
-            const currentLocale = locales.find((l) => pathname.startsWith(`/${l}`)) || defaultLocale;
             return NextResponse.redirect(new URL(`/${currentLocale}`, request.url));
           }
+
+          // 3. Multi-Factor Authentication Check
+          const { data: aalData } = await supabaseServer.auth.mfa.getAuthenticatorAssuranceLevel();
+          const currentAal = aalData?.currentLevel; // 'aal1' or 'aal2'
+          const nextAal = aalData?.nextLevel;       // 'aal1' or 'aal2'
+
+          // If MFA is configured and required (AAL2 is target), but user is only at AAL1 level
+          if (nextAal === 'aal2' && currentAal !== 'aal2') {
+            const deviceId = request.cookies.get('x-device-id')?.value || request.headers.get('x-device-id');
+            let isDeviceTrusted = false;
+
+            if (deviceId) {
+              const { data: trustedDevice } = await supabaseServer
+                .from('trusted_devices')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('device_id', deviceId)
+                .gt('expires_at', new Date().toISOString())
+                .single();
+
+              if (trustedDevice) {
+                isDeviceTrusted = true;
+                // Update last_used_at timestamp on the trusted device record asynchronously
+                await supabaseServer
+                  .from('trusted_devices')
+                  .update({ last_used_at: new Date().toISOString() })
+                  .eq('id', trustedDevice.id);
+              }
+            }
+
+            // If not verified AAL2 and no active device trust token, kick to admin login
+            if (!isDeviceTrusted) {
+              return NextResponse.redirect(new URL(`/${currentLocale}/admin`, request.url));
+            }
+          }
+        } else {
+          // Accessing the plain login page /admin or /[locale]/admin
+          if (user) {
+            // Verify if user is admin/manager
+            const { data: profile } = await supabaseServer
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .single();
+
+            const userRole = profile?.role || user.user_metadata?.role || user.app_metadata?.role;
+            if (userRole === 'admin' || userRole === 'manager') {
+              // Already logged in as Admin, redirect to first sub-dashboard (e.g. cms)
+              return NextResponse.redirect(new URL(`/${currentLocale}/admin/cms`, request.url));
+            }
+          }
         }
-        // If not logged in, we let them see the login form itself in src/app/[locale]/admin/page.tsx
       } catch (error) {
         console.error('Middleware Supabase auth check error:', error);
       }
