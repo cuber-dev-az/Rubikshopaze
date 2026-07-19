@@ -39,6 +39,14 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
       .eq('id', session.user.id)
       .single();
 
+    console.log('DEBUG_ADMIN_LAYOUT', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+      profile,
+      profileError: error?.message,
+    });
+
     if (profile) {
       userRole = profile.role;
       if (profile.role === 'admin' || profile.role === 'manager') {
