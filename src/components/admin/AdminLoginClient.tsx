@@ -9,6 +9,7 @@ interface AdminLoginClientProps {
   userRole?: string;
   initialSessionExists?: boolean;
   debugCookies?: string;
+  debugCookieValue?: string;
 }
 
 export default function AdminLoginClient({
@@ -17,6 +18,7 @@ export default function AdminLoginClient({
   userRole,
   initialSessionExists,
   debugCookies,
+  debugCookieValue,
 }: AdminLoginClientProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -180,6 +182,9 @@ export default function AdminLoginClient({
         <div>DEBUG → session: {String(initialSessionExists)} | email: {userEmail || 'yoxdur'} | role: {userRole || 'yoxdur'}</div>
         <div style={{marginTop: 4, fontSize: 10, borderTop: '1px solid #444', paddingTop: 4}}>
           COOKIES: {debugCookies}
+        </div>
+        <div style={{marginTop: 4, fontSize: 10, borderTop: '1px solid #444', paddingTop: 4}}>
+          VALUE_PREVIEW: {debugCookieValue || 'Yoxdur'}
         </div>
       </div>
 

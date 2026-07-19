@@ -23,6 +23,8 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
   const dict = await getDictionary(locale);
 
   const allCookieNames = (await cookies()).getAll().map(c => c.name).join(', ') || 'HEÇ BİR COOKIE YOXDUR';
+  const authCookie = (await cookies()).getAll().find(c => c.name.includes('-auth-token'));
+  const debugCookieValue = authCookie ? authCookie.value.substring(0, 60) : 'TAPILMADI';
 
   // Server-side Route Protection Check
   const supabase = await createServerSupabaseClient();
@@ -70,6 +72,7 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
         userRole={userRole}
         initialSessionExists={!!session?.user}
         debugCookies={allCookieNames}
+        debugCookieValue={debugCookieValue}
       />
     );
   }
