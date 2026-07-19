@@ -35,70 +35,59 @@ export async function middleware(request: NextRequest) {
   // Extract locale and path elements
   const segments = pathname.split('/');
   const locale = locales.includes(segments[1]) ? segments[1] : defaultLocale;
-  const isAdminPath = segments[2] === 'admin';
-  const isAdminRoot = isAdminPath && (segments.length === 3 || (segments.length === 4 && segments[3] === ''));
+  const isNestedAdminRoute = pathname.startsWith(`/${locale}/admin/`) && pathname !== `/${locale}/admin/`;
 
-  let supabaseResponse = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+  let response = NextResponse.next({
+    request: { headers: request.headers },
   });
 
-  if (isAdminPath) {
-    const host = request.headers.get('host') || '';
-    const referer = request.headers.get('referer') || '';
-    const secFetchDest = request.headers.get('sec-fetch-dest') || '';
+  const host = request.headers.get('host') || '';
+  const referer = request.headers.get('referer') || '';
+  const secFetchDest = request.headers.get('sec-fetch-dest') || '';
 
-    const isIframe = secFetchDest === 'iframe' || referer.includes('ai.studio') || referer.includes('google.com');
-    const isRunApp = host.includes('.run.app');
-    const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+  const isIframe = secFetchDest === 'iframe' || referer.includes('ai.studio') || referer.includes('google.com');
+  const isRunApp = host.includes('.run.app');
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
 
-    const useSameSiteNone = isIframe || isRunApp;
+  const useSameSiteNone = isIframe || isRunApp;
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
-          },
-          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-            cookiesToSet.forEach(({ name, value }) => {
-              request.cookies.set(name, value);
-            });
-            supabaseResponse = NextResponse.next({
-              request: {
-                headers: request.headers,
-              },
-            });
-            cookiesToSet.forEach(({ name, value, options }) => {
-              supabaseResponse.cookies.set(name, value, {
-                ...options,
-                secure: isLocalhost ? false : true,
-                sameSite: useSameSiteNone ? 'none' as const : 'lax' as const,
-                path: options.path || '/',
-              });
-            });
-          },
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll().map((c) => ({ name: c.name, value: c.value }));
         },
-      }
-    );
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+          cookiesToSet.forEach(({ name, value }) => {
+            request.cookies.set(name, value);
+          });
+          response = NextResponse.next({
+            request: { headers: request.headers },
+          });
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, {
+              ...options,
+              secure: isLocalhost ? false : true,
+              sameSite: useSameSiteNone ? 'none' as const : 'lax' as const,
+              path: options.path || '/',
+            });
+          });
+        },
+      },
+    }
+  );
 
-    // Verify user session
+  // FIX: ONLY protect nested admin routes (e.g., /az/admin/dashboard). 
+  // DO NOT run redirects on the exact root /az/admin to allow the login client component to mount safely.
+  if (isNestedAdminRoute) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      if (isAdminRoot) {
-        return supabaseResponse;
-      } else {
-        const redirectUrl = request.nextUrl.clone();
-        redirectUrl.pathname = `/${locale}/admin`;
-        return NextResponse.redirect(redirectUrl);
-      }
+      return NextResponse.redirect(new URL(`/${locale}/admin`, request.url));
     }
 
-    // Role verification
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -106,9 +95,7 @@ export async function middleware(request: NextRequest) {
       .single();
 
     if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = `/${locale}`;
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.redirect(new URL(`/${locale}`, request.url));
     }
 
     // MFA protection check (AAL1 demanding AAL2)
@@ -124,32 +111,25 @@ export async function middleware(request: NextRequest) {
       if (deviceId) {
         const { data: deviceCheck, error: deviceError } = await supabase
           .from('trusted_devices')
-          .select('id')
+          .select('expires_at')
           .eq('user_id', user.id)
           .eq('device_id', deviceId)
           .single();
 
-        if (deviceCheck && !deviceError) {
+        if (deviceCheck && !deviceError && new Date(deviceCheck.expires_at) > new Date()) {
           isTrusted = true;
         }
       }
 
       if (!isTrusted) {
-        if (isAdminRoot) {
-          return supabaseResponse;
-        } else {
-          const redirectUrl = request.nextUrl.clone();
-          redirectUrl.pathname = `/${locale}/admin`;
-          return NextResponse.redirect(redirectUrl);
-        }
+        return NextResponse.redirect(new URL(`/${locale}/admin`, request.url));
       }
     }
   }
 
-  return supabaseResponse;
+  return response;
 }
 
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|assets|api).*)'],
 };
-
