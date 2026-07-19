@@ -150,7 +150,7 @@ export default function BlogClient() {
                     }
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end gap-2">
                       <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors" title="Bax">
                         <Eye className="w-4 h-4" />
                       </button>

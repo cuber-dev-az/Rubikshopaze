@@ -59,7 +59,7 @@ export default function CampaignsClient() {
                     {camp.status === 'ended' && <span className="inline-flex px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-slate-800 text-slate-500 border border-slate-700">Bitib</span>}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end gap-2">
                       {camp.status === 'active' ? (
                         <button className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Dayandır">
                           <Square className="w-4 h-4" />

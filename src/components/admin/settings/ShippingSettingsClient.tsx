@@ -219,7 +219,7 @@ export default function ShippingSettingsClient() {
                       </div>
                       <div className="flex items-center gap-6">
                         <div className="font-mono font-bold text-amber-500">{Number(method.price).toFixed(2)} ₼</div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-2">
                           <button 
                             onClick={() => startEdit(method)}
                             className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
@@ -271,6 +271,17 @@ export default function ShippingSettingsClient() {
                 />
               </div>
             </div>
+          </div>
+
+          <div className="flex justify-end pt-6 border-t border-slate-800">
+            <button 
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 text-sm font-black rounded-xl transition-all shadow-lg shadow-amber-500/20"
+            >
+              <Save className="w-4 h-4" /> {saving ? 'Gözləyin...' : 'Yadda Saxla'}
+            </button>
           </div>
 
         </div>

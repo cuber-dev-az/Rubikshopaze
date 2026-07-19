@@ -84,7 +84,7 @@ export default function NavigationClient() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2">
                     <button className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"><Edit3 className="w-4 h-4" /></button>
                     <button className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>
@@ -111,7 +111,7 @@ export default function NavigationClient() {
                     <div className="font-bold text-white">{faq.question}</div>
                     <div className="text-sm text-slate-400 leading-relaxed">{faq.answer}</div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                  <div className="flex items-center gap-2 mt-1">
                     <button className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"><Edit3 className="w-4 h-4" /></button>
                     <button className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
                   </div>

@@ -346,7 +346,7 @@ export default function BrandsListClient() {
                     {brand.description || <span className="text-slate-600 italic">Təsvir yoxdur</span>}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <button 
                         onClick={() => handleEditClick(brand)} 
                         className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors" 

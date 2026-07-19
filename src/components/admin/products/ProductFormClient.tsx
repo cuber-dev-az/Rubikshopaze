@@ -47,6 +47,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [slug, setSlug] = useState(isNew ? '' : 'gan-14-maglev-flagship-3x3');
   const [productType, setProductType] = useState('standard');
   const [status, setStatus] = useState('draft');
+  const [imageUrl, setImageUrl] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
   const [isFeatured, setIsFeatured] = useState(false);
   const [tags, setTags] = useState('gan, flagship, maglev');
   
@@ -119,7 +121,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setPrice_azn(prod.price_azn !== undefined ? String(prod.price_azn) : '');
             setCompareAtPrice_azn(prod.compare_at_price_azn !== undefined && prod.compare_at_price_azn !== null ? String(prod.compare_at_price_azn) : '');
             setSlug(prod.slug || '');
-            setStatus(prod.is_active ? 'publish' : 'draft');
+            setStatus(prod.status || (prod.is_active ? 'publish' : 'draft'));
+            setImageUrl(prod.image_url || '');
+            setVideoUrl(prod.video_url || '');
             setIsFeatured(prod.is_featured || false);
             setSelectedBrandId(prod.brand_id || '');
             setProductType(prod.product_type || 'standard');
@@ -245,6 +249,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         price_azn: priceNumber,
         compare_at_price_azn: comparePriceNumber || undefined,
         is_active: status === 'publish',
+        status: status,
+        image_url: imageUrl || undefined,
+        video_url: videoUrl || undefined,
         variants: payloadVariants,
         category_ids: selectedCategoryId ? [selectedCategoryId] : [],
         brand_id: selectedBrandId || undefined,
@@ -571,30 +578,54 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                   <ImageIcon className="w-5 h-5 text-amber-500" /> Şəkil Meneceri
                 </h3>
-                <div className="border-2 border-dashed border-slate-700 bg-slate-950/50 rounded-2xl p-10 flex flex-col items-center justify-center text-center hover:border-amber-500/50 hover:bg-amber-500/5 transition-all cursor-pointer group">
-                  <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Plus className="w-8 h-8 text-slate-400 group-hover:text-amber-500 transition-colors" />
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Əsas Şəkil URL-i</label>
+                    <input 
+                      type="url" 
+                      className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
+                      placeholder="Şəkil URL daxil edin (məs. Supabase Storage linki və ya hər hansı şəkil URL)"
+                      value={imageUrl}
+                      onChange={e => setImageUrl(e.target.value)}
+                    />
                   </div>
-                  <p className="text-sm font-bold text-white mb-1">Şəkilləri bura sürükləyin və ya klikləyin</p>
-                  <p className="text-xs text-slate-500">PNG, JPG, WEBP (Max 5MB)</p>
-                </div>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
-                  {[1, 2].map(i => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-slate-800 group">
-                      <Image src={`https://picsum.photos/seed/prod${i}/200/200`} alt="Preview" fill className="object-cover" />
-                      <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <button className="p-2 bg-slate-800 hover:bg-red-500 text-white rounded-lg transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      {i === 1 && (
+
+                  {imageUrl ? (
+                    <div className="mt-4">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Şəkil Önizləməsi</p>
+                      <div className="relative w-48 aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
+                        <Image 
+                          src={imageUrl} 
+                          alt="Önizləmə" 
+                          fill 
+                          className="object-cover" 
+                          unoptimized={true}
+                          referrerPolicy="no-referrer"
+                        />
                         <div className="absolute top-2 left-2 px-2 py-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded uppercase tracking-wider shadow-md">
                           Əsas
                         </div>
-                      )}
+                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button 
+                            type="button"
+                            onClick={() => setImageUrl('')}
+                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  ))}
+                  ) : (
+                    <div className="border-2 border-dashed border-slate-700 bg-slate-950/50 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
+                      <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                        <ImageIcon className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <p className="text-sm font-bold text-white mb-1">Şəkil URL-i boşdur</p>
+                      <p className="text-xs text-slate-500">Məhsulun əsas şəkli olaraq göstəriləcək bir URL daxil edin</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -608,6 +639,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                     type="url" 
                     className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
                     placeholder="https://youtube.com/watch?v=..."
+                    value={videoUrl}
+                    onChange={e => setVideoUrl(e.target.value)}
                   />
                 </div>
               </div>

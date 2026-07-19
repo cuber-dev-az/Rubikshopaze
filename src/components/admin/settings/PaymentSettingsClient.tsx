@@ -158,6 +158,17 @@ export default function PaymentSettingsClient() {
             </div>
           </div>
 
+          <div className="flex justify-end pt-6 border-t border-slate-800">
+            <button 
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 text-sm font-black rounded-xl transition-all shadow-lg shadow-amber-500/20"
+            >
+              <Save className="w-4 h-4" /> {saving ? 'Gözləyin...' : 'Yadda Saxla'}
+            </button>
+          </div>
+
         </div>
       )}
     </div>

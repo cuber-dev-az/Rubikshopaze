@@ -617,7 +617,7 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-2">
                       <button className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors border border-slate-700">
                         Bax <ChevronRight className="w-3 h-3 inline" />
                       </button>

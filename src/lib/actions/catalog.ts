@@ -106,6 +106,9 @@ export async function createProduct(payload: {
   compare_at_price_azn?: number;
   brand_id?: string;
   is_active?: boolean;
+  status?: string;
+  image_url?: string;
+  video_url?: string;
   category_ids?: string[];
   variants?: any[];
   is_featured?: boolean;
@@ -133,6 +136,9 @@ export async function createProduct(payload: {
       compare_at_price_azn: payload.compare_at_price_azn,
       brand_id: payload.brand_id,
       is_active: payload.is_active ?? true,
+      status: payload.status ?? (payload.is_active ? 'publish' : 'draft'),
+      image_url: payload.image_url,
+      video_url: payload.video_url,
       is_featured: payload.is_featured ?? false,
       product_type: payload.product_type ?? 'speedcube',
       tags: payload.tags ?? [],
@@ -194,6 +200,9 @@ export async function updateProduct(id: string, payload: Partial<{
   compare_at_price_azn: number;
   brand_id: string;
   is_active: boolean;
+  status: string;
+  image_url: string;
+  video_url: string;
   category_ids: string[];
   variants: any[];
   is_featured: boolean;

@@ -204,6 +204,18 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                     </p>
                   </div>
                   
+                  {!user && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        openModal('login');
+                      }}
+                      className="w-full mb-3 py-2.5 text-xs font-black text-rubik-brand bg-rubik-brand/10 hover:bg-rubik-brand/20 rounded-xl transition-colors cursor-pointer block text-center"
+                    >
+                      Daxil ol və sürətli rəsmiləşdir
+                    </button>
+                  )}
+                  
                   <div className="grid grid-cols-2 gap-3">
                     <Link
                       href={`/${locale}/cart`}
@@ -212,19 +224,8 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                     >
                       Səbətə bax
                     </Link>
-                    {!user && (
-                        <button
-                          onClick={() => {
-                            onClose();
-                            openModal('login');
-                          }}
-                          className="w-full mb-3 py-2 text-sm font-bold text-rubik-brand bg-rubik-brand/10 hover:bg-rubik-brand/20 rounded-xl transition-colors cursor-pointer"
-                        >
-                          Daxil ol və rəsmiləşdir
-                        </button>
-                      )}
-                      <Link
-                        href={`/${locale}/checkout`}
+                    <Link
+                      href={`/${locale}/checkout`}
                       onClick={onClose}
                       className="w-full inline-flex items-center justify-center py-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white text-xs font-black rounded-xl hover:shadow-soft-md transition-all cursor-pointer flex gap-1 items-center"
                     >

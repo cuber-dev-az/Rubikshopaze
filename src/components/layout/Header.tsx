@@ -242,7 +242,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {/* Cart Toggle */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="hidden md:flex relative p-2.5 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200"
+                className="relative p-2.5 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 flex items-center justify-center"
                 aria-label="Səbət"
               >
                 <ShoppingCart className="h-5 w-5" />
