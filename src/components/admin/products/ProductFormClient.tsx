@@ -18,7 +18,14 @@ import {
   AlertCircle
 } from 'lucide-react';
 import Image from 'next/image';
-import { createProduct, updateProduct, getProductById } from '@/lib/actions/catalog';
+import { 
+  createProduct, 
+  updateProduct, 
+  getProductById, 
+  deleteProduct, 
+  getCategories, 
+  getBrands 
+} from '@/lib/actions/catalog';
 
 interface ProductFormClientProps {
   isNew: boolean;
@@ -36,6 +43,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [description_en, setDescription_en] = useState(isNew ? '' : "The world's most advanced speed cube.");
   const [description_ru, setDescription_ru] = useState(isNew ? '' : 'Самый продвинутый скоростной куб в мире.');
   const [price_azn, setPrice_azn] = useState(isNew ? '' : '145.00');
+  const [compareAtPrice_azn, setCompareAtPrice_azn] = useState(isNew ? '' : '155.00');
   const [slug, setSlug] = useState(isNew ? '' : 'gan-14-maglev-flagship-3x3');
   const [productType, setProductType] = useState('standard');
   const [status, setStatus] = useState('draft');
@@ -44,6 +52,12 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDesc, setSeoDesc] = useState('');
+
+  // Speedcubing-specific specifications
+  const [weight_g, setWeight_g] = useState(isNew ? '' : '71');
+  const [isMagnetic, setIsMagnetic] = useState(isNew ? false : true);
+  const [size_mm, setSize_mm] = useState(isNew ? '' : '56');
+  const [difficultyLevel, setDifficultyLevel] = useState(isNew ? 'başlanğıc' : 'peşəkar');
 
   const [variants, setVariants] = useState<any[]>(
     isNew 
@@ -58,6 +72,33 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [loadingProduct, setLoadingProduct] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Categories and Brands lists from Database
+  const [categoriesList, setCategoriesList] = useState<any[]>([]);
+  const [brandsList, setBrandsList] = useState<any[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedBrandId, setSelectedBrandId] = useState('');
+
+  // Fetch metadata on mount
+  React.useEffect(() => {
+    const loadMetadata = async () => {
+      try {
+        const [catsRes, brandsRes] = await Promise.all([
+          getCategories(),
+          getBrands()
+        ]);
+        if (catsRes.success && catsRes.data) {
+          setCategoriesList(catsRes.data);
+        }
+        if (brandsRes.success && brandsRes.data) {
+          setBrandsList(brandsRes.data);
+        }
+      } catch (err) {
+        console.error('Metadata loading error:', err);
+      }
+    };
+    loadMetadata();
+  }, []);
 
   // Hydrate product details when editing
   React.useEffect(() => {
@@ -76,9 +117,25 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setDescription_en(prod.description_en || '');
             setDescription_ru(prod.description_ru || '');
             setPrice_azn(prod.price_azn !== undefined ? String(prod.price_azn) : '');
+            setCompareAtPrice_azn(prod.compare_at_price_azn !== undefined && prod.compare_at_price_azn !== null ? String(prod.compare_at_price_azn) : '');
             setSlug(prod.slug || '');
             setStatus(prod.is_active ? 'publish' : 'draft');
             setIsFeatured(prod.is_featured || false);
+            setSelectedBrandId(prod.brand_id || '');
+            setProductType(prod.product_type || 'standard');
+            setTags(Array.isArray(prod.tags) ? prod.tags.join(', ') : (prod.tags || ''));
+            setSeoTitle(prod.seo_title || '');
+            setSeoDesc(prod.seo_description || '');
+            setWeight_g(prod.weight_g !== undefined && prod.weight_g !== null ? String(prod.weight_g) : '');
+            setIsMagnetic(prod.is_magnetic || false);
+            setSize_mm(prod.size_mm !== undefined && prod.size_mm !== null ? String(prod.size_mm) : '');
+            setDifficultyLevel(prod.difficulty_level || 'başlanğıc');
+
+            if (prod.product_categories && Array.isArray(prod.product_categories) && prod.product_categories.length > 0) {
+              setSelectedCategoryId(prod.product_categories[0].category_id || '');
+            } else {
+              setSelectedCategoryId('');
+            }
             
             if (prod.variants && Array.isArray(prod.variants)) {
               setVariants(prod.variants.map((v: any, index: number) => ({
@@ -129,9 +186,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
     if (!productId) return;
     setIsDeletingProduct(true);
     try {
-      const res = await supabase.from('products').delete().eq('id', productId);
-      if (res.error) {
-        setErrorMsg('Silinmə zamanı xəta baş verdi: ' + res.error.message);
+      const res = await deleteProduct(productId);
+      if (!res.success) {
+        setErrorMsg('Silinmə zamanı xəta baş verdi: ' + (res.error || 'Xəta baş verdi'));
       } else {
         setSuccessMsg('Məhsul uğurla silindi!');
         setTimeout(() => {
@@ -170,6 +227,13 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         };
       });
 
+      const parsedComparePrice = parseFloat(String(compareAtPrice_azn).replace(',', '.'));
+      const comparePriceNumber = !isNaN(parsedComparePrice) && isFinite(parsedComparePrice) ? Math.round(parsedComparePrice * 100) / 100 : null;
+
+      const tagsArray = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+      const weightNumber = weight_g !== '' ? parseFloat(weight_g) : null;
+      const sizeNumber = size_mm !== '' ? parseFloat(size_mm) : null;
+
       const payload = {
         title_az,
         title_en,
@@ -179,8 +243,20 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         description_ru,
         slug: slug || title_az.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
         price_azn: priceNumber,
+        compare_at_price_azn: comparePriceNumber || undefined,
         is_active: status === 'publish',
         variants: payloadVariants,
+        category_ids: selectedCategoryId ? [selectedCategoryId] : [],
+        brand_id: selectedBrandId || undefined,
+        is_featured: isFeatured,
+        product_type: productType,
+        tags: tagsArray,
+        seo_title: seoTitle || undefined,
+        seo_description: seoDesc || undefined,
+        weight_g: weightNumber !== null ? weightNumber : undefined,
+        is_magnetic: isMagnetic,
+        size_mm: sizeNumber !== null ? sizeNumber : undefined,
+        difficulty_level: difficultyLevel,
       };
 
       let res;
@@ -357,17 +433,40 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Qiymət (AZN)</label>
                     <input
                       type="text"
                       inputMode="decimal"
-                      pattern="^\d+([.,]\d{1,2})?$"
+                      step="0.01"
                       value={price_azn}
-                      onChange={(e) => setPrice_azn(e.target.value.replace(',', '.'))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(',', '.');
+                        if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                          setPrice_azn(val);
+                        }
+                      }}
                       className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
-                      placeholder="E.g.: 55.45"
+                      placeholder="Məs.: 145.00"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Endirimdən əvvəlki qiymət (AZN)</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      step="0.01"
+                      value={compareAtPrice_azn}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(',', '.');
+                        if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                          setCompareAtPrice_azn(val);
+                        }
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
+                      placeholder="Məs.: 155.00"
                     />
                   </div>
 
@@ -393,11 +492,71 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors appearance-none"
                     >
                       <option value="standard">Standard Məhsul</option>
+                      <option value="speedcube">Rubik Kubu / Puzzle</option>
                       <option value="service">Xidmət Məhsulu (Məsələn: Setup)</option>
                       <option value="bundle">Bundle (Paket)</option>
                       <option value="preorder">Pre-order (Ön Sifariş)</option>
                       <option value="wholesale">Topdan Satış</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* Speedcubing Specifications */}
+                <div className="pt-6 mt-6 border-t border-slate-800 space-y-4">
+                  <h4 className="text-sm font-black text-amber-500 uppercase tracking-wider">Rubik Kubu & Sürət Kubu Göstəriciləri</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Çəki (qram)</label>
+                      <input 
+                        type="number" 
+                        value={weight_g}
+                        onChange={(e) => setWeight_g(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors animate-fade-in"
+                        placeholder="Məs.: 71"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Ölçü (mm)</label>
+                      <input 
+                        type="number" 
+                        value={size_mm}
+                        onChange={(e) => setSize_mm(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
+                        placeholder="Məs.: 56"
+                        min="0"
+                        step="0.1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Çətinlik Səviyyəsi</label>
+                      <select 
+                        value={difficultyLevel}
+                        onChange={(e) => setDifficultyLevel(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors appearance-none cursor-pointer"
+                      >
+                        <option value="başlanğıc">Başlanğıc (Beginner)</option>
+                        <option value="orta">Orta (Intermediate)</option>
+                        <option value="peşəkar">Peşəkar (Professional)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Maqnit xüsusiyyəti</label>
+                      <div 
+                        onClick={() => setIsMagnetic(!isMagnetic)}
+                        className="flex items-center justify-between cursor-pointer p-3 bg-slate-950 border border-slate-800 rounded-xl hover:border-slate-700 transition-colors h-[50px]"
+                      >
+                        <span className="text-xs font-bold text-slate-300">Maqnitlidir</span>
+                        <div className={`w-10 h-6 rounded-full p-1 transition-colors ${isMagnetic ? 'bg-amber-500' : 'bg-slate-700'}`}>
+                          <div className={`w-4 h-4 bg-white rounded-full transition-transform ${isMagnetic ? 'translate-x-4' : 'translate-x-0'}`} />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -498,11 +657,13 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                         <input
                           type="text"
                           inputMode="decimal"
-                          pattern="^\d+([.,]\d{1,2})?$"
+                          step="0.01"
                           value={String(v.price)}
                           onChange={(e) => {
                             const val = e.target.value.replace(',', '.');
-                            handleUpdateVariant(v.id, 'price', val);
+                            if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                              handleUpdateVariant(v.id, 'price', val);
+                            }
                           }}
                           className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
                         />
@@ -666,21 +827,33 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Kateqoriya</label>
-              <select className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition-colors appearance-none">
-                <option>3x3 Kublar</option>
-                <option>Ağıllı Kublar</option>
-                <option>Aksesuarlar</option>
-                <option>Lubrikantlar</option>
+              <select 
+                value={selectedCategoryId}
+                onChange={(e) => setSelectedCategoryId(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="">— Seçin —</option>
+                {categoriesList.map(cat => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name_az} {cat.parent_id ? `(Alt)` : ''}
+                  </option>
+                ))}
               </select>
             </div>
             
             <div>
               <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Brend</label>
-              <select className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition-colors appearance-none">
-                <option>GAN</option>
-                <option>MoYu</option>
-                <option>QiYi</option>
-                <option>X-Man</option>
+              <select 
+                value={selectedBrandId}
+                onChange={(e) => setSelectedBrandId(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-amber-500 transition-colors appearance-none cursor-pointer"
+              >
+                <option value="">— Seçin —</option>
+                {brandsList.map(brand => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

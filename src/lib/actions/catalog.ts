@@ -108,24 +108,45 @@ export async function createProduct(payload: {
   is_active?: boolean;
   category_ids?: string[];
   variants?: any[];
+  is_featured?: boolean;
+  product_type?: string;
+  tags?: string[];
+  seo_title?: string;
+  seo_description?: string;
+  weight_g?: number;
+  is_magnetic?: boolean;
+  size_mm?: number;
+  difficulty_level?: string;
 }) {
   try {
     const supabase = await createServerSupabaseClient();
+
+    const insertObj: any = {
+      title_az: payload.title_az,
+      title_en: payload.title_en,
+      title_ru: payload.title_ru,
+      description_az: payload.description_az,
+      description_en: payload.description_en,
+      description_ru: payload.description_ru,
+      slug: payload.slug,
+      price_azn: payload.price_azn,
+      compare_at_price_azn: payload.compare_at_price_azn,
+      brand_id: payload.brand_id,
+      is_active: payload.is_active ?? true,
+      is_featured: payload.is_featured ?? false,
+      product_type: payload.product_type ?? 'speedcube',
+      tags: payload.tags ?? [],
+      seo_title: payload.seo_title,
+      seo_description: payload.seo_description,
+      weight_g: payload.weight_g,
+      is_magnetic: payload.is_magnetic ?? false,
+      size_mm: payload.size_mm,
+      difficulty_level: payload.difficulty_level ?? 'başlanğıc',
+    };
+
     const { data: product, error: prodError } = await supabase
       .from('products')
-      .insert({
-        title_az: payload.title_az,
-        title_en: payload.title_en,
-        title_ru: payload.title_ru,
-        description_az: payload.description_az,
-        description_en: payload.description_en,
-        description_ru: payload.description_ru,
-        slug: payload.slug,
-        price_azn: payload.price_azn,
-        compare_at_price_azn: payload.compare_at_price_azn,
-        brand_id: payload.brand_id,
-        is_active: payload.is_active ?? true,
-      })
+      .insert(insertObj)
       .select()
       .single();
 
@@ -175,6 +196,15 @@ export async function updateProduct(id: string, payload: Partial<{
   is_active: boolean;
   category_ids: string[];
   variants: any[];
+  is_featured: boolean;
+  product_type: string;
+  tags: string[];
+  seo_title: string;
+  seo_description: string;
+  weight_g: number;
+  is_magnetic: boolean;
+  size_mm: number;
+  difficulty_level: string;
 }>) {
   try {
     const supabase = await createServerSupabaseClient();
