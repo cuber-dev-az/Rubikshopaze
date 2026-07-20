@@ -286,11 +286,14 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
                 <span>{t({ az: 'Azərbaycan Speedcubing Flaqmanı', en: 'Azerbaijan Speedcubing Flagship', ru: 'Флагман Спидкубинга в Азербайджане' })}</span>
               </div>
               <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white font-sans">
-                {t({
-                  az: 'Sürətli Həllin Yeni Sərhədləri!',
-                  en: 'New Frontiers of Speedcubing!',
-                  ru: 'Новые рубежи спидкубинга!'
-                })}
+                <span>
+                  {t({
+                    az: 'Sürətli Həllin Yeni Sərhədləri!',
+                    en: 'New Frontiers of Speedcubing!',
+                    ru: 'Новые рубежи спидкубинга!'
+                  })}
+                </span>
+                {" "}
                 <br />
                 <span className="bg-gradient-to-r from-rubik-brand via-rubik-yellow to-rubik-green bg-clip-text text-transparent">
                   RubikShop.az
@@ -462,7 +465,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
             </div>
 
             {/* Showcase Tabs */}
-            <div className="flex items-center gap-1.5 bg-card p-1 border border-border rounded-xl shadow-soft-sm">
+            <div role="tablist" aria-label="Məhsul nümayişi" className="flex items-center gap-1.5 bg-card p-1 border border-border rounded-xl shadow-soft-sm">
               {[
                 { id: 'new', title: { az: 'Yeni Gələnlər', en: 'New Arrivals', ru: 'Новинки' } },
                 { id: 'best', title: { az: 'Çox Satılanlar', en: 'Best Sellers', ru: 'Популярное' } },
@@ -470,6 +473,8 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
               ].map((tab) => (
                 <button
                   key={tab.id}
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg transition-all cursor-pointer ${
                     activeTab === tab.id

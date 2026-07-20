@@ -66,7 +66,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           onClick={handleWishlistToggle}
           disabled={isWishlistLoading}
           className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand"
-          aria-label="Wishlist"
+          aria-label={isWishlisted ? "Seçilmişlərdən sil" : "Seçilmişlərə əlavə et"}
         >
           {isWishlistLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
