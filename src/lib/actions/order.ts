@@ -34,18 +34,63 @@ export async function submitOrderAtomic(payload: OrderPayload) {
   try {
     // 0. Validate stock quantity before placing the order
     for (const item of payload.items) {
-      const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      if (uuidMatch) {
-        const productId = uuidMatch[0];
-        const { data: productData, error: productError } = await supabaseAdmin
-          .from('products')
-          .select('title_az, stock_quantity')
-          .eq('id', productId)
-          .single();
+      let productId = '';
+      let variantId = '';
 
-        if (!productError && productData) {
-          if (productData.stock_quantity < item.quantity) {
-            throw new Error(`Sifariş tamamlanmadı: "${productData.title_az}" məhsulunun mövcud stoku (${productData.stock_quantity} ədəd) sifariş etmək istədiyiniz miqdardan (${item.quantity} ədəd) azdır.`);
+      if (item.product_id.includes('__variant__')) {
+        const parts = item.product_id.split('__variant__');
+        productId = parts[0];
+        variantId = parts[1];
+      } else {
+        const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        if (uuidMatch) {
+          productId = uuidMatch[0];
+        }
+      }
+
+      if (productId) {
+        // Check if there are variants for this product
+        const { data: productVariants } = await supabaseAdmin
+          .from('variants')
+          .select('*')
+          .eq('product_id', productId);
+
+        const hasVariants = productVariants && productVariants.length > 0;
+
+        if (hasVariants) {
+          // It's a product with variants! Find the specific variant to check
+          let targetVariant = null;
+          if (variantId) {
+            targetVariant = productVariants.find(v => v.id === variantId);
+          }
+          if (!targetVariant) {
+            // Fallback: pick the first active variant
+            targetVariant = productVariants.find(v => v.is_active) || productVariants[0];
+          }
+
+          if (targetVariant) {
+            if (targetVariant.stock < item.quantity) {
+              const { data: productData } = await supabaseAdmin
+                .from('products')
+                .select('title_az')
+                .eq('id', productId)
+                .single();
+              const pName = productData?.title_az || 'Məhsul';
+              throw new Error(`Sifariş tamamlanmadı: "${pName} (${targetVariant.name || 'Seçilmiş Variant'})" variantının mövcud stoku (${targetVariant.stock} ədəd) sifariş etmək istədiyiniz miqdardan (${item.quantity} ədəd) azdır.`);
+            }
+          }
+        } else {
+          // It's a product without variants (simple product)
+          const { data: productData, error: productError } = await supabaseAdmin
+            .from('products')
+            .select('title_az, stock_quantity')
+            .eq('id', productId)
+            .single();
+
+          if (!productError && productData) {
+            if (productData.stock_quantity < item.quantity) {
+              throw new Error(`Sifariş tamamlanmadı: "${productData.title_az}" məhsulunun mövcud stoku (${productData.stock_quantity} ədəd) sifariş etmək istədiyiniz miqdardan (${item.quantity} ədəd) azdır.`);
+            }
           }
         }
       }
@@ -87,11 +132,21 @@ export async function submitOrderAtomic(payload: OrderPayload) {
     // 2. Insert into order_items table querying active variant IDs
     const orderItems = [];
     for (const item of payload.items) {
-      const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      let productId = null;
       let variantId = null;
 
-      if (uuidMatch) {
-        const productId = uuidMatch[0];
+      if (item.product_id.includes('__variant__')) {
+        const parts = item.product_id.split('__variant__');
+        productId = parts[0];
+        variantId = parts[1];
+      } else {
+        const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        if (uuidMatch) {
+          productId = uuidMatch[0];
+        }
+      }
+
+      if (productId && !variantId) {
         // Query the first active variant from variants table
         const { data: variantData } = await supabaseAdmin
           .from('variants')
@@ -134,23 +189,96 @@ export async function submitOrderAtomic(payload: OrderPayload) {
       throw new Error(itemsError.message);
     }
 
-    // 3. Automatically decrease stock quantity for ordered products
+    // 3. Automatically decrease stock quantity for ordered products or variants
     for (const item of payload.items) {
-      const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-      if (uuidMatch) {
-        const productId = uuidMatch[0];
-        const { data: productData } = await supabaseAdmin
-          .from('products')
-          .select('stock_quantity')
-          .eq('id', productId)
-          .single();
+      let productId = '';
+      let variantId = '';
 
-        if (productData) {
-          const newStock = Math.max(0, productData.stock_quantity - item.quantity);
-          await supabaseAdmin
+      if (item.product_id.includes('__variant__')) {
+        const parts = item.product_id.split('__variant__');
+        productId = parts[0];
+        variantId = parts[1];
+      } else {
+        const uuidMatch = item.product_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+        if (uuidMatch) {
+          productId = uuidMatch[0];
+        }
+      }
+
+      if (productId) {
+        // Check if there are variants for this product
+        const { data: productVariants } = await supabaseAdmin
+          .from('variants')
+          .select('*')
+          .eq('product_id', productId);
+
+        const hasVariants = productVariants && productVariants.length > 0;
+
+        if (hasVariants) {
+          // Decrease variant stock
+          let targetVariant = null;
+          if (variantId) {
+            targetVariant = productVariants.find(v => v.id === variantId);
+          }
+          if (!targetVariant) {
+            targetVariant = productVariants.find(v => v.is_active) || productVariants[0];
+          }
+
+          if (targetVariant) {
+            const newStock = Math.max(0, targetVariant.stock - item.quantity);
+            await supabaseAdmin
+              .from('variants')
+              .update({ stock: newStock })
+              .eq('id', targetVariant.id);
+          }
+        } else {
+          // Simple product - decrease products.stock_quantity
+          const { data: productData } = await supabaseAdmin
             .from('products')
-            .update({ stock_quantity: newStock })
-            .eq('id', productId);
+            .select('stock_quantity')
+            .eq('id', productId)
+            .single();
+
+          if (productData) {
+            const newStock = Math.max(0, productData.stock_quantity - item.quantity);
+            await supabaseAdmin
+              .from('products')
+              .update({ stock_quantity: newStock })
+              .eq('id', productId);
+          }
+        }
+      }
+    }
+
+    // 4. Update coupon usage or deduct gift card balance
+    if (payload.coupon_code) {
+      const codeUpper = payload.coupon_code.trim().toUpperCase();
+      
+      const { data: coupon } = await supabaseAdmin
+        .from('coupons')
+        .select('*')
+        .eq('code', codeUpper)
+        .maybeSingle();
+
+      if (coupon) {
+        await supabaseAdmin
+          .from('coupons')
+          .update({ used_count: (coupon.used_count || 0) + 1 })
+          .eq('id', coupon.id);
+      } else {
+        const { data: giftCard } = await supabaseAdmin
+          .from('gift_cards')
+          .select('*')
+          .eq('code', codeUpper)
+          .maybeSingle();
+
+        if (giftCard) {
+          const appliedDiscount = Number(payload.discount || 0);
+          const newBalance = Math.max(0, Number(giftCard.current_balance) - appliedDiscount);
+          await supabaseAdmin
+            .from('gift_cards')
+            .update({ current_balance: newBalance })
+            .eq('id', giftCard.id);
         }
       }
     }
@@ -171,11 +299,11 @@ export async function getOrdersByPhone(phone: string) {
 
     if (error) {
       console.warn('Supabase getOrdersByPhone direct table fallback:', error.message);
-      return { success: true, data: getMockOrders(phone) };
+      return { success: false, error: error.message, data: [] };
     }
     
     if (!data || data.length === 0) {
-      return { success: true, data: getMockOrders(phone) };
+      return { success: true, data: [] };
     }
 
     // Map database enterprise schema columns back to expected frontend fields
@@ -213,7 +341,7 @@ export async function getOrdersByPhone(phone: string) {
 
     return { success: true, data: mappedOrders };
   } catch (error: any) {
-    return { success: true, data: getMockOrders(phone) };
+    return { success: false, error: error.message, data: [] };
   }
 }
 

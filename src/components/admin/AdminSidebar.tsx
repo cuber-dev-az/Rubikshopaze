@@ -108,7 +108,7 @@ export default function AdminSidebar({
             { label: 'Kateqoriyalar', href: `/${locale}/admin/categories`, icon: Layers },
             { label: 'Brendlər', href: `/${locale}/admin/brands`, icon: Bookmark },
             { label: 'Kolleksiyalar', href: `/${locale}/admin/collections`, icon: Sparkles },
-            { label: 'Nis Xidmətlər (Setup)', href: `/${locale}/admin/services`, icon: FolderOpen }
+            { label: 'Nis Xidmətlər (Quraşdırma)', href: `/${locale}/admin/services`, icon: FolderOpen }
           ]
         }
       ]
@@ -126,9 +126,9 @@ export default function AdminSidebar({
             { label: 'Müştərilər', href: `/${locale}/admin/customers`, icon: Users },
             { label: 'İnventar', href: `/${locale}/admin/inventory`, icon: Boxes },
             { label: 'Anbarlar', href: `/${locale}/admin/warehouses`, icon: Warehouse },
-            { label: 'Çatdırılma (Shipping)', href: `/${locale}/admin/shipping`, icon: Truck },
+            { label: 'Çatdırılma', href: `/${locale}/admin/shipping`, icon: Truck },
             { label: 'Ödənişlər', href: `/${locale}/admin/payments`, icon: CreditCard },
-            { label: 'Qaytarılmalar / RMA', href: `/${locale}/admin/returns`, icon: RefreshCw }
+            { label: 'Qaytarılmalar (RMA)', href: `/${locale}/admin/returns`, icon: RefreshCw }
           ]
         }
       ]
@@ -168,7 +168,7 @@ export default function AdminSidebar({
             { label: 'Fayllar', href: `/${locale}/admin/files`, icon: FolderOpen },
             { label: 'Sistem & Audit Logları', href: `/${locale}/admin/system`, icon: History },
             { label: 'İdxal / İxrac', href: `/${locale}/admin/import-export`, icon: ArrowUpDown },
-            { label: 'API / Developer Alətləri', href: `/${locale}/admin/api-tools`, icon: FileCode }
+            { label: 'API / Tərtibatçı Alətləri', href: `/${locale}/admin/api-tools`, icon: FileCode }
           ]
         }
       ]

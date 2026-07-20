@@ -24,6 +24,24 @@ interface OrderTrackerProps {
 }
 
 export function OrderTracker({ status, orderId, updatedAt }: OrderTrackerProps) {
+  const [waNumber, setWaNumber] = React.useState('994506684925');
+
+  React.useEffect(() => {
+    async function fetchTrackerSettings() {
+      try {
+        const { getSettings } = await import('@/lib/actions/settings');
+        const paymentRes = await getSettings('payment');
+        if (paymentRes.success && paymentRes.data?.whatsappNumber) {
+          const raw = paymentRes.data.whatsappNumber.replace(/[^0-9]/g, '');
+          setWaNumber(raw ? raw : '994506684925');
+        }
+      } catch (err) {
+        console.error('Error fetching tracker settings:', err);
+      }
+    }
+    fetchTrackerSettings();
+  }, []);
+
   // Normalize status string safely
   const currentStatus: OrderStatus = React.useMemo(() => {
     const s = (status || '').toLowerCase();
@@ -162,7 +180,7 @@ export function OrderTracker({ status, orderId, updatedAt }: OrderTrackerProps) 
               Sifarişinizin kuryer xidmətinə təhvil verilməsi üçün WhatsApp üzərindən adminlə əlaqə saxlayaraq sifarişinizi təsdiqləməyiniz xahiş olunur.
             </p>
             <a
-              href="https://wa.me/994506684925"
+              href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 text-[10px] font-black text-amber-900 hover:underline"

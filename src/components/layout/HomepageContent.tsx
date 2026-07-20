@@ -38,6 +38,9 @@ interface Product {
   price_azn: number;
   image_url: string;
   stock_quantity: number;
+  compare_at_price_azn?: number;
+  original_price_azn?: number;
+  discount_percent?: number;
 }
 
 interface HomepageContentProps {
@@ -69,15 +72,23 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
   // Filter products into tab items
   const newArrivals = currentProducts.slice(0, 4);
   const bestSellers = currentProducts.filter(p => p.stock_quantity > 0).slice(0, 4);
-  const saleProducts = currentProducts.map(p => ({
-    ...p,
-    original_price: p.price_azn * 1.25 // mock original price
-  })).slice(2, 6);
+  
+  const saleProducts = currentProducts
+    .filter(p => {
+      const origPrice = p.original_price_azn || p.compare_at_price_azn;
+      return origPrice && origPrice > p.price_azn;
+    })
+    .map(p => ({
+      ...p,
+      original_price: p.original_price_azn || p.compare_at_price_azn
+    }));
+
+  const activeSaleProducts = saleProducts.length > 0 ? saleProducts.slice(0, 4) : currentProducts.slice(0, 4);
 
   const getActiveProducts = () => {
     switch (activeTab) {
       case 'best': return bestSellers;
-      case 'sale': return saleProducts;
+      case 'sale': return activeSaleProducts;
       default: return newArrivals;
     }
   };
@@ -489,7 +500,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
               {getActiveProducts().map((product) => {
 
               const isOutOfStock = product.stock_quantity <= 0;
-              const hasSale = activeTab === 'sale' && 'original_price' in product;
+              const originalPrice = product.original_price_azn || product.compare_at_price_azn;
+              const hasSale = originalPrice && originalPrice > product.price_azn;
+              const discountPercent = hasSale ? Math.round(((originalPrice - product.price_azn) / originalPrice) * 100) : 0;
               return (
                 <div
                   key={product.id}
@@ -515,7 +528,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
 
                     {hasSale && (
                       <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-soft-sm">
-                        -25% ENDİRİM
+                        -{discountPercent}% ENDİRİM
                       </div>
                     )}
                   </div>
@@ -531,7 +544,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
                       </span>
                       {hasSale && (
                         <span className="text-xs text-muted-foreground line-through">
-                          {(product as any).original_price.toFixed(2)} AZN
+                          {originalPrice.toFixed(2)} AZN
                         </span>
                       )}
                     </div>

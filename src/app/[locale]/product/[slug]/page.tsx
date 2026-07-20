@@ -25,7 +25,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     const descColumn = `description_${locale}`;
     const { data: dbProduct, error } = await supabase
       .from('products')
-      .select('*')
+      .select('*, variants(*)')
       .eq('id', slug)
       .single();
 
@@ -34,7 +34,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         id: dbProduct.id,
         title: (dbProduct[titleColumn] || dbProduct.title_az || dbProduct.title_en || dbProduct.title_ru || dbProduct.title || '') as string,
         price_azn: Number(dbProduct.price_azn || 0),
-        original_price: dbProduct.original_price ? Number(dbProduct.original_price) : undefined,
+        original_price: dbProduct.compare_at_price_azn ? Number(dbProduct.compare_at_price_azn) : undefined,
         image_url: dbProduct.image_url || 'https://picsum.photos/seed/default/600/600',
         stock_quantity: Number(dbProduct.stock_quantity || 0),
         brand: dbProduct.brand || 'Premium',
@@ -50,7 +50,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           tension_system: 'Spring Tension',
           surface_finish: 'Frosted / UV Option'
         },
-        compatibility: 'Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və turnirlərdə istifadə edilə bilər.'
+        compatibility: 'Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və turnirlərdə istifadə edilə bilər.',
+        variants: dbProduct.variants || []
       };
     }
   } catch (err) {

@@ -14,89 +14,83 @@ import {
   ShieldCheck,
   ListTodo,
   X,
-  Save
+  Save,
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import ServiceOrdersClient from './ServiceOrdersClient';
-
-interface Service {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  icon: string;
-  isActive: boolean;
-}
-
-const INITIAL_SERVICES: Service[] = [
-  {
-    id: 'srv-1',
-    title: 'Premium Lube Setup',
-    description: 'Kubun daxili mexanizminin xüsusi silikon yağlarla yağlanması və təmizlənməsi. Sürət və nəzarəti artırır.',
-    price: 5.00,
-    icon: 'Droplet',
-    isActive: true,
-  },
-  {
-    id: 'srv-2',
-    title: 'Custom Tensioning',
-    description: 'Müştərinin istəyinə uyğun olaraq kubun gərginliyinin (tension) nizamlanması. Yayların optimallaşdırılması.',
-    price: 3.50,
-    icon: 'Settings',
-    isActive: true,
-  },
-  {
-    id: 'srv-3',
-    title: 'Magnet Swaps (Pro)',
-    description: 'Standart maqnitlərin daha güclü və ya zəif N35/N48 maqnitlərlə əvəzlənməsi. Stabil hissi artırır.',
-    price: 15.00,
-    icon: 'Zap',
-    isActive: true,
-  },
-  {
-    id: 'srv-4',
-    title: 'Core Lubing & Spring Noise Fix',
-    description: 'Nüvənin yağlanması və yay səs-küyünün (spring noise) tamamilə aradan qaldırılması.',
-    price: 8.00,
-    icon: 'ShieldCheck',
-    isActive: true,
-  },
-];
+import { getServices, createService, updateService, deleteService, getServiceOrders, ServiceDB } from '@/lib/actions/services';
 
 export default function ServicesClient() {
   const [activeTab, setActiveTab] = React.useState<'management' | 'orders'>('management');
-  const [services, setServices] = React.useState<Service[]>(INITIAL_SERVICES);
+  const [services, setServices] = React.useState<ServiceDB[]>([]);
+  const [orderCount, setOrderCount] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingService, setEditingService] = React.useState<Service | null>(null);
+  const [editingService, setEditingService] = React.useState<ServiceDB | null>(null);
+  const [submitting, setSubmitting] = React.useState(false);
   
   // Form state
-  const [formData, setFormData] = React.useState<Partial<Service>>({
-    title: '',
+  const [formData, setFormData] = React.useState({
+    name_az: '',
     description: '',
     price: 0,
-    icon: 'Settings',
-    isActive: true,
+    is_active: true,
   });
 
+  React.useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError('');
+    
+    const [srvRes, ordRes] = await Promise.all([
+      getServices(),
+      getServiceOrders()
+    ]);
+
+    if (srvRes.success && srvRes.services) {
+      setServices(srvRes.services);
+    } else {
+      setError(srvRes.error || 'Xidmətləri yükləmək mümkün olmadı.');
+    }
+
+    if (ordRes.success && ordRes.orders) {
+      // Set the count of pending + in_progress service orders
+      const activeOrders = ordRes.orders.filter(o => o.status === 'pending' || o.status === 'in_progress');
+      setOrderCount(activeOrders.length);
+    }
+
+    setLoading(false);
+  };
+
   const filteredServices = services.filter(s => 
-    s.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    s.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (s.name_az || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (s.description || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleOpenModal = (service?: Service) => {
+  const handleOpenModal = (service?: ServiceDB) => {
     if (service) {
       setEditingService(service);
-      setFormData(service);
+      setFormData({
+        name_az: service.name_az,
+        description: service.description || '',
+        price: Number(service.price),
+        is_active: service.is_active,
+      });
     } else {
       setEditingService(null);
       setFormData({
-        title: '',
+        name_az: '',
         description: '',
         price: 0,
-        icon: 'Settings',
-        isActive: true,
+        is_active: true,
       });
     }
     setIsModalOpen(true);
@@ -107,23 +101,49 @@ export default function ServicesClient() {
     setEditingService(null);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.name_az.trim()) return;
+
+    setSubmitting(true);
     if (editingService) {
-      setServices(services.map(s => s.id === editingService.id ? { ...s, ...formData } as Service : s));
+      const res = await updateService(editingService.id, {
+        name_az: formData.name_az.trim(),
+        description: formData.description.trim(),
+        price: formData.price,
+        is_active: formData.is_active
+      });
+      if (res.success) {
+        handleCloseModal();
+        fetchData();
+      } else {
+        alert(res.error || 'Yeniləmə xətası.');
+      }
     } else {
-      const newService: Service = {
-        ...(formData as Service),
-        id: `srv-${Date.now()}`,
-      };
-      setServices([...services, newService]);
+      const res = await createService({
+        name_az: formData.name_az.trim(),
+        description: formData.description.trim(),
+        price: formData.price,
+        is_active: formData.is_active
+      });
+      if (res.success) {
+        handleCloseModal();
+        fetchData();
+      } else {
+        alert(res.error || 'Xidmət yaradılarkən xəta baş verdi.');
+      }
     }
-    handleCloseModal();
+    setSubmitting(false);
   };
 
-  const handleDelete = (id: string) => {
-    if(confirm('Silmək istədiyinizə əminsiniz?')) {
-      setServices(services.filter(s => s.id !== id));
+  const handleDelete = async (id: string) => {
+    if(confirm('Silmək istədiyinizə əminsiniz? Bu xidmət növünü tamamilə siləcək.')) {
+      const res = await deleteService(id);
+      if (res.success) {
+        fetchData();
+      } else {
+        alert(res.error || 'Silinmə xətası.');
+      }
     }
   };
 
@@ -134,11 +154,20 @@ export default function ServicesClient() {
         <div>
           <h1 className="text-2xl font-black text-white flex items-center gap-2">
             <Wrench className="h-6 w-6 text-amber-500" />
-            Xidmətlər (Custom Setup)
+            Xidmətlər (Custom Setup & Repair)
           </h1>
           <p className="text-sm text-slate-400 mt-1">
-            Nis xidmətlərin (yağlama, tənzimləmə) idarəedilməsi və sifariş növbəsi.
+            Rubik kublarının yağlanması, gərginlik tənzimlənməsi (tensioning) və premium bərpa xidmətləri.
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={fetchData}
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl border border-slate-700 transition-colors"
+            title="Yenilə"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -165,11 +194,19 @@ export default function ServicesClient() {
         >
           <ListTodo className="h-4 w-4" />
           Sifariş Növbəsi
-          <span className="flex items-center justify-center bg-red-500 text-white text-[10px] h-5 w-5 rounded-full font-black">
-            3
-          </span>
+          {orderCount > 0 && (
+            <span className="flex items-center justify-center bg-red-500 text-white text-[10px] h-5 w-5 rounded-full font-black animate-pulse">
+              {orderCount}
+            </span>
+          )}
         </button>
       </div>
+
+      {error && (
+        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-2xl">
+          {error}
+        </div>
+      )}
 
       {/* Tab Content */}
       <AnimatePresence mode="wait">
@@ -202,55 +239,68 @@ export default function ServicesClient() {
               </button>
             </div>
 
-            {/* Services Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {filteredServices.map((service) => (
-                <div key={service.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition-colors group relative overflow-hidden flex flex-col">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
-                  
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-amber-500 shrink-0">
-                      {service.icon === 'Droplet' && <Droplet className="h-6 w-6" />}
-                      {service.icon === 'Settings' && <Settings className="h-6 w-6" />}
-                      {service.icon === 'Zap' && <Zap className="h-6 w-6" />}
-                      {service.icon === 'ShieldCheck' && <ShieldCheck className="h-6 w-6" />}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                <p className="text-sm">Xidmətlər yüklənir...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredServices.map((service) => (
+                  <div key={service.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition-colors group relative overflow-hidden flex flex-col">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none" />
+                    
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-amber-500 shrink-0 font-bold">
+                        {service.name_az.toLowerCase().includes('yağ') ? (
+                          <Droplet className="h-6 w-6 text-blue-400" />
+                        ) : (
+                          <Settings className="h-6 w-6 text-amber-500" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                          service.is_active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'
+                        }`}>
+                          {service.is_active ? 'Aktiv' : 'Deaktiv'}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                        service.isActive ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'
-                      }`}>
-                        {service.isActive ? 'Aktiv' : 'Passiv'}
-                      </span>
+
+                    <h3 className="text-lg font-black text-white mb-2">{service.name_az}</h3>
+                    <p className="text-sm text-slate-400 line-clamp-2 mb-4 flex-grow">
+                      {service.description || 'Xidmət haqqında ətraflı təsvir qeyd edilməyib.'}
+                    </p>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-800/50 mt-auto">
+                      <div className="text-md font-black text-amber-500 font-mono">
+                        +{Number(service.price).toFixed(2)} AZN
+                      </div>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => handleOpenModal(service)}
+                          className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(service.id)}
+                          className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
+                ))}
 
-                  <h3 className="text-lg font-bold text-white mb-2">{service.title}</h3>
-                  <p className="text-sm text-slate-400 line-clamp-2 mb-4 flex-grow">
-                    {service.description}
-                  </p>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-800/50 mt-auto">
-                    <div className="text-lg font-black text-amber-500">
-                      +{service.price.toFixed(2)} AZN
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => handleOpenModal(service)}
-                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(service.id)}
-                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+                {filteredServices.length === 0 && (
+                  <div className="col-span-3 text-center p-12 bg-slate-900 border border-slate-800 rounded-2xl text-slate-500">
+                    Sistemdə heç bir xidmət növü tapılmadı.
                   </div>
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
           </motion.div>
         ) : (
           <motion.div
@@ -267,14 +317,7 @@ export default function ServicesClient() {
       {/* Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              onClick={handleCloseModal}
-            />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: 20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
@@ -282,8 +325,8 @@ export default function ServicesClient() {
               className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-950/50 shrink-0">
-                <h3 className="text-xl font-bold text-white">
-                  {editingService ? 'Xidməti Yenilə' : 'Yeni Xidmət Yarat'}
+                <h3 className="text-xl font-bold text-white uppercase tracking-wide">
+                  {editingService ? 'Xidmət Məlumatlarını Yenilə' : 'Yeni Xidmət Növü Yarat'}
                 </h3>
                 <button 
                   onClick={handleCloseModal}
@@ -293,75 +336,56 @@ export default function ServicesClient() {
                 </button>
               </div>
 
-              <form onSubmit={handleSave} className="p-6 space-y-5 overflow-y-auto">
+              <form onSubmit={handleSave} className="p-6 space-y-5 overflow-y-auto text-left">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-300">Başlıq</label>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Xidmət Adı (Azərbaycanca)</label>
                   <input
                     type="text"
                     required
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    value={formData.name_az}
+                    onChange={(e) => setFormData({...formData, name_az: e.target.value})}
                     className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
-                    placeholder="Məs: Premium Lube Setup"
+                    placeholder="Məs: Professional 3x3 Yağlanma"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-slate-300">Təsvir</label>
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Xidmət Təsviri (Açıqlama)</label>
                   <textarea
                     required
                     rows={3}
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all resize-none"
-                    placeholder="Xidmətin detalları..."
+                    placeholder="Xidmətin detalları, tətbiq olunan yağlar və nizamlamalar haqqında məlumat..."
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-300">Qiymət (AZN)</label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      step="0.01"
-                      value={formData.price}
-                      onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-slate-300">İkon</label>
-                    <select
-                      value={formData.icon}
-                      onChange={(e) => setFormData({...formData, icon: e.target.value})}
-                      className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all appearance-none cursor-pointer"
-                    >
-                      <option value="Settings">Settings</option>
-                      <option value="Droplet">Droplet</option>
-                      <option value="Zap">Zap</option>
-                      <option value="ShieldCheck">ShieldCheck</option>
-                    </select>
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-wider">Xidmət Qiyməti (AZN)</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.10"
+                    value={formData.price === 0 ? '' : formData.price}
+                    onChange={(e) => setFormData({...formData, price: parseFloat(e.target.value) || 0})}
+                    className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
+                    placeholder="Məsələn: 5.00"
+                  />
                 </div>
 
                 <div className="flex items-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({...formData, isActive: !formData.isActive})}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${
-                      formData.isActive ? 'bg-amber-500' : 'bg-slate-700'
-                    }`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      formData.isActive ? 'translate-x-6' : 'translate-x-1'
-                    }`} />
-                  </button>
-                  <span className="text-sm font-semibold text-slate-300">
-                    {formData.isActive ? 'Xidmət aktivdir' : 'Xidmət passivdir'}
-                  </span>
+                  <input 
+                    type="checkbox"
+                    id="is_active_chk"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                    className="w-4 h-4 accent-amber-500"
+                  />
+                  <label htmlFor="is_active_chk" className="text-sm font-semibold text-white select-none">
+                    Xidmət aktiv olsun (müştəri seçə bilsin)
+                  </label>
                 </div>
 
                 <div className="pt-6 flex justify-end gap-3 border-t border-slate-800">
@@ -374,9 +398,14 @@ export default function ServicesClient() {
                   </button>
                   <button
                     type="submit"
-                    className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold rounded-xl transition-all cursor-pointer"
+                    disabled={submitting}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-black rounded-xl transition-all cursor-pointer disabled:opacity-50"
                   >
-                    <Save className="h-4 w-4" />
+                    {submitting ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
                     Yadda Saxla
                   </button>
                 </div>

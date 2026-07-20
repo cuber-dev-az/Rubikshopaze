@@ -26,6 +26,26 @@ function SuccessContent() {
   const params = useParams();
   const locale = (params?.locale as string) || 'az';
 
+  const [waNumber, setWaNumber] = React.useState('994506684925');
+  const [formattedWaNumber, setFormattedWaNumber] = React.useState('+994 50 668 49 25');
+
+  React.useEffect(() => {
+    async function fetchSuccessSettings() {
+      try {
+        const { getSettings } = await import('@/lib/actions/settings');
+        const paymentRes = await getSettings('payment');
+        if (paymentRes.success && paymentRes.data?.whatsappNumber) {
+          const raw = paymentRes.data.whatsappNumber.replace(/[^0-9]/g, '');
+          setWaNumber(raw ? raw : '994506684925');
+          setFormattedWaNumber(paymentRes.data.whatsappNumber);
+        }
+      } catch (err) {
+        console.error('Error fetching success settings:', err);
+      }
+    }
+    fetchSuccessSettings();
+  }, []);
+
   const orderId = searchParams.get('orderId') || 'W-5219A9B4';
   const paymentMethod = searchParams.get('payment') || 'bank_transfer';
   const totalAmount = searchParams.get('total') || '145.00';
@@ -64,7 +84,7 @@ function SuccessContent() {
 
           <div className="pt-2">
             <a
-              href="https://wa.me/994506684925"
+              href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white font-black text-xs rounded-xl transition-all shadow-soft-md"
@@ -149,12 +169,12 @@ function SuccessContent() {
               </div>
             </div>
             <a
-              href="https://wa.me/994506684925"
+              href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noreferrer"
               className="text-xs font-black text-rubik-brand hover:underline flex items-center gap-1 cursor-pointer whitespace-nowrap"
             >
-              <span>+994 50 668 49 25</span>
+              <span>{formattedWaNumber}</span>
               <ChevronRight className="h-4 w-4" />
             </a>
           </div>

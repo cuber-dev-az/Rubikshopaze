@@ -274,6 +274,15 @@ export async function updateProduct(id: string, payload: Partial<{
 export async function deleteProduct(id: string) {
   try {
     const supabase = await createServerSupabaseClient();
+    
+    // Write audit log BEFORE we delete the record to know which ID is deleted, or as part of the action.
+    const { createAuditLog } = await import('@/lib/actions/audit');
+    await createAuditLog({
+      action: 'Məhsul silindi',
+      table_name: 'products',
+      record_id: id,
+    });
+
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) throw error;
     revalidatePath('/[locale]', 'layout');

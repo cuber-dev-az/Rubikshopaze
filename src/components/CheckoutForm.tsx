@@ -31,6 +31,7 @@ import {
 import { useCartStore } from '@/store/useCartStore';
 import { submitOrderAtomic } from '@/lib/actions/order';
 import { validateCoupon } from '@/lib/actions/coupons';
+import { validateGiftCard } from '@/lib/actions/gift-cards';
 import type { ApplicationDictionary } from '@/types/application.types';
 
 interface CheckoutFormProps {
@@ -88,12 +89,51 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   });
   const freeShippingThreshold = 100;
 
+  // Load settings from Supabase
+  const [waNumber, setWaNumber] = React.useState('994506684925');
+  const [shippingPrices, setShippingPrices] = React.useState({
+    standard: 3,
+    express: 7,
+    metro: 0
+  });
+
+  React.useEffect(() => {
+    async function fetchCheckoutSettings() {
+      try {
+        const { getSettings } = await import('@/lib/actions/settings');
+        const [paymentRes, shippingRes] = await Promise.all([
+          getSettings('payment'),
+          getSettings('shipping')
+        ]);
+        if (paymentRes.success && paymentRes.data?.whatsappNumber) {
+          const raw = paymentRes.data.whatsappNumber.replace(/[^0-9]/g, '');
+          setWaNumber(raw ? raw : '994506684925');
+        }
+        if (shippingRes.success && shippingRes.data) {
+          const methods = shippingRes.data.deliveryMethods || [];
+          const standardMethod = methods.find((m: any) => m.name.toLowerCase().includes('kuryer') || m.name.toLowerCase().includes('ünvan') || m.id === 2);
+          const expressMethod = methods.find((m: any) => m.name.toLowerCase().includes('express') || m.name.toLowerCase().includes('sürətli') || m.id === 3);
+          const metroMethod = methods.find((m: any) => m.name.toLowerCase().includes('metro') || m.id === 1);
+
+          setShippingPrices({
+            standard: standardMethod ? Number(standardMethod.price) : 3,
+            express: expressMethod ? Number(expressMethod.price) : 7,
+            metro: metroMethod ? Number(metroMethod.price) : 0
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching checkout settings:', err);
+      }
+    }
+    fetchCheckoutSettings();
+  }, []);
+
   const shippingCost = React.useMemo(() => {
     if (subtotal >= freeShippingThreshold || subtotal === 0) return 0;
-    if (deliveryMethod === 'express') return 7;
-    if (deliveryMethod === 'metro') return 0; // Metro is free pickup
-    return 3;
-  }, [subtotal, deliveryMethod]);
+    if (deliveryMethod === 'express') return shippingPrices.express;
+    if (deliveryMethod === 'metro') return shippingPrices.metro;
+    return shippingPrices.standard;
+  }, [subtotal, deliveryMethod, shippingPrices]);
 
     const [couponError, setCouponError] = React.useState('');
   const [isCouponLoading, setIsCouponLoading] = React.useState(false);
@@ -101,12 +141,21 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     if (!couponInput.trim()) return;
     setCouponError('');
     setIsCouponLoading(true);
+    
+    // 1. Try to validate as a coupon
     const res = await validateCoupon(couponInput, subtotal);
     if (res.success && res.coupon) {
-      applyCoupon(res.coupon.code, res.coupon.discount_type, res.coupon.discount_value);
+      applyCoupon(res.coupon.code, res.coupon.discount_type as any, res.coupon.discount_value);
       setCouponInput('');
     } else {
-      setCouponError(res.error || 'Kupon keçərsizdir.');
+      // 2. Try to validate as a gift card
+      const gcRes = await validateGiftCard(couponInput);
+      if (gcRes.success && gcRes.giftCard) {
+        applyCoupon(gcRes.giftCard.code, 'fixed', gcRes.giftCard.current_balance);
+        setCouponInput('');
+      } else {
+        setCouponError(res.error || gcRes.error || 'Daxil edilən kod keçərsizdir.');
+      }
     }
     setIsCouponLoading(false);
   };
@@ -282,7 +331,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         message += `⚡ _Zəhmət olmasa, sifarişi təsdiqləmək və çatdırılmanı təşkil etmək üçün bu mesajı bizə göndərin._`;
 
         const encodedMessage = encodeURIComponent(message);
-        const waLink = `https://wa.me/994506684925?text=${encodedMessage}`;
+        const waLink = `https://wa.me/${waNumber}?text=${encodedMessage}`;
 
         clearCart();
 
@@ -539,7 +588,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   Ünvana kuryer vasitəsilə 1-2 iş günü ərzində çatdırılır.
                 </p>
                 <span className="block mt-3 text-xs font-mono font-bold text-foreground">
-                  {subtotal >= freeShippingThreshold ? 'Pulsuz' : '3.00 AZN'}
+                  {subtotal >= freeShippingThreshold ? 'Pulsuz' : `${shippingPrices.standard.toFixed(2)} AZN`}
                 </span>
               </button>
 
@@ -567,7 +616,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   Sifariş verildikdən cəmi 3 saat sonra qapınızda! (Bakı daxili)
                 </p>
                 <span className="block mt-3 text-xs font-mono font-bold text-foreground">
-                  {subtotal >= freeShippingThreshold ? 'Pulsuz' : '7.00 AZN'}
+                  {subtotal >= freeShippingThreshold ? 'Pulsuz' : `${shippingPrices.express.toFixed(2)} AZN`}
                 </span>
               </button>
 
@@ -595,7 +644,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   İstənilən metro stansiyasının çıxışında kuryerimizlə görüş.
                 </p>
                 <span className="block mt-3 text-xs font-mono font-bold text-green-600 font-black">
-                  Pulsuz (0 AZN)
+                  {shippingPrices.metro === 0 ? 'Pulsuz' : `${shippingPrices.metro.toFixed(2)} AZN`}
                 </span>
               </button>
             </div>

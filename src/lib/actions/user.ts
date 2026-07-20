@@ -154,6 +154,20 @@ export async function updateProfile(userId: string, payload: Partial<{
       .single();
 
     if (error) throw error;
+
+    // Write audit log if role or details changed
+    try {
+      const { createAuditLog } = await import('@/lib/actions/audit');
+      await createAuditLog({
+        action: `İstifadəçi profili yeniləndi (Rol: ${payload.role || 'Dəyişməyib'})`,
+        table_name: 'profiles',
+        record_id: userId,
+        new_values: payload
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed:', auditErr);
+    }
+
     return { success: true, data };
   } catch (error: any) {
     console.error('updateProfile Error:', error.message);

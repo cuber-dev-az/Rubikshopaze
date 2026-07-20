@@ -44,6 +44,7 @@ interface ProductDetailClientContentProps {
     description: string;
     specs: Record<string, string>;
     compatibility: string;
+    variants?: any[];
   };
   relatedProducts: Array<{
     id: string;
@@ -67,6 +68,17 @@ export function ProductDetailClientContent({
 }: ProductDetailClientContentProps) {
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
+
+  // Database-driven variants selection setup
+  const dbVariants = React.useMemo(() => product.variants || [], [product.variants]);
+  const [selectedVariantId, setSelectedVariantId] = React.useState<string | null>(
+    dbVariants.length > 0 ? dbVariants[0].id : null
+  );
+
+  const selectedVariant = React.useMemo(() => {
+    if (dbVariants.length === 0) return null;
+    return dbVariants.find(v => v.id === selectedVariantId) || dbVariants[0];
+  }, [dbVariants, selectedVariantId]);
 
   // Core configuration selections
   const [activeImage, setActiveImage] = React.useState(product.image_url);
@@ -96,9 +108,14 @@ export function ProductDetailClientContent({
   const coatingCost = selectedCoating === 'UV Coated' ? 10 : 0;
   const coreCost = selectedCore === 'MagLev' ? 15 : selectedCore === 'Ball-Core' ? 25 : 0;
   const addonCost = addonSetup ? 5 : 0;
-  const finalPrice = basePrice + coatingCost + coreCost + addonCost;
+  
+  const finalPrice = selectedVariant 
+    ? Number(selectedVariant.price_azn || selectedVariant.price || basePrice)
+    : basePrice + coatingCost + coreCost + addonCost;
 
-  const currentSku = `${product.sku}-${selectedCoating.substring(0, 2).toUpperCase()}-${selectedCore.substring(0, 3).toUpperCase()}-${addonSetup ? 'SETUP' : 'STOCK'}`;
+  const currentSku = selectedVariant 
+    ? selectedVariant.sku 
+    : `${product.sku}-${selectedCoating.substring(0, 2).toUpperCase()}-${selectedCore.substring(0, 3).toUpperCase()}-${addonSetup ? 'SETUP' : 'STOCK'}`;
 
   // Calculated Ratings Summary
   const averageRating = React.useMemo(() => {
@@ -117,9 +134,16 @@ export function ProductDetailClientContent({
   }, [product.image_url]);
 
   const handleAddToCart = (redirect = false) => {
-    const titleAddition = ` (${selectedCoating}${addonSetup ? ' + Premium Setup' : ''})`;
+    const titleAddition = selectedVariant 
+      ? ` (${selectedVariant.name || selectedVariant.sku})`
+      : ` (${selectedCoating}${addonSetup ? ' + Premium Setup' : ''})`;
+
+    const cartItemId = selectedVariant 
+      ? `${product.id}__variant__${selectedVariant.id}`
+      : `${product.id}-${selectedCoating.replace(/\s+/g, '-').toLowerCase()}-${addonSetup ? 'setup' : 'standard'}`;
+
     const cartItem = {
-      id: `${product.id}-${selectedCoating.replace(/\s+/g, '-').toLowerCase()}-${addonSetup ? 'setup' : 'standard'}`,
+      id: cartItemId,
       title: `${product.title}${titleAddition}`,
       price_azn: finalPrice,
       quantity: 1,
@@ -160,7 +184,9 @@ export function ProductDetailClientContent({
     }
   };
 
-  const isOutOfStock = product.stock_quantity <= 0;
+  const isOutOfStock = selectedVariant 
+    ? (selectedVariant.stock <= 0) 
+    : (product.stock_quantity <= 0);
 
   // Render Stars helper
   const renderStars = (rating: number) => {
@@ -318,63 +344,104 @@ export function ProductDetailClientContent({
               </div>
             </div>
 
-            {/* Selection Engine - Interactive Variant selectors */}
-            <div className="space-y-4">
-              {/* Plastik Örtük Variant */}
-              <div className="space-y-2.5">
-                <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
-                  Xarici Örtük Tipi
-                </span>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { name: 'UV Coated', desc: 'Parlaq, cızılmaya davamlı (+10 AZN)', premium: true },
-                    { name: 'Matte/Frosted', desc: 'Yumşaq toxunuş, klassik', premium: false }
-                  ].map((coat) => (
-                    <button
-                      key={coat.name}
-                      onClick={() => setSelectedCoating(coat.name)}
-                      className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.5rem] ${
-                        selectedCoating === coat.name
-                          ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm'
-                          : 'border-border bg-card text-foreground hover:border-foreground/20'
-                      }`}
-                    >
-                      <span className="font-bold text-sm flex items-center justify-between">
-                        <span>{coat.name}</span>
-                        {selectedCoating === coat.name && <Check className="h-4 w-4 text-white shrink-0" />}
-                      </span>
-                      <span className={`text-[10px] mt-1 block leading-tight ${selectedCoating === coat.name ? 'text-white/80' : 'text-muted-foreground'}`}>{coat.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+             {/* Selection Engine - Interactive Variant selectors */}
+             <div className="space-y-4">
+               {dbVariants.length > 0 ? (
+                 <div className="space-y-2.5">
+                   <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
+                     Məhsul Variantı Seçin
+                   </span>
+                   <div className="grid grid-cols-2 gap-3">
+                     {dbVariants.map((v) => {
+                       const vStock = v.stock ?? 0;
+                       const isVSelected = selectedVariantId === v.id;
+                       const vPrice = Number(v.price_azn || v.price || product.price_azn);
+                       return (
+                         <button
+                           key={v.id}
+                           onClick={() => setSelectedVariantId(v.id)}
+                           className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.5rem] ${
+                             isVSelected
+                               ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm'
+                               : 'border-border bg-card text-foreground hover:border-foreground/20'
+                           }`}
+                         >
+                           <span className="font-bold text-sm flex items-center justify-between gap-2">
+                             <span className="truncate">{v.name || v.sku}</span>
+                             {isVSelected && <Check className="h-4 w-4 text-white shrink-0" />}
+                           </span>
+                           <span className="flex items-center justify-between text-[10px] mt-1">
+                             <span className={isVSelected ? 'text-white/80' : 'text-muted-foreground'}>
+                               {vStock > 0 ? `Stokda: ${vStock} ədəd` : 'Bitib (Sifarişlə)'}
+                             </span>
+                             <span className="font-bold">
+                               {vPrice.toFixed(2)} AZN
+                             </span>
+                           </span>
+                         </button>
+                       );
+                     })}
+                   </div>
+                 </div>
+               ) : (
+                 <>
+                   {/* Plastik Örtük Variant */}
+                   <div className="space-y-2.5">
+                     <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
+                       Xarici Örtük Tipi
+                     </span>
+                     <div className="grid grid-cols-2 gap-3">
+                       {[
+                         { name: 'UV Coated', desc: 'Parlaq, cızılmaya davamlı (+10 AZN)', premium: true },
+                         { name: 'Matte/Frosted', desc: 'Yumşaq toxunuş, klassik', premium: false }
+                       ].map((coat) => (
+                         <button
+                           key={coat.name}
+                           onClick={() => setSelectedCoating(coat.name)}
+                           className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.5rem] ${
+                             selectedCoating === coat.name
+                               ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm'
+                               : 'border-border bg-card text-foreground hover:border-foreground/20'
+                           }`}
+                         >
+                           <span className="font-bold text-sm flex items-center justify-between">
+                             <span>{coat.name}</span>
+                             {selectedCoating === coat.name && <Check className="h-4 w-4 text-white shrink-0" />}
+                           </span>
+                           <span className={`text-[10px] mt-1 block leading-tight ${selectedCoating === coat.name ? 'text-white/80' : 'text-muted-foreground'}`}>{coat.desc}</span>
+                         </button>
+                       ))}
+                     </div>
+                   </div>
 
-              {/* Gərginlik / Yay Mexanika Tipi -> Daxili Core Mexanizmi */}
-              <div className="space-y-2.5">
-                <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
-                  Daxili Maqnit/Yay Mexanizmi
-                </span>
-                <div className="flex gap-2.5 flex-wrap">
-                  {[
-                    { name: 'Spring', label: 'Spring (Standard)', cost: 0 },
-                    { name: 'MagLev', label: 'MagLev (+15 AZN)', cost: 15 },
-                    { name: 'Ball-Core', label: 'Ball-Core (+25 AZN)', cost: 25 }
-                  ].map((core) => (
-                    <button
-                      key={core.name}
-                      onClick={() => setSelectedCore(core.name)}
-                      className={`px-4 py-2 text-xs font-bold border rounded-xl transition-all cursor-pointer ${
-                        selectedCore === core.name
-                          ? 'bg-rubik-brand text-white border-rubik-brand shadow-soft-sm'
-                          : 'bg-muted/40 text-muted-foreground border-border hover:border-foreground/20'
-                      }`}
-                    >
-                      {core.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+                   {/* Gərginlik / Yay Mexanika Tipi -> Daxili Core Mexanizmi */}
+                   <div className="space-y-2.5">
+                     <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
+                       Daxili Maqnit/Yay Mexanizmi
+                     </span>
+                     <div className="flex gap-2.5 flex-wrap">
+                       {[
+                         { name: 'Spring', label: 'Spring (Standard)', cost: 0 },
+                         { name: 'MagLev', label: 'MagLev (+15 AZN)', cost: 15 },
+                         { name: 'Ball-Core', label: 'Ball-Core (+25 AZN)', cost: 25 }
+                       ].map((core) => (
+                         <button
+                           key={core.name}
+                           onClick={() => setSelectedCore(core.name)}
+                           className={`px-4 py-2 text-xs font-bold border rounded-xl transition-all cursor-pointer ${
+                             selectedCore === core.name
+                               ? 'bg-rubik-brand text-white border-rubik-brand shadow-soft-sm'
+                               : 'bg-muted/40 text-muted-foreground border-border hover:border-foreground/20'
+                           }`}
+                         >
+                           {core.label}
+                         </button>
+                       ))}
+                     </div>
+                   </div>
+                 </>
+               )}
+             </div>
 
             {/* Service Option Toggle Addon */}
             <div className="border border-dashed border-rubik-brand rounded-2xl p-4 bg-rubik-brand/5 space-y-2.5">

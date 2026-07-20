@@ -125,6 +125,8 @@ interface AdminDashboardProps {
     totalOrders: number;
     totalProducts: number;
     openSupportTickets: number;
+    trend7Days?: any[];
+    trend30Days?: any[];
   };
   recentOrders: any[];
 }
@@ -132,6 +134,14 @@ interface AdminDashboardProps {
 export default function AdminDashboardClient({ stats, recentOrders }: AdminDashboardProps) {
   const [mounted, setMounted] = React.useState(false);
   const [activeChart, setActiveChart] = React.useState<'revenue' | 'orders'>('revenue');
+  const [trendDays, setTrendDays] = React.useState<7 | 30>(30);
+  
+  const chartData = React.useMemo(() => {
+    if (trendDays === 7) {
+      return stats.trend7Days || [];
+    }
+    return stats.trend30Days || [];
+  }, [stats.trend7Days, stats.trend30Days, trendDays]);
   
   const aov = stats.totalOrders > 0 ? (stats.totalSales / stats.totalOrders) : 0;
 
@@ -213,7 +223,7 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
           <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/[0.02] rounded-full blur-2xl pointer-events-none" />
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Dönüşüm Oranı (Conversion)</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Dönüşüm Oranı</span>
               <span className="text-2xl md:text-3xl font-black text-white font-mono block tracking-tight">3.42%</span>
             </div>
             <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
@@ -259,35 +269,58 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
             <div className="space-y-1">
               <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
                 <TrendingUp className="h-4.5 w-4.5 text-amber-400" />
-                Maliyyə Artım Trendi (Revenue Trend)
+                Maliyyə Artım Trendi
               </h3>
-              <p className="text-[11px] text-slate-400">Platformanın illik dövriyyə və kəmiyyət dinamikasının qrafiki.</p>
+              <p className="text-[11px] text-slate-400">Platformanın dinamik dövriyyə və kəmiyyət qrafiki (Supabase).</p>
             </div>
 
-            <div className="flex items-center bg-slate-950 p-1 border border-slate-800 rounded-xl">
-              <button
-                onClick={() => setActiveChart('revenue')}
-                className={`px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
-                  activeChart === 'revenue' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Gəlir (AZN)
-              </button>
-              <button
-                onClick={() => setActiveChart('orders')}
-                className={`px-3 py-1.5 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
-                  activeChart === 'orders' ? 'bg-amber-500 text-slate-950' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Sifariş Sayı
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Period Selector (7 or 30 Days) */}
+              <div className="flex items-center bg-slate-950 p-1 border border-slate-850 rounded-xl">
+                <button
+                  onClick={() => setTrendDays(7)}
+                  className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                    trendDays === 7 ? 'bg-indigo-600 text-white shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  7 Gün
+                </button>
+                <button
+                  onClick={() => setTrendDays(30)}
+                  className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                    trendDays === 30 ? 'bg-indigo-600 text-white shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  30 Gün
+                </button>
+              </div>
+
+              {/* Metric Selector (Revenue or Orders) */}
+              <div className="flex items-center bg-slate-950 p-1 border border-slate-800 rounded-xl">
+                <button
+                  onClick={() => setActiveChart('revenue')}
+                  className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                    activeChart === 'revenue' ? 'bg-amber-500 text-slate-950 shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Gəlir (AZN)
+                </button>
+                <button
+                  onClick={() => setActiveChart('orders')}
+                  className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                    activeChart === 'orders' ? 'bg-amber-500 text-slate-950 shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Sifariş
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="h-80 w-full">
             {mounted ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.2}/>

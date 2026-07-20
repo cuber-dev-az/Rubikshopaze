@@ -53,6 +53,12 @@ export function ProductCard({ product, dict }: ProductCardProps) {
 
   return (
     <div className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 relative">
+      {product.discount_percent && product.discount_percent > 0 ? (
+        <div className="absolute top-3 left-3 z-10 bg-red-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-wider shadow-md">
+          -{product.discount_percent}%
+        </div>
+      ) : null}
+
       <div className="absolute top-3 right-3 z-10">
         <button
           onClick={handleWishlistToggle}
@@ -89,9 +95,22 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
           {product.title}
         </h3>
-        <p className="mt-2 text-lg font-bold text-gray-900">
-          {product.price_azn.toFixed(2)} AZN
-        </p>
+        
+        {product.discount_percent && product.discount_percent > 0 ? (
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-lg font-black text-red-600 font-mono">
+              {product.price_azn.toFixed(2)} AZN
+            </span>
+            <span className="text-xs text-slate-400 line-through font-mono">
+              {product.original_price_azn?.toFixed(2)} AZN
+            </span>
+          </div>
+        ) : (
+          <p className="mt-2 text-lg font-bold text-gray-900">
+            {product.price_azn.toFixed(2)} AZN
+          </p>
+        )}
+        
         <button
           onClick={handleAddToCart}
           disabled={isOutOfStock}

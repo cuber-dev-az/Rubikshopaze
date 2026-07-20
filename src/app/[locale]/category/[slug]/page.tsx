@@ -2,6 +2,7 @@ import { getDictionary } from '@/i18n/dictionaries';
 import { CategoryClientContent } from '@/components/layout/CategoryClientContent';
 import { rubikTaxonomyGroups } from '@/lib/config/catalog';
 import { getActiveProducts, mapProductToLocale, Product } from '@/lib/supabase/queries/products';
+import { applyCampaignDiscounts } from '@/lib/actions/campaigns';
 
 export const revalidate = 60;
 
@@ -35,12 +36,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   try {
     const products = await getActiveProducts();
     // Add additional fields used by CategoryClientContent
-    formattedProducts = products.map((p) => ({
+    const mapped = products.map((p) => ({
       ...mapProductToLocale(p, locale),
       category_slug: p.category_slug || p.category || undefined,
       brand: p.brand || undefined,
       mechanics: p.mechanics || undefined
     }));
+    formattedProducts = await applyCampaignDiscounts(mapped);
   } catch (err) {
     console.error('Failed to load products:', err);
   }

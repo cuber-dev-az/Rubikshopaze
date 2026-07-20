@@ -23,6 +23,11 @@ const nextConfig = {
         hostname: 'picsum.photos',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.puzzlewholesale.com',
+        pathname: '/**',
+      },
     ],
   },
 };

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { HomepageContent } from '@/components/layout/HomepageContent';
 import { getActiveProducts, mapProductToLocale, Product } from '@/lib/supabase/queries/products';
+import { applyCampaignDiscounts } from '@/lib/actions/campaigns';
 import { createClient } from '@/lib/supabase/client';
 import azDict from '../../../messages/az.json';
 import enDict from '../../../messages/en.json';
@@ -44,14 +45,15 @@ export default function StorefrontPage({ params }: PageProps) {
           .from('banners')
           .select('*')
           .eq('is_active', true)
-          .order('created_at', { ascending: false });
+          .order('sort_order', { ascending: true });
           
         setBanners(bannersData || []);
         
         // Fetch products
         const rawProducts = await getActiveProducts();
         const formatted = rawProducts.map((p) => mapProductToLocale(p, locale));
-        setProducts(formatted);
+        const withDiscounts = await applyCampaignDiscounts(formatted);
+        setProducts(withDiscounts);
       } catch (err) {
         console.error('Error loading storefront data:', err);
       } finally {

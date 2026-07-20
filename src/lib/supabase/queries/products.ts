@@ -22,6 +22,9 @@ export interface Product {
   price_azn: number;
   image_url: string;
   stock_quantity: number;
+  compare_at_price_azn?: number;
+  original_price_azn?: number;
+  discount_percent?: number;
 }
 
 export async function getActiveProducts() {
@@ -49,5 +52,8 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product {
     price_azn: Number(raw.price_azn || 0),
     image_url: raw.image_url || 'https://picsum.photos/seed/default/600/600',
     stock_quantity: Number(raw.stock_quantity || 0),
+    compare_at_price_azn: raw.compare_at_price_azn ? Number(raw.compare_at_price_azn) : undefined,
+    original_price_azn: raw.original_price_azn ? Number(raw.original_price_azn) : undefined,
+    discount_percent: raw.discount_percent ? Number(raw.discount_percent) : undefined,
   };
 }

@@ -68,6 +68,20 @@ export async function updateOrderStatus(orderId: string, status: 'pending' | 'sh
       .single();
 
     if (error) throw error;
+
+    // Write audit log
+    try {
+      const { createAuditLog } = await import('@/lib/actions/audit');
+      await createAuditLog({
+        action: `Sifariş statusu yeniləndi: ${status}`,
+        table_name: 'orders',
+        record_id: orderId,
+        new_values: { shipping_status: status }
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed:', auditErr);
+    }
+
     revalidatePath('/[locale]/admin', 'page');
     return { success: true, data };
   } catch (error: any) {
@@ -87,6 +101,20 @@ export async function updatePaymentStatus(orderId: string, status: 'pending' | '
       .single();
 
     if (error) throw error;
+
+    // Write audit log
+    try {
+      const { createAuditLog } = await import('@/lib/actions/audit');
+      await createAuditLog({
+        action: `Ödəniş statusu yeniləndi: ${status}`,
+        table_name: 'orders',
+        record_id: orderId,
+        new_values: { payment_status: status }
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed:', auditErr);
+    }
+
     revalidatePath('/[locale]/admin', 'page');
     return { success: true, data };
   } catch (error: any) {
@@ -260,6 +288,45 @@ export async function getDashboardStats() {
     const totalProducts = productsRes.count || 0;
     const openSupportTickets = ticketsRes.count || 0;
 
+    const orders = ordersRes.data || [];
+    
+    // Helper to format date as DD.MM
+    const formatDate = (date: Date) => {
+      const d = date.getDate();
+      const m = date.getMonth() + 1;
+      return `${d < 10 ? '0' : ''}${d}.${m < 10 ? '0' : ''}${m}`;
+    };
+
+    const getTrendForDays = (daysCount: number) => {
+      const trend = [];
+      const now = new Date();
+      for (let i = daysCount - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(now.getDate() - i);
+        
+        const dayOrders = orders.filter(o => {
+          if (!o.created_at) return false;
+          const orderDate = new Date(o.created_at);
+          return orderDate.getFullYear() === d.getFullYear() &&
+                 orderDate.getMonth() === d.getMonth() &&
+                 orderDate.getDate() === d.getDate();
+        });
+
+        const revenue = dayOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+        const count = dayOrders.length;
+
+        trend.push({
+          name: formatDate(d),
+          revenue,
+          orders: count
+        });
+      }
+      return trend;
+    };
+
+    const trend7Days = getTrendForDays(7);
+    const trend30Days = getTrendForDays(30);
+
     return {
       success: true,
       stats: {
@@ -267,6 +334,8 @@ export async function getDashboardStats() {
         totalOrders,
         totalProducts,
         openSupportTickets,
+        trend7Days,
+        trend30Days,
       }
     };
   } catch (error: any) {
@@ -347,12 +416,22 @@ export async function createCMSPage(payload: {
   content_az: string;
   content_en: string;
   content_ru: string;
+  meta_title_az?: string;
+  meta_title_en?: string;
+  meta_title_ru?: string;
+  meta_description_az?: string;
+  meta_description_en?: string;
+  meta_description_ru?: string;
+  is_published?: boolean;
 }) {
   try {
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase
       .from('pages')
-      .insert(payload)
+      .insert({
+        ...payload,
+        is_published: payload.is_published ?? true,
+      })
       .select()
       .single();
 
@@ -373,6 +452,13 @@ export async function updateCMSPage(id: string, payload: Partial<{
   content_az: string;
   content_en: string;
   content_ru: string;
+  meta_title_az: string;
+  meta_title_en: string;
+  meta_title_ru: string;
+  meta_description_az: string;
+  meta_description_en: string;
+  meta_description_ru: string;
+  is_published: boolean;
 }>) {
   try {
     const supabase = await createServerSupabaseClient();
@@ -416,6 +502,7 @@ export async function getBanners() {
     const { data, error } = await supabase
       .from('banners')
       .select('*')
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -436,6 +523,7 @@ export async function createBanner(payload: {
   image_url: string;
   link_url?: string;
   location: 'hero' | 'promo' | 'sidebar' | 'footer';
+  sort_order?: number;
   is_active?: boolean;
 }) {
   try {
@@ -444,6 +532,7 @@ export async function createBanner(payload: {
       .from('banners')
       .insert({
         ...payload,
+        sort_order: payload.sort_order ?? 0,
         is_active: payload.is_active ?? true,
       })
       .select()
@@ -468,6 +557,7 @@ export async function updateBanner(id: string, payload: Partial<{
   image_url: string;
   link_url: string;
   location: 'hero' | 'promo' | 'sidebar' | 'footer';
+  sort_order: number;
   is_active: boolean;
 }>) {
   try {
@@ -497,6 +587,409 @@ export async function deleteBanner(id: string) {
     return { success: true };
   } catch (error: any) {
     console.error('deleteBanner Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+
+// =========================================================================
+// FAQS ACTIONS
+// =========================================================================
+
+export async function getFAQs() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('faqs')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('getFAQs Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function createFAQ(payload: {
+  question_az: string;
+  question_en: string;
+  question_ru: string;
+  answer_az: string;
+  answer_en: string;
+  answer_ru: string;
+  sort_order?: number;
+  is_active?: boolean;
+}) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('faqs')
+      .insert({
+        ...payload,
+        sort_order: payload.sort_order ?? 0,
+        is_active: payload.is_active ?? true,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('createFAQ Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateFAQ(id: string, payload: Partial<{
+  question_az: string;
+  question_en: string;
+  question_ru: string;
+  answer_az: string;
+  answer_en: string;
+  answer_ru: string;
+  sort_order: number;
+  is_active: boolean;
+}>) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('faqs')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('updateFAQ Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteFAQ(id: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.from('faqs').delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('deleteFAQ Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+
+// =========================================================================
+// NAVIGATION ITEMS ACTIONS
+// =========================================================================
+
+export async function getNavigationItems() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('navigation_items')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('getNavigationItems Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function createNavigationItem(payload: {
+  label_az: string;
+  label_en: string;
+  label_ru: string;
+  link_url: string;
+  location: 'header' | 'footer_col1' | 'footer_col2' | 'footer_col3';
+  sort_order?: number;
+  is_active?: boolean;
+}) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('navigation_items')
+      .insert({
+        ...payload,
+        sort_order: payload.sort_order ?? 0,
+        is_active: payload.is_active ?? true,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('createNavigationItem Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateNavigationItem(id: string, payload: Partial<{
+  label_az: string;
+  label_en: string;
+  label_ru: string;
+  link_url: string;
+  location: 'header' | 'footer_col1' | 'footer_col2' | 'footer_col3';
+  sort_order: number;
+  is_active: boolean;
+}>) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('navigation_items')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('updateNavigationItem Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteNavigationItem(id: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.from('navigation_items').delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('deleteNavigationItem Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+
+// =========================================================================
+// BLOG POSTS ACTIONS
+// =========================================================================
+
+export async function getBlogPosts() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('getBlogPosts Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function createBlogPost(payload: {
+  title_az: string;
+  title_en: string;
+  title_ru: string;
+  slug: string;
+  content_az: string;
+  content_en: string;
+  content_ru: string;
+  featured_image?: string;
+  is_published?: boolean;
+}) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .insert({
+        ...payload,
+        is_published: payload.is_published ?? true,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('createBlogPost Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateBlogPost(id: string, payload: Partial<{
+  title_az: string;
+  title_en: string;
+  title_ru: string;
+  slug: string;
+  content_az: string;
+  content_en: string;
+  content_ru: string;
+  featured_image: string;
+  is_published: boolean;
+}>) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('updateBlogPost Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteBlogPost(id: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.from('blog_posts').delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('deleteBlogPost Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+
+// =========================================================================
+// COLLECTIONS ACTIONS
+// =========================================================================
+
+export async function getCollections() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('collections')
+      .select('*, collection_products(product_id)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('getCollections Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function createCollection(payload: {
+  name_az: string;
+  name_en: string;
+  name_ru: string;
+  slug: string;
+  description_az?: string;
+  description_en?: string;
+  description_ru?: string;
+  image_url?: string;
+  is_active?: boolean;
+  product_ids?: string[];
+}) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { name_az, name_en, name_ru, slug, description_az, description_en, description_ru, image_url, is_active, product_ids } = payload;
+    
+    const { data: collection, error: collError } = await supabase
+      .from('collections')
+      .insert({
+        name_az,
+        name_en,
+        name_ru,
+        slug,
+        description_az,
+        description_en,
+        description_ru,
+        image_url,
+        is_active: is_active ?? true
+      })
+      .select()
+      .single();
+
+    if (collError) throw collError;
+
+    if (product_ids && product_ids.length > 0) {
+      const mapping = product_ids.map(pid => ({
+        collection_id: collection.id,
+        product_id: pid
+      }));
+      const { error: mapError } = await supabase
+        .from('collection_products')
+        .insert(mapping);
+      if (mapError) throw mapError;
+    }
+
+    return { success: true, data: collection };
+  } catch (error: any) {
+    console.error('createCollection Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateCollection(id: string, payload: Partial<{
+  name_az: string;
+  name_en: string;
+  name_ru: string;
+  slug: string;
+  description_az: string;
+  description_en: string;
+  description_ru: string;
+  image_url: string;
+  is_active: boolean;
+  product_ids: string[];
+}>) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { product_ids, ...details } = payload;
+
+    if (Object.keys(details).length > 0) {
+      const { error: collError } = await supabase
+        .from('collections')
+        .update(details)
+        .eq('id', id);
+      if (collError) throw collError;
+    }
+
+    if (product_ids !== undefined) {
+      // Delete existing
+      await supabase.from('collection_products').delete().eq('collection_id', id);
+      
+      if (product_ids.length > 0) {
+        const mapping = product_ids.map(pid => ({
+          collection_id: id,
+          product_id: pid
+        }));
+        const { error: mapError } = await supabase
+          .from('collection_products')
+          .insert(mapping);
+        if (mapError) throw mapError;
+      }
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('updateCollection Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteCollection(id: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { error } = await supabase.from('collections').delete().eq('id', id);
+    if (error) throw error;
+    return { success: true };
+  } catch (error: any) {
+    console.error('deleteCollection Error:', error.message);
     return { success: false, error: error.message };
   }
 }
