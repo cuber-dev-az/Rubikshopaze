@@ -9,6 +9,17 @@ export default function LocalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // Check if error is a Next.js redirect or not found, if so rethrow it so Next.js can handle it
+  if (
+    error.message === 'NEXT_REDIRECT' ||
+    error.digest?.startsWith('NEXT_REDIRECT') ||
+    error.message?.includes('NEXT_REDIRECT') ||
+    error.message === 'NEXT_NOT_FOUND' ||
+    error.digest?.startsWith('NEXT_NOT_FOUND')
+  ) {
+    throw error;
+  }
+
   useEffect(() => {
     console.error('Local Area Error:', error);
   }, [error]);

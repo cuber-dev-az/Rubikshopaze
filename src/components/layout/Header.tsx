@@ -37,9 +37,7 @@ export function Header({ dict, locale }: HeaderProps) {
   const [searchQuery, setSearchQuery] = React.useState('');
   
   const { user, userRole, signOut: authSignOut } = useAuthUser();
-  
   const openModal = useAuthModalStore((state) => state.openModal);
-  const [isCatalogOpen, setIsCatalogOpen] = React.useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -80,7 +78,6 @@ export function Header({ dict, locale }: HeaderProps) {
     if (!searchQuery.trim()) return;
     router.push(`/${locale}?search=${encodeURIComponent(searchQuery)}`);
     setIsSearchOpen(false);
-    setSearchQuery('');
   };
 
   React.useEffect(() => {
@@ -97,13 +94,14 @@ export function Header({ dict, locale }: HeaderProps) {
     <React.Fragment>
       {/* Top Banner Accent */}
       <div className="bg-rubik-brand text-white text-xs font-sans py-2 px-4 text-center tracking-wide font-medium flex items-center justify-center gap-2">
-        <Sparkles className="h-3 w-3 animate-pulse" />
+        <Sparkles className="h-3 w-3 shrink-0 animate-pulse" />
         <span>Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma.</span>
       </div>
 
       <header className="sticky top-0 z-40 w-full bg-card border-b border-border shadow-soft-sm backdrop-blur-md bg-opacity-95 dark:bg-opacity-90">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-20 items-center justify-between gap-4">
+            
             {/* Logo */}
             <div className="flex items-center">
               <Link href={`/${locale}`} className="flex items-center gap-2.5 group">
@@ -117,89 +115,106 @@ export function Header({ dict, locale }: HeaderProps) {
             <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
               <Link
                 href={`/${locale}`}
-                className="px-3 py-2 text-sm font-medium text-foreground hover:text-rubik-brand transition-colors"
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  pathname === `/${locale}` || pathname === `/${locale}/`
+                    ? 'text-rubik-brand font-bold'
+                    : 'text-foreground hover:text-rubik-brand'
+                }`}
               >
                 {dict.navigation.home}
               </Link>
 
-              {rubikTaxonomyGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="relative"
-                  onMouseEnter={() => setActiveMegaMenu(group.id)}
-                  onMouseLeave={() => setActiveMegaMenu(null)}
-                >
-                  <button className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-foreground hover:text-rubik-brand transition-colors cursor-pointer">
-                    <span>{t(group.title)}</span>
-                    <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                  </button>
+              {rubikTaxonomyGroups.map((group) => {
+                const isGroupActive = group.items.some((item) =>
+                  pathname.startsWith(`/${locale}/category/${encodeURIComponent(item.slug)}`)
+                );
+                return (
+                  <div
+                    key={group.id}
+                    className="relative"
+                    onMouseEnter={() => setActiveMegaMenu(group.id)}
+                    onMouseLeave={() => setActiveMegaMenu(null)}
+                  >
+                    <button className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
+                      isGroupActive ? 'text-rubik-brand font-bold' : 'text-foreground hover:text-rubik-brand'
+                    }`}>
+                      <span>{t(group.title)}</span>
+                      <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+                    </button>
 
-                  <AnimatePresence>
-                    {activeMegaMenu === group.id && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[480px] sm:w-[600px] z-50 pointer-events-auto"
-                      >
-                        <div className="bg-card border border-border rounded-xl shadow-soft-xl overflow-hidden grid grid-cols-2 p-5 gap-4">
-                          <div className="col-span-2 border-b border-border/60 pb-2 mb-1 flex items-center justify-between">
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                              {t(group.title)}
-                            </h4>
-                            <span className="text-[10px] text-rubik-brand font-medium">Rubikshop Premium</span>
+                    <AnimatePresence>
+                      {activeMegaMenu === group.id && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[480px] sm:w-[600px] z-50 pointer-events-auto"
+                        >
+                          <div className="bg-card border border-border rounded-xl shadow-soft-xl overflow-hidden grid grid-cols-2 p-5 gap-4">
+                            <div className="col-span-2 border-b border-border/60 pb-2 mb-1 flex items-center justify-between">
+                              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                {t(group.title)}
+                              </h4>
+                              <span className="text-[10px] text-rubik-brand font-medium">Rubikshop Premium</span>
+                            </div>
+
+                            {group.items.map((item) => {
+                              const ItemIcon = item.icon || Package;
+                              const isItemActive = pathname.startsWith(`/${locale}/category/${encodeURIComponent(item.slug)}`);
+                              return (
+                                <Link
+                                  key={item.id}
+                                  href={`/${locale}/category/${encodeURIComponent(item.slug)}`}
+                                  className={`flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors ${
+                                    isItemActive ? 'bg-muted/50 border border-rubik-brand/10' : ''
+                                  }`}
+                                >
+                                  <div className="bg-rubik-brand/10 p-2 rounded-lg text-rubik-brand shrink-0">
+                                    <ItemIcon className="h-4 w-4" />
+                                  </div>
+                                  <div className="flex flex-col">
+                                    <span className={`text-sm font-bold hover:text-rubik-brand ${
+                                      isItemActive ? 'text-rubik-brand font-black' : 'text-foreground'
+                                    }`}>
+                                      {t(item.title)}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground line-clamp-1">
+                                      {t(item.description)}
+                                    </span>
+                                  </div>
+                                </Link>
+                              );
+                            })}
                           </div>
-
-                          {group.items.map((item) => {
-                            const ItemIcon = item.icon || Package;
-                            return (
-                              <Link
-                                key={item.id}
-                                href={`/${locale}/category/${encodeURIComponent(item.slug)}`}
-                                className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors"
-                              >
-                                <div className="bg-rubik-brand/10 p-2 rounded-lg text-rubik-brand shrink-0">
-                                  <ItemIcon className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-bold text-foreground hover:text-rubik-brand">
-                                    {t(item.title)}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground line-clamp-1">
-                                    {t(item.description)}
-                                  </span>
-                                </div>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
             </nav>
 
             {/* Icons, Multi-Language, Search */}
             <div className="flex items-center gap-2 md:gap-4">
-              {/* Search Bar Button */}
+              
+              {/* Search Bar Button (Desktop only) */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="hidden md:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] items-center justify-center cursor-pointer"
                 aria-label="Axtarış"
               >
                 <Search className="h-5 w-5" />
               </button>
 
-              {/* Language Selector Dropdown (Desktop) */}
+              {/* Language Selector Dropdown (Desktop only) */}
               <div className="hidden md:flex items-center gap-1.5 bg-muted px-2.5 py-1.5 rounded-lg border border-border">
                 <Globe className="h-4 w-4 text-muted-foreground mr-1" />
                 {(['az', 'en', 'ru'] as const).map((lang) => (
                   <button
                     key={lang}
                     onClick={() => changeLanguage(lang)}
-                    className={`px-2.5 py-1 text-xs font-bold rounded transition-all duration-200 uppercase min-h-[36px] min-w-[36px] flex items-center justify-center ${
+                    className={`px-2.5 py-1 text-xs font-bold rounded transition-all duration-200 uppercase min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer ${
                       locale === lang
                         ? 'bg-rubik-brand text-white shadow-soft-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -219,7 +234,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 </Link>
               )}
 
-              {/* User Profile */}
+              {/* User Profile (Desktop only) */}
               <button
                 onClick={handleAccountClick}
                 className="hidden md:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center"
@@ -239,10 +254,10 @@ export function Header({ dict, locale }: HeaderProps) {
                 </button>
               )}
 
-              {/* Cart Toggle */}
+              {/* Cart Toggle (Desktop only) */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 flex items-center justify-center min-w-[44px] min-h-[44px]"
+                className="hidden md:flex relative p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
                 aria-label="Səbət"
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -253,26 +268,41 @@ export function Header({ dict, locale }: HeaderProps) {
                 )}
               </button>
 
-              {/* Mobile Menu Button */}
+              {/* Mobile Menu Button - Hamburger (Shown below lg) */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className="lg:hidden p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
                 aria-label="Menyu"
               >
                 {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
             </div>
+
           </div>
         </div>
 
-        {/* Dynamic Interactive Search Banner */}
+        {/* SUB-HEADER MOBILE SEARCH INPUT (Visible only on mobile/tablet) */}
+        <div className="md:hidden px-4 pb-4 bg-card">
+          <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+            <Search className="absolute left-3.5 h-4 w-4 text-gray-500 pointer-events-none" />
+            <input
+              type="search"
+              placeholder="Məhsul axtar..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-[#161b22] border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand transition-all"
+            />
+          </form>
+        </div>
+
+        {/* Dynamic Desktop Interactive Search Banner */}
         <AnimatePresence>
           {isSearchOpen && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t border-border bg-card overflow-hidden"
+              className="hidden md:block border-t border-border bg-card overflow-hidden"
             >
               <div className="max-w-3xl mx-auto px-4 py-4 md:py-6">
                 <form onSubmit={handleSearchSubmit} className="relative flex items-center">
@@ -287,7 +317,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   />
                   <button
                     type="submit"
-                    className="absolute right-2 px-4 py-1.5 bg-rubik-brand text-white text-sm font-medium rounded-lg hover:bg-rubik-brand-dark transition-colors"
+                    className="absolute right-2 px-4 py-1.5 bg-rubik-brand text-white text-sm font-black rounded-lg hover:bg-rubik-brand-dark transition-colors cursor-pointer"
                   >
                     Axtar
                   </button>
@@ -297,129 +327,130 @@ export function Header({ dict, locale }: HeaderProps) {
           )}
         </AnimatePresence>
 
-        {/* Mobile Navigation Drawer */}
+        {/* FULL-SCREEN MOBILE OVERLAY NAV DRAWER (Visible below lg) */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <React.Fragment>
+              {/* Drawer Overlay */}
               <motion.div
-                key="menu-backdrop"
+                key="mobile-drawer-overlay"
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: 0.5 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/40 z-40 backdrop-blur-sm lg:hidden"
+                className="fixed inset-0 bg-black z-40 lg:hidden"
                 onClick={() => setIsMobileMenuOpen(false)}
               />
+              
+              {/* Drawer Container */}
               <motion.div
-                key="menu-drawer"
-                initial={{ x: '-100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '-100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="fixed inset-y-0 left-0 w-[85%] max-w-sm bg-card z-50 shadow-2xl flex flex-col lg:hidden border-r border-border"
+                key="mobile-drawer-container"
+                initial={{ opacity: 0, y: '-100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                className="fixed inset-0 bg-[#0d1117] z-50 p-6 flex flex-col lg:hidden overflow-y-auto"
               >
-                <div className="flex-1 overflow-y-auto">
-                  <div className="p-4 border-b border-border flex items-center justify-between">
-                    <span className="font-bold text-xl text-foreground">Menu</span>
-                    <button onClick={() => setIsMobileMenuOpen(false)} className="p-3 bg-muted rounded-full text-foreground hover:bg-muted/80 transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Bağla">
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
+                {/* Header Row */}
+                <div className="flex items-center justify-between border-b border-gray-800 pb-5">
+                  <Link 
+                    href={`/${locale}`} 
+                    className="flex items-center gap-2 group"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg tracking-tight">
+                      RubikShop<span className="text-rubik-yellow">.az</span>
+                    </span>
+                  </Link>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-gray-200 transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label="Bağla"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Body Content */}
+                <div className="flex-1 flex flex-col justify-between pt-6 pb-10 gap-8">
                   
-                  <div className="p-4 space-y-6">
-                    <div className="space-y-1">
-                      <button 
-                        onClick={() => setIsCatalogOpen(!isCatalogOpen)}
-                        className="flex items-center justify-between w-full text-base font-bold text-foreground hover:text-rubik-brand transition-colors cursor-pointer py-2 animate-none"
+                  {/* Navigation List */}
+                  <nav className="flex flex-col">
+                    {[
+                      { label: 'Kataloq', href: `/${locale}/category` },
+                      { label: 'Alqoritmlər & Öyrənmə', href: `/${locale}?category=learning-content` },
+                      { label: 'Çatdırılma və Ödəniş', href: `/${locale}/faq` },
+                      { label: 'Haqqımızda', href: `/${locale}/pages/about` },
+                      { label: 'Əlaqə', href: `/${locale}/faq` },
+                    ].map((item) => (
+                      <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`block py-4 text-base font-bold transition-all border-b border-gray-800/40 last:border-0 ${
+                          pathname === item.href || pathname.startsWith(item.href + '/')
+                            ? 'text-rubik-brand'
+                            : 'text-gray-300 hover:text-white'
+                        }`}
                       >
-                        <span>Kataloq</span>
-                        <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${isCatalogOpen ? 'rotate-180' : ''}`} />
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
+
+                  {/* Language Selection & User state */}
+                  <div className="space-y-6">
+                    {/* Dil Seçimi */}
+                    <div className="space-y-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-gray-500 block">
+                        {t({ az: 'Dil seçimi', en: 'Language', ru: 'Язык' })}
+                      </span>
+                      <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1 rounded-xl border border-gray-800">
+                        {(['az', 'en', 'ru'] as const).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => {
+                              changeLanguage(lang);
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className={`py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[40px] flex items-center justify-center cursor-pointer ${
+                              locale === lang
+                                ? 'bg-rubik-brand text-white shadow-soft-sm'
+                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {lang}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* User State & Kabinet Button */}
+                    <div className="space-y-3 pt-4 border-t border-gray-800/60">
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          handleAccountClick();
+                        }}
+                        className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
+                      >
+                        Şəxsi Kabinet
                       </button>
 
-                      <AnimatePresence initial={false}>
-                        {isCatalogOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden pl-2"
-                          >
-                            <div className="mt-2 space-y-4 border-l-2 border-border/60 pl-3">
-                              {rubikTaxonomyGroups.map((group) => (
-                                <div key={group.id} className="space-y-2">
-                                  <h4 className="text-xs font-black uppercase tracking-wider text-muted-foreground/75 pt-1">
-                                    {t(group.title)}
-                                  </h4>
-                                  <div className="space-y-1">
-                                    {group.items.map((item) => {
-                                      const ItemIcon = item.icon || Package;
-                                      return (
-                                        <Link
-                                          key={item.id}
-                                          href={`/${locale}/category/${encodeURIComponent(item.slug)}`}
-                                          onClick={() => setIsMobileMenuOpen(false)}
-                                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground hover:text-rubik-brand transition-colors"
-                                        >
-                                          <ItemIcon className="h-4 w-4 text-rubik-brand" />
-                                          <span>{t(item.title)}</span>
-                                        </Link>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 border-t border-border bg-muted/10 space-y-4 pb-[80px]">
-                  {/* Mobile Language Switcher */}
-                  <div className="space-y-2 mb-2">
-                    <span className="text-xs font-black uppercase tracking-wider text-muted-foreground/75 block">
-                      {t({ az: 'Dil seçimi', en: 'Language', ru: 'Язык' })}
-                    </span>
-                    <div className="grid grid-cols-3 gap-2 bg-muted p-1 rounded-xl border border-border">
-                      {(['az', 'en', 'ru'] as const).map((lang) => (
+                      {mounted && user && (
                         <button
-                          key={lang}
-                          onClick={() => changeLanguage(lang)}
-                          className={`py-3 text-sm font-black rounded-lg transition-all duration-200 uppercase min-h-[44px] flex items-center justify-center ${
-                            locale === lang
-                              ? 'bg-rubik-brand text-white shadow-soft-sm'
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`}
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            handleSignOut();
+                          }}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 text-sm font-black rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer min-h-[44px]"
                         >
-                          {lang}
+                          <LogOut className="h-4 w-4" />
+                          <span>Çıxış Et</span>
                         </button>
-                      ))}
+                      )}
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleAccountClick();
-                    }}
-                    className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-foreground text-card text-sm font-black rounded-lg hover:bg-foreground/90 transition-colors cursor-pointer min-h-[44px]"
-                  >
-                    Şəxsi Kabinet
-                  </button>
-
-                  {mounted && user && (
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        handleSignOut();
-                      }}
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-red-600 text-white text-sm font-black rounded-lg hover:bg-red-700 transition-colors cursor-pointer min-h-[44px]"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>Çıxış Et</span>
-                    </button>
-                  )}
                 </div>
               </motion.div>
             </React.Fragment>
