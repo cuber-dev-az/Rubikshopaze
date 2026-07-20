@@ -35,7 +35,7 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
 
   const navItems = [
     {
-      name: dict.navigation.home,
+      name: 'Əsas',
       href: `/${locale}`,
       icon: Home,
     },
@@ -50,7 +50,7 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
       icon: Heart,
     },
     {
-      name: dict.navigation.cart,
+      name: 'Səbət',
       href: `/${locale}/cart`,
       icon: ShoppingCart,
       badge: mounted && totalItems > 0 ? totalItems : undefined,
@@ -86,16 +86,16 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
                   router.push(item.href);
                 }
               }}
-              className={`relative flex flex-col items-center justify-center w-full h-full min-h-[48px] min-w-[48px] py-1 px-2.5 transition-all cursor-pointer ${
-                isActive ? 'text-rubik-brand' : 'text-gray-400 hover:text-white'
+              className={`relative flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] py-1 px-1 transition-all cursor-pointer ${
+                isActive ? 'text-red-500 font-semibold' : 'text-gray-300 hover:text-white'
               }`}
               style={{ contentVisibility: 'auto' }}
               aria-label={item.name}
             >
               <div className="relative flex items-center justify-center p-1 rounded-full group-active:scale-95 transition-transform duration-100">
-                <Icon className={`w-[22px] h-[22px] transition-transform ${isActive ? 'scale-110 text-rubik-brand' : 'group-hover:scale-105'}`} />
+                <Icon className={`w-[22px] h-[22px] transition-transform ${isActive ? 'scale-110 text-red-500' : 'group-hover:scale-105'}`} />
                 {item.badge !== undefined && (
-                  <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[9px] font-black text-white bg-rubik-brand border-2 border-[#0d1117] rounded-full">
+                  <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[9px] font-black text-white bg-red-500 border-2 border-[#0d1117] rounded-full animate-pulse">
                     {item.badge}
                   </span>
                 )}

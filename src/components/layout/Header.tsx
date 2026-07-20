@@ -48,8 +48,11 @@ export function Header({ dict, locale }: HeaderProps) {
   // Determine whether to show the mobile search sub-header
   const showMobileSearch = React.useMemo(() => {
     const cleanPath = pathname || '';
-    const isHome = cleanPath === `/${locale}` || cleanPath === `/${locale}/` || cleanPath === '/' || cleanPath === '';
-    const isCategory = cleanPath.startsWith(`/${locale}/category`);
+    const isHome = 
+      cleanPath === '/' || 
+      cleanPath === `/${locale}` || 
+      cleanPath === `/${locale}/`;
+    const isCategory = cleanPath.includes('/category');
     return isHome || isCategory;
   }, [pathname, locale]);
 
@@ -209,14 +212,14 @@ export function Header({ dict, locale }: HeaderProps) {
               {/* Search Bar Button (Desktop only) */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="hidden md:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] items-center justify-center cursor-pointer"
+                className="hidden lg:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] items-center justify-center cursor-pointer"
                 aria-label="Axtarış"
               >
                 <Search className="h-5 w-5" />
               </button>
 
               {/* Language Selector Dropdown (Desktop only) */}
-              <div className="hidden md:flex items-center gap-1.5 bg-muted px-2.5 py-1.5 rounded-lg border border-border">
+              <div className="hidden lg:flex items-center gap-1.5 bg-muted px-2.5 py-1.5 rounded-lg border border-border">
                 <Globe className="h-4 w-4 text-muted-foreground mr-1" />
                 {(['az', 'en', 'ru'] as const).map((lang) => (
                   <button
@@ -236,7 +239,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {mounted && (userRole === 'admin' || userRole === 'manager') && (
                 <Link
                   href={`/${locale}/admin`}
-                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/25 transition-all duration-200 uppercase tracking-wider"
+                  className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/25 transition-all duration-200 uppercase tracking-wider"
                 >
                   Admin Panel
                 </Link>
@@ -245,7 +248,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {/* User Profile (Desktop only) */}
               <button
                 onClick={handleAccountClick}
-                className="hidden md:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center"
+                className="hidden lg:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center"
                 aria-label="Account profile"
               >
                 <User className="h-5 w-5" />
@@ -254,7 +257,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {mounted && user && (
                 <button
                   onClick={handleSignOut}
-                  className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 shadow-soft-sm cursor-pointer"
+                  className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 shadow-soft-sm cursor-pointer"
                   title="Çıxış Et"
                 >
                   <LogOut className="h-4 w-4" />
@@ -265,7 +268,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {/* Cart Toggle (Desktop only) */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="hidden md:flex relative p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
+                className="hidden lg:flex relative p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
                 aria-label="Səbət"
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -291,7 +294,7 @@ export function Header({ dict, locale }: HeaderProps) {
 
         {/* SUB-HEADER MOBILE SEARCH INPUT (Visible conditionally on mobile/tablet) */}
         {showMobileSearch && (
-          <div className="md:hidden px-4 pb-4 bg-card">
+          <div className="lg:hidden px-4 pb-4 bg-card">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
               <Search className="absolute left-3.5 h-4 w-4 text-gray-500 pointer-events-none" />
               <input
@@ -341,14 +344,14 @@ export function Header({ dict, locale }: HeaderProps) {
         <AnimatePresence>
           {isMobileMenuOpen && (
             <React.Fragment>
-              {/* Drawer Container (Using z-[9999] high-level fixed view to prevent parent layout clipping/truncation) */}
+              {/* Drawer Container (Using z-[99999] high-level fixed standalone view to prevent parent layout clipping/truncation) */}
               <motion.div
                 key="mobile-drawer-container"
                 initial={{ opacity: 0, y: '-100%' }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: '-100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                className="fixed inset-0 bg-[#0d1117] z-[9999] p-6 flex flex-col lg:hidden overflow-y-auto"
+                className="fixed inset-0 h-screen w-screen bg-[#0d1117] z-[99999] p-6 flex flex-col lg:hidden overflow-y-auto"
               >
                 {/* Header Row */}
                 <div className="flex items-center justify-between border-b border-gray-800 pb-5">
@@ -363,10 +366,10 @@ export function Header({ dict, locale }: HeaderProps) {
                   </Link>
                   <button
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-gray-200 transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
                     aria-label="Bağla"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-5 w-5 text-white" />
                   </button>
                 </div>
 
@@ -386,10 +389,10 @@ export function Header({ dict, locale }: HeaderProps) {
                         key={item.label}
                         href={item.href}
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className={`block py-4 text-base font-bold transition-all border-b border-gray-800/40 last:border-0 ${
+                        className={`block py-3 text-xl font-medium text-white border-b border-gray-800 transition-colors ${
                           pathname === item.href || pathname.startsWith(item.href + '/')
-                            ? 'text-rubik-brand'
-                            : 'text-gray-300 hover:text-white'
+                            ? 'text-rubik-brand font-bold border-rubik-brand/40'
+                            : 'hover:text-rubik-brand'
                         }`}
                       >
                         {item.label}
@@ -401,7 +404,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   <div className="space-y-6">
                     {/* Dil Seçimi */}
                     <div className="space-y-3">
-                      <span className="text-xs font-black uppercase tracking-wider text-gray-500 block">
+                      <span className="text-xs font-black uppercase tracking-wider text-gray-400 block">
                         {t({ az: 'Dil seçimi', en: 'Language', ru: 'Язык' })}
                       </span>
                       <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1 rounded-xl border border-gray-800">
@@ -415,7 +418,7 @@ export function Header({ dict, locale }: HeaderProps) {
                             className={`py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[40px] flex items-center justify-center cursor-pointer ${
                               locale === lang
                                 ? 'bg-rubik-brand text-white shadow-soft-sm'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                : 'text-gray-300 hover:text-white hover:bg-white/5'
                             }`}
                           >
                             {lang}
@@ -424,28 +427,39 @@ export function Header({ dict, locale }: HeaderProps) {
                       </div>
                     </div>
 
-                    {/* User State & Kabinet Button */}
+                    {/* User State & Action Panel */}
                     <div className="space-y-3 pt-4 border-t border-gray-800/60">
-                      <button
-                        onClick={() => {
-                          setIsMobileMenuOpen(false);
-                          handleAccountClick();
-                        }}
-                        className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
-                      >
-                        Şəxsi Kabinet
-                      </button>
-
-                      {mounted && user && (
+                      {mounted && user ? (
+                        <React.Fragment>
+                          <button
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              handleAccountClick();
+                            }}
+                            className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
+                          >
+                            Şəxsi Kabinet
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              handleSignOut();
+                            }}
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 text-sm font-black rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer min-h-[44px]"
+                          >
+                            <LogOut className="h-4 w-4" />
+                            <span>Çıxış Et</span>
+                          </button>
+                        </React.Fragment>
+                      ) : (
                         <button
                           onClick={() => {
                             setIsMobileMenuOpen(false);
-                            handleSignOut();
+                            openModal('login');
                           }}
-                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 text-sm font-black rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer min-h-[44px]"
+                          className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-rubik-brand text-white text-sm font-black rounded-xl hover:bg-rubik-brand-dark transition-colors cursor-pointer min-h-[44px]"
                         >
-                          <LogOut className="h-4 w-4" />
-                          <span>Çıxış Et</span>
+                          Giriş / Qeydiyyat
                         </button>
                       )}
                     </div>
