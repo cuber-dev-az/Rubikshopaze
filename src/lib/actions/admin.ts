@@ -9,6 +9,224 @@ import { revalidatePath } from 'next/cache';
 // ORDERS MANAGEMENT
 // =========================================================================
 
+export async function seedMockOrders() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    
+    // Check if we already have orders
+    const check = await supabase.from('orders').select('id', { count: 'exact', head: true });
+    if (check.count && check.count > 0) {
+      return { success: true, seeded: false };
+    }
+
+    const mockOrders = [
+      {
+        email: 'orxan@gmail.com',
+        phone: '+994 50 123 45 67',
+        full_name: 'Orxan Məmmədov',
+        shipping_address: 'Elmlər Akademiyası m. | Instagram: @orxan_m',
+        city: 'Bakı',
+        payment_method: 'card_to_card',
+        payment_status: 'paid',
+        shipping_status: 'delivered',
+        subtotal: 145.00,
+        discount: 0.00,
+        shipping_fee: 0.00,
+        total: 145.00,
+        created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'ayten@gmail.com',
+        phone: '+994 55 987 65 43',
+        full_name: 'Aytən Əliyeva',
+        shipping_address: 'Gənclik parkı yaxınlığı',
+        city: 'Bakı',
+        payment_method: 'cash_on_delivery',
+        payment_status: 'pending',
+        shipping_status: 'pending',
+        subtotal: 55.00,
+        discount: 5.00,
+        shipping_fee: 3.00,
+        total: 53.00,
+        created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'tural@mail.ru',
+        phone: '+994 70 555 44 33',
+        full_name: 'Tural Süleymanov',
+        shipping_address: '28 May metrosu çıxışı | Instagram: @tural_s',
+        city: 'Bakı',
+        payment_method: 'card_to_card',
+        payment_status: 'paid',
+        shipping_status: 'delivered',
+        subtotal: 220.00,
+        discount: 20.00,
+        shipping_fee: 0.00,
+        total: 200.00,
+        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'leyla@box.az',
+        phone: '+994 50 444 33 22',
+        full_name: 'Leyla Hüseynova',
+        shipping_address: 'Nərimanov m. çıxışı',
+        city: 'Bakı',
+        payment_method: 'cash_on_delivery',
+        payment_status: 'pending',
+        shipping_status: 'pending',
+        subtotal: 45.00,
+        discount: 0.00,
+        shipping_fee: 0.00,
+        total: 45.00,
+        created_at: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'farid@gmail.com',
+        phone: '+994 77 111 22 33',
+        full_name: 'Fərid Qasımov',
+        shipping_address: 'Xırdalan şəhəri, blok 4',
+        city: 'Xırdalan',
+        payment_method: 'cash_on_delivery',
+        payment_status: 'pending',
+        shipping_status: 'pending',
+        subtotal: 110.00,
+        discount: 0.00,
+        shipping_fee: 3.00,
+        total: 113.00,
+        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'gunel@code.edu.az',
+        phone: '+994 50 888 77 66',
+        full_name: 'Günel Həsənova',
+        shipping_address: 'Sumqayıt 10-cu mkr | Instagram: @gunel_h',
+        city: 'Sumqayıt',
+        payment_method: 'card_to_card',
+        payment_status: 'paid',
+        shipping_status: 'delivered',
+        subtotal: 85.00,
+        discount: 0.00,
+        shipping_fee: 7.00,
+        total: 92.00,
+        created_at: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'nihad@gmail.com',
+        phone: '+994 55 222 33 44',
+        full_name: 'Nihad Əlizadə',
+        shipping_address: 'İçərişəhər metrosu | Instagram: @nihad_a',
+        city: 'Bakı',
+        payment_method: 'card_to_card',
+        payment_status: 'paid',
+        shipping_status: 'delivered',
+        subtotal: 130.00,
+        discount: 10.00,
+        shipping_fee: 0.00,
+        total: 120.00,
+        created_at: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'sebiner@gmail.com',
+        phone: '+994 50 333 44 55',
+        full_name: 'Səbinə Rəhimova',
+        shipping_address: 'Yasamal, İnşaatçılar pr.',
+        city: 'Bakı',
+        payment_method: 'cash_on_delivery',
+        payment_status: 'pending',
+        shipping_status: 'pending',
+        subtotal: 75.00,
+        discount: 0.00,
+        shipping_fee: 3.00,
+        total: 78.00,
+        created_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'muradm@gmail.com',
+        phone: '+994 50 777 88 99',
+        full_name: 'Murad Məmmədov',
+        shipping_address: 'Xətai metrosu yaxınlığı',
+        city: 'Bakı',
+        payment_method: 'card_to_card',
+        payment_status: 'paid',
+        shipping_status: 'delivered',
+        subtotal: 260.00,
+        discount: 25.00,
+        shipping_fee: 0.00,
+        total: 235.00,
+        created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'elvin@mail.ru',
+        phone: '+994 70 999 88 11',
+        full_name: 'Elvin Vəliyev',
+        shipping_address: 'Badamdar qəsəbəsi',
+        city: 'Bakı',
+        payment_method: 'cash_on_delivery',
+        payment_status: 'pending',
+        shipping_status: 'shipped',
+        subtotal: 90.00,
+        discount: 0.00,
+        shipping_fee: 3.00,
+        total: 93.00,
+        created_at: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'nigar@box.az',
+        phone: '+994 50 666 55 44',
+        full_name: 'Nigar Baxşəliyeva',
+        shipping_address: 'Sahil metrosu',
+        city: 'Bakı',
+        payment_method: 'card_to_card',
+        payment_status: 'paid',
+        shipping_status: 'delivered',
+        subtotal: 155.00,
+        discount: 15.00,
+        shipping_fee: 0.00,
+        total: 140.00,
+        created_at: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'kenan@gmail.com',
+        phone: '+994 55 111 44 77',
+        full_name: 'Kənan Əsgərov',
+        shipping_address: 'Nəsimi r., 3-cü mkr',
+        city: 'Bakı',
+        payment_method: 'cash_on_delivery',
+        payment_status: 'pending',
+        shipping_status: 'pending',
+        subtotal: 60.00,
+        discount: 0.00,
+        shipping_fee: 3.00,
+        total: 63.00,
+        created_at: new Date(Date.now() - 26 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        email: 'ayxanr@gmail.com',
+        phone: '+994 50 500 11 22',
+        full_name: 'Ayxan Rzayev',
+        shipping_address: 'Koroğlu metrosu | Instagram: @ayxan_r',
+        city: 'Bakı',
+        payment_method: 'card_to_card',
+        payment_status: 'paid',
+        shipping_status: 'delivered',
+        subtotal: 195.00,
+        discount: 15.00,
+        shipping_fee: 0.00,
+        total: 180.00,
+        created_at: new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+
+    const { error } = await supabase.from('orders').insert(mockOrders);
+    if (error) throw error;
+
+    return { success: true, seeded: true };
+  } catch (error: any) {
+    console.error('seedMockOrders Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function getOrders() {
   try {
     const supabase = await createServerSupabaseClient();
@@ -283,12 +501,12 @@ export async function getDashboardStats() {
     if (productsRes.error) throw productsRes.error;
     if (ticketsRes.error) throw ticketsRes.error;
 
-    const totalSales = (ordersRes.data || []).reduce((sum, order) => sum + Number(order.total || 0), 0);
-    const totalOrders = ordersRes.data?.length || 0;
+    const orders = ordersRes.data || [];
+
+    const totalSales = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const totalOrders = orders.length;
     const totalProducts = productsRes.count || 0;
     const openSupportTickets = ticketsRes.count || 0;
-
-    const orders = ordersRes.data || [];
     
     // Helper to format date as DD.MM
     const formatDate = (date: Date) => {
