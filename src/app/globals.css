@@ -8,12 +8,12 @@
   --primary-foreground: #FFFFFF;
   --secondary: #1E1E1E;
   --secondary-foreground: #FFFFFF;
-  --accent: #F2B705;
+  --accent: #B27B00;
   --accent-foreground: #1E1E1E;
   --card: #FFFFFF;
   --card-foreground: #121212;
   --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
+  --muted-foreground: #4B5563;
   --border: #E5E7EB;
   --input: #E5E7EB;
   --ring: #D9383A;
@@ -42,6 +42,17 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans), Inter, sans-serif;
+  }
+
+  /* Comprehensive focus-visible accessibility outline for WCAG 2.1 AA */
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex="0"]:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 2px #0d1117, 0 0 0 4px #f97316 !important;
   }
 }
 

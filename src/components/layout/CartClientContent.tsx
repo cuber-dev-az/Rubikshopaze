@@ -232,14 +232,14 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                 </div>
                 <div className="w-full bg-muted border border-border h-3 rounded-full overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-rubik-brand to-yellow-500 h-full transition-all duration-500"
+                    className="bg-rubik-brand h-full transition-all duration-500"
                     style={{ width: `${progressToFreeShipping}%` }}
                   />
                 </div>
               </div>
 
               {/* Active Cart items panel */}
-              <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-soft-sm">
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-md">
                 <div className="px-6 py-5 bg-muted/40 border-b border-border flex items-center justify-between">
                   <h2 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-2">
                     <Package className="h-4.5 w-4.5 text-rubik-brand" />

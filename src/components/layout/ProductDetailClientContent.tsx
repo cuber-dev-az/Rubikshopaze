@@ -817,7 +817,7 @@ export function ProductDetailClientContent({
         </section>
 
         {/* 5. Bundle Offer (Xüsusi Bundle təklifi) */}
-        <section className="bg-gradient-to-r from-blue-900 to-indigo-950 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-soft-lg flex flex-col md:flex-row items-center justify-between gap-6">
+        <section className="bg-rubik-charcoal border border-slate-800 rounded-xl p-6 md:p-8 text-white relative overflow-hidden shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
           
           <div className="space-y-2 relative z-10 text-center md:text-left">
@@ -827,15 +827,15 @@ export function ProductDetailClientContent({
             <h3 className="text-lg md:text-2xl font-black">
               Bu Flaqmanı Alarkən GAN Lube və MoYu Mat qutusunu 20% Endirimlə Alın!
             </h3>
-            <p className="text-xs text-blue-100 max-w-xl">
+            <p className="text-xs text-gray-300 max-w-xl">
               Hər şey daxil tam peşəkar sürətli həll dəsti. Kampaniyaya orijinal fırlatma yağı, böyük fırlatma matı və tənzimləmə qutusu daxildir.
             </p>
           </div>
 
           <div className="shrink-0 flex flex-col items-center gap-2 relative z-10">
             <div className="text-center">
-              <span className="block text-[10px] text-blue-200 line-through">{(finalPrice + 35).toFixed(2)} AZN</span>
-              <span className="text-xl md:text-2xl font-black text-yellow-400">{(finalPrice + 24.5).toFixed(2)} AZN</span>
+              <span className="block text-[10px] text-gray-400 line-through">{(finalPrice + 35).toFixed(2)} AZN</span>
+              <span className="text-xl md:text-2xl font-black text-rubik-brand">{(finalPrice + 24.5).toFixed(2)} AZN</span>
             </div>
             <button
               onClick={() => {

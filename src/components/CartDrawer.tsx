@@ -98,7 +98,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                   </div>
                   <div className="w-full bg-muted border border-border h-2.5 rounded-full overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-rubik-brand to-yellow-500 h-full transition-all duration-500"
+                      className="bg-rubik-brand h-full transition-all duration-500"
                       style={{ width: `${progressToFreeShipping}%` }}
                     />
                   </div>

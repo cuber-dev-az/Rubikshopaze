@@ -574,15 +574,15 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Shipping Banner */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-800 text-white p-8 rounded-3xl shadow-soft-lg flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300">
-            <div className="p-3 bg-white/10 rounded-xl w-fit">
-              <Truck className="h-6 w-6 text-rubik-yellow" />
+          <div className="bg-rubik-charcoal border border-slate-800 text-white p-8 rounded-xl shadow-md flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300">
+            <div className="p-3 bg-white/5 rounded-xl w-fit">
+              <Truck className="h-6 w-6 text-rubik-brand" />
             </div>
             <div>
               <h3 className="text-xl font-bold leading-tight">
                 {t({ az: '24 Saat Daxilində Sürətli Çatdırılma!', en: '24-Hour Express Courier!', ru: 'Экспресс курьер за 24 часа!' })}
               </h3>
-              <p className="text-xs md:text-sm text-blue-100 mt-2">
+              <p className="text-xs md:text-sm text-gray-300 mt-2">
                 {t({
                   az: 'Bakı daxilində eyni gün kuryer çatdırılması. Sifarişi qapıda yoxlayaraq, nağd və ya kartla ödəniş imkanı.',
                   en: 'Same day shipping within Baku. Double-check your cube at your door, then pay cash or card.',
@@ -593,15 +593,15 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           </div>
 
           {/* Gift Card Banner */}
-          <div className="bg-gradient-to-br from-purple-600 to-pink-700 text-white p-8 rounded-3xl shadow-soft-lg flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300">
-            <div className="p-3 bg-white/10 rounded-xl w-fit">
-              <Gift className="h-6 w-6 text-rubik-yellow" />
+          <div className="bg-rubik-charcoal border border-slate-800 text-white p-8 rounded-xl shadow-md flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300">
+            <div className="p-3 bg-white/5 rounded-xl w-fit">
+              <Gift className="h-6 w-6 text-rubik-brand" />
             </div>
             <div>
               <h3 className="text-xl font-bold leading-tight">
                 {t({ az: 'RubikShop Hədiyyə Kartları', en: 'Premium Gift Cards', ru: 'Подарочные карты' })}
               </h3>
-              <p className="text-xs md:text-sm text-purple-100 mt-2">
+              <p className="text-xs md:text-sm text-gray-300 mt-2">
                 {t({
                   az: 'Doğmalarınız və speedcuber dostlarınız üçün ideal intellektual hədiyyə kartları. 20 - 200 AZN dəyərində.',
                   en: 'Perfect intellectual gift cards for speedcubers and family. Value from 20 to 200 AZN.',
@@ -612,15 +612,15 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           </div>
 
           {/* Wholesale Banner */}
-          <div className="bg-gradient-to-br from-emerald-600 to-teal-800 text-white p-8 rounded-3xl shadow-soft-lg flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300 md:col-span-2 lg:col-span-1">
-            <div className="p-3 bg-white/10 rounded-xl w-fit">
-              <Building2 className="h-6 w-6 text-rubik-yellow" />
+          <div className="bg-rubik-charcoal border border-slate-800 text-white p-8 rounded-xl shadow-md flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300 md:col-span-2 lg:col-span-1">
+            <div className="p-3 bg-white/5 rounded-xl w-fit">
+              <Building2 className="h-6 w-6 text-rubik-green" />
             </div>
             <div>
               <h3 className="text-xl font-bold leading-tight">
                 {t({ az: 'Məktəblər & Klublar üçün Topdan Satış', en: 'Schools & Clubs Wholesale', ru: 'Опт для школ и клубов' })}
               </h3>
-              <p className="text-xs md:text-sm text-emerald-100 mt-2">
+              <p className="text-xs md:text-sm text-gray-300 mt-2">
                 {t({
                   az: 'Dərnəklər, məktəb layihələri və intellektual oyun qrupları üçün xüsusi endirimli topdan qiymətlər və əlaqə.',
                   en: 'Special high-volume discounts for classrooms, puzzle clubs, and intellect leagues with full supply.',
@@ -632,7 +632,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
         </div>
 
         {/* Special Bundle Section */}
-        <div className="bg-gradient-to-r from-rubik-charcoal to-rubik-charcoal-dark border border-border/10 rounded-3xl p-8 lg:p-12 shadow-soft-xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="bg-gradient-to-r from-rubik-charcoal to-rubik-charcoal-dark border border-border/10 rounded-xl p-8 lg:p-12 shadow-md grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-7 space-y-4">
             <span className="px-3 py-1 bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold rounded-full uppercase tracking-wider">
               {t({ az: 'MƏHDUD DƏST TEKLİFİ', en: 'LIMITED EDITION BUNDLE', ru: 'ЛИМИТИРОВАННЫЙ НАБОР' })}
@@ -764,8 +764,8 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           </div>
 
           {/* Community Team Sponsorship */}
-          <div className="bg-gradient-to-br from-indigo-900 to-rubik-charcoal border border-border/10 rounded-3xl p-8 lg:p-12 text-white text-center space-y-6 max-w-4xl mx-auto shadow-soft-xl">
-            <Users className="h-10 w-10 text-rubik-yellow mx-auto animate-bounce" />
+          <div className="bg-rubik-charcoal border border-slate-800 rounded-xl p-8 lg:p-12 text-white text-center space-y-6 max-w-4xl mx-auto shadow-md">
+            <Users className="h-10 w-10 text-rubik-brand mx-auto animate-bounce" />
             <div className="space-y-2">
               <h3 className="text-2xl font-black">
                 {t({ az: 'Sponsorluq Proqramına Qoşulun!', en: 'Apply for Team Sponsorship!', ru: 'Подайте заявку на спонсорство!' })}
@@ -929,7 +929,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
         </div>
 
         {/* Bottom CTA */}
-        <div className="bg-gradient-to-br from-rubik-brand to-rubik-brand-dark rounded-3xl p-8 lg:p-16 text-white text-center space-y-6 shadow-soft-xl max-w-4xl mx-auto relative overflow-hidden">
+        <div className="bg-gradient-to-br from-rubik-brand to-rubik-brand-dark rounded-xl p-8 lg:p-16 text-white text-center space-y-6 shadow-md max-w-4xl mx-auto relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]"></div>
           <div className="relative z-10 space-y-4">
             <h3 className="text-3xl md:text-4xl font-black leading-tight">

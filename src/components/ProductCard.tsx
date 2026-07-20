@@ -14,6 +14,8 @@ interface ProductCardProps {
     price_azn: number;
     image_url: string;
     stock_quantity: number;
+    discount_percent?: number;
+    original_price_azn?: number;
   };
   dict: ApplicationDictionary;
 }
@@ -52,9 +54,9 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   };
 
   return (
-    <div className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 relative">
+    <div className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative">
       {product.discount_percent && product.discount_percent > 0 ? (
-        <div className="absolute top-3 left-3 z-10 bg-red-600 text-white text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-wider shadow-md">
+        <div className="absolute top-3 left-3 z-10 bg-rubik-brand text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md">
           -{product.discount_percent}%
         </div>
       ) : null}
@@ -63,7 +65,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         <button
           onClick={handleWishlistToggle}
           disabled={isWishlistLoading}
-          className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-red-500"
+          className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand"
           aria-label="Wishlist"
         >
           {isWishlistLoading ? (
@@ -82,10 +84,11 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
           className="object-cover p-4"
           priority={false}
+          referrerPolicy="no-referrer"
         />
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px]">
-            <span className="text-white font-bold tracking-wider px-3 py-1 bg-red-600 rounded-md">
+            <span className="text-white font-bold tracking-wider px-3 py-1 bg-rubik-brand rounded-xl">
               {dict.product.out_of_stock}
             </span>
           </div>
@@ -98,10 +101,10 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         
         {product.discount_percent && product.discount_percent > 0 ? (
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-lg font-black text-red-600 font-mono">
+            <span className="text-lg font-black text-rubik-brand font-mono">
               {product.price_azn.toFixed(2)} AZN
             </span>
-            <span className="text-xs text-slate-400 line-through font-mono">
+            <span className="text-xs text-gray-500 line-through font-mono">
               {product.original_price_azn?.toFixed(2)} AZN
             </span>
           </div>
@@ -114,10 +117,10 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         <button
           onClick={handleAddToCart}
           disabled={isOutOfStock}
-          className={`mt-4 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors duration-200 ${
+          className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200 ${
             isOutOfStock
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-rubik-primary text-black hover:bg-yellow-400 active:scale-[0.98]'
+              : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark active:scale-[0.98]'
           }`}
         >
           {isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}

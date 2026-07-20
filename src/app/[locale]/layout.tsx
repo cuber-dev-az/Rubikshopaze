@@ -18,5 +18,11 @@ export default async function LocaleLayout({
   const { locale } = await params;
   const dict = await getDictionary(locale);
 
-  return <StorefrontLayout dict={dict} locale={locale}>{children}</StorefrontLayout>;
+  return (
+    <html lang={locale}>
+      <body>
+        <StorefrontLayout dict={dict} locale={locale}>{children}</StorefrontLayout>
+      </body>
+    </html>
+  );
 }

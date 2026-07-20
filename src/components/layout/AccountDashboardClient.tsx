@@ -441,7 +441,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
               className="space-y-6"
             >
               {/* Welcome banner */}
-              <div className="relative bg-gradient-to-r from-rubik-brand to-yellow-500 rounded-3xl p-6 md:p-8 text-white shadow-soft-md overflow-hidden space-y-3">
+              <div className="relative bg-gradient-to-r from-rubik-brand to-rubik-brand-dark rounded-xl p-6 md:p-8 text-white shadow-md overflow-hidden space-y-3">
                 <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
                 <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full w-fit">VIP Müştəri</span>
                 <h2 className="text-xl md:text-3xl font-black">Xoş gəldiniz, {fullName}!</h2>
