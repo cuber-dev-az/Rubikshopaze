@@ -45,6 +45,14 @@ export function Header({ dict, locale }: HeaderProps) {
   const items = useCartStore((state) => state.items);
   const totalItems = React.useMemo(() => items.reduce((total, item) => total + (item.quantity || 1), 0), [items]);
 
+  // Determine whether to show the mobile search sub-header
+  const showMobileSearch = React.useMemo(() => {
+    const cleanPath = pathname || '';
+    const isHome = cleanPath === `/${locale}` || cleanPath === `/${locale}/` || cleanPath === '/' || cleanPath === '';
+    const isCategory = cleanPath.startsWith(`/${locale}/category`);
+    return isHome || isCategory;
+  }, [pathname, locale]);
+
   const handleAccountClick = React.useCallback(() => {
     if (!user) {
       openModal('login');
@@ -281,19 +289,21 @@ export function Header({ dict, locale }: HeaderProps) {
           </div>
         </div>
 
-        {/* SUB-HEADER MOBILE SEARCH INPUT (Visible only on mobile/tablet) */}
-        <div className="md:hidden px-4 pb-4 bg-card">
-          <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
-            <Search className="absolute left-3.5 h-4 w-4 text-gray-500 pointer-events-none" />
-            <input
-              type="search"
-              placeholder="Məhsul axtar..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#161b22] border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand transition-all"
-            />
-          </form>
-        </div>
+        {/* SUB-HEADER MOBILE SEARCH INPUT (Visible conditionally on mobile/tablet) */}
+        {showMobileSearch && (
+          <div className="md:hidden px-4 pb-4 bg-card">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+              <Search className="absolute left-3.5 h-4 w-4 text-gray-500 pointer-events-none" />
+              <input
+                type="search"
+                placeholder="Məhsul axtar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-[#161b22] border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand transition-all"
+              />
+            </form>
+          </div>
+        )}
 
         {/* Dynamic Desktop Interactive Search Banner */}
         <AnimatePresence>
@@ -331,24 +341,14 @@ export function Header({ dict, locale }: HeaderProps) {
         <AnimatePresence>
           {isMobileMenuOpen && (
             <React.Fragment>
-              {/* Drawer Overlay */}
-              <motion.div
-                key="mobile-drawer-overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black z-40 lg:hidden"
-                onClick={() => setIsMobileMenuOpen(false)}
-              />
-              
-              {/* Drawer Container */}
+              {/* Drawer Container (Using z-[9999] high-level fixed view to prevent parent layout clipping/truncation) */}
               <motion.div
                 key="mobile-drawer-container"
                 initial={{ opacity: 0, y: '-100%' }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: '-100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                className="fixed inset-0 bg-[#0d1117] z-50 p-6 flex flex-col lg:hidden overflow-y-auto"
+                className="fixed inset-0 bg-[#0d1117] z-[9999] p-6 flex flex-col lg:hidden overflow-y-auto"
               >
                 {/* Header Row */}
                 <div className="flex items-center justify-between border-b border-gray-800 pb-5">
