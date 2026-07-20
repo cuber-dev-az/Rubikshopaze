@@ -18,9 +18,9 @@ const config: Config = {
             dark: '#B02527',
           },
           yellow: {
-            DEFAULT: '#F2B705', // Rubik Yellow
+            DEFAULT: '#B27B00', // Rubik Gold for AA contrast compatibility on light backgrounds
             light: '#F5C845',
-            dark: '#C19202',
+            dark: '#8C5E00',
           },
           blue: {
             DEFAULT: '#00529C', // Rubik Blue

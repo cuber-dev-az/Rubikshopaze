@@ -182,24 +182,24 @@ export function Header({ dict, locale }: HeaderProps) {
             </nav>
 
             {/* Icons, Multi-Language, Search */}
-            <div className="flex items-center gap-1.5 md:gap-3">
+            <div className="flex items-center gap-2 md:gap-4">
               {/* Search Bar Button */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="p-2.5 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200"
+                className="p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label="Axtarış"
               >
                 <Search className="h-5 w-5" />
               </button>
 
               {/* Language Selector Dropdown (Desktop) */}
-              <div className="hidden md:flex items-center gap-1 bg-muted px-2 py-1 rounded-lg border border-border">
+              <div className="hidden md:flex items-center gap-1.5 bg-muted px-2.5 py-1.5 rounded-lg border border-border">
                 <Globe className="h-4 w-4 text-muted-foreground mr-1" />
                 {(['az', 'en', 'ru'] as const).map((lang) => (
                   <button
                     key={lang}
                     onClick={() => changeLanguage(lang)}
-                    className={`px-1.5 py-0.5 text-xs font-bold rounded transition-all duration-200 uppercase ${
+                    className={`px-2.5 py-1 text-xs font-bold rounded transition-all duration-200 uppercase min-h-[36px] min-w-[36px] flex items-center justify-center ${
                       locale === lang
                         ? 'bg-rubik-brand text-white shadow-soft-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -213,7 +213,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {mounted && (userRole === 'admin' || userRole === 'manager') && (
                 <Link
                   href={`/${locale}/admin`}
-                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/25 transition-all duration-200 uppercase tracking-wider"
+                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/25 transition-all duration-200 uppercase tracking-wider"
                 >
                   Admin Panel
                 </Link>
@@ -222,7 +222,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {/* User Profile */}
               <button
                 onClick={handleAccountClick}
-                className="hidden md:flex p-2.5 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 cursor-pointer"
+                className="hidden md:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center"
                 aria-label="Account profile"
               >
                 <User className="h-5 w-5" />
@@ -231,7 +231,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {mounted && user && (
                 <button
                   onClick={handleSignOut}
-                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 shadow-soft-sm cursor-pointer"
+                  className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 shadow-soft-sm cursor-pointer"
                   title="Çıxış Et"
                 >
                   <LogOut className="h-4 w-4" />
@@ -242,7 +242,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {/* Cart Toggle */}
               <button
                 onClick={() => setIsCartOpen(true)}
-                className="relative p-2.5 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 flex items-center justify-center"
+                className="relative p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 flex items-center justify-center min-w-[44px] min-h-[44px]"
                 aria-label="Səbət"
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -256,7 +256,7 @@ export function Header({ dict, locale }: HeaderProps) {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2.5 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200"
+                className="lg:hidden p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 aria-label="Menyu"
               >
                 {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -320,7 +320,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 <div className="flex-1 overflow-y-auto">
                   <div className="p-4 border-b border-border flex items-center justify-between">
                     <span className="font-bold text-xl text-foreground">Menu</span>
-                    <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 -mr-2 bg-muted rounded-full text-foreground hover:bg-muted/80 transition-colors cursor-pointer">
+                    <button onClick={() => setIsMobileMenuOpen(false)} className="p-3 bg-muted rounded-full text-foreground hover:bg-muted/80 transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Bağla">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -376,12 +376,34 @@ export function Header({ dict, locale }: HeaderProps) {
                   </div>
                 </div>
                 <div className="p-4 border-t border-border bg-muted/10 space-y-4 pb-[80px]">
+                  {/* Mobile Language Switcher */}
+                  <div className="space-y-2 mb-2">
+                    <span className="text-xs font-black uppercase tracking-wider text-muted-foreground/75 block">
+                      {t({ az: 'Dil seçimi', en: 'Language', ru: 'Язык' })}
+                    </span>
+                    <div className="grid grid-cols-3 gap-2 bg-muted p-1 rounded-xl border border-border">
+                      {(['az', 'en', 'ru'] as const).map((lang) => (
+                        <button
+                          key={lang}
+                          onClick={() => changeLanguage(lang)}
+                          className={`py-3 text-sm font-black rounded-lg transition-all duration-200 uppercase min-h-[44px] flex items-center justify-center ${
+                            locale === lang
+                              ? 'bg-rubik-brand text-white shadow-soft-sm'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {lang}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <button
                     onClick={() => {
                       setIsMobileMenuOpen(false);
                       handleAccountClick();
                     }}
-                    className="w-full inline-flex items-center justify-center px-4 py-3 bg-foreground text-card text-sm font-semibold rounded-lg hover:bg-foreground/90 transition-colors cursor-pointer"
+                    className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-foreground text-card text-sm font-black rounded-lg hover:bg-foreground/90 transition-colors cursor-pointer min-h-[44px]"
                   >
                     Şəxsi Kabinet
                   </button>
@@ -392,7 +414,7 @@ export function Header({ dict, locale }: HeaderProps) {
                         setIsMobileMenuOpen(false);
                         handleSignOut();
                       }}
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-red-600 text-white text-sm font-black rounded-lg hover:bg-red-700 transition-colors cursor-pointer min-h-[44px]"
                     >
                       <LogOut className="h-4 w-4" />
                       <span>Çıxış Et</span>

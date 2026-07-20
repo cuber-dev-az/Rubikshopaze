@@ -25,13 +25,13 @@ export function StorefrontLayout({ children, dict, locale }: StorefrontLayoutPro
   const isAdmin = pathname ? pathname.split('/').includes('admin') : false;
 
   if (isAdmin) {
-    return <>{children}</>;
+    return <main id="main-content">{children}</main>;
   }
 
   if (!mounted) {
     return (
       <div className="flex flex-col min-h-screen pb-[60px] md:pb-0">
-        <main className="flex-grow">{children}</main>
+        <main id="main-content" className="flex-grow">{children}</main>
       </div>
     );
   }
@@ -39,7 +39,7 @@ export function StorefrontLayout({ children, dict, locale }: StorefrontLayoutPro
   return (
     <div className="flex flex-col min-h-screen pb-[60px] md:pb-0">
       <Header dict={dict} locale={locale} />
-      <main className="flex-grow">{children}</main>
+      <main id="main-content" className="flex-grow">{children}</main>
       <Footer dict={dict} locale={locale} />
       <MobileBottomNav dict={dict} locale={locale} />
       <AuthModal />

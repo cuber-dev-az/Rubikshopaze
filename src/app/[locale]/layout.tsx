@@ -21,6 +21,7 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body>
+        <a href="#main-content" className="sr-only focus:not-only-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-orange-600 focus:text-white focus:p-3 focus:rounded-md focus:z-50">Skip to content</a>
         <StorefrontLayout dict={dict} locale={locale}>{children}</StorefrontLayout>
       </body>
     </html>
