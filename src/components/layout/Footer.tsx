@@ -115,28 +115,22 @@ export function Footer({ dict, locale }: FooterProps) {
           <h4 className="text-sm font-bold text-white uppercase tracking-wider">Dəstək və Şərtlər</h4>
           <ul className="space-y-2.5 text-xs md:text-sm">
             <li>
-              <span className="hover:text-rubik-brand transition-colors cursor-pointer flex items-center gap-1.5">
-                <HelpCircle className="h-4 w-4 text-rubik-yellow" />
-                <span>Tez-tez verilən suallar (FAQ)</span>
-              </span>
-            </li>
-            <li>
-              <span className="hover:text-rubik-brand transition-colors cursor-pointer flex items-center gap-1.5">
+              <Link href={`/${locale}/pages/terms-of-service`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-rubik-green" />
-                <span>İstifadəçi Şərtləri & Gizlilik</span>
-              </span>
+                <span>İstifadə Şərtləri</span>
+              </Link>
             </li>
             <li>
-              <span className="hover:text-rubik-brand transition-colors cursor-pointer flex items-center gap-1.5">
-                <BookOpen className="h-4 w-4 text-rubik-blue-light" />
-                <span>Bloq və Cubing Xəbərləri</span>
-              </span>
+              <Link href={`/${locale}/pages/privacy-policy`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-rubik-yellow" />
+                <span>Məxfilik Siyasəti</span>
+              </Link>
             </li>
             <li>
-              <span className="hover:text-rubik-brand transition-colors cursor-pointer flex items-center gap-1.5">
-                <Heart className="h-4 w-4 text-rubik-brand" />
-                <span>Sponsorluq Şərtləri</span>
-              </span>
+              <Link href={`/${locale}/pages/return-policy`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-rubik-brand" />
+                <span>Geri Qaytarma Qaydaları</span>
+              </Link>
             </li>
           </ul>
         </div>

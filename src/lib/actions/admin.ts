@@ -619,6 +619,110 @@ export async function getCMSPages() {
       .order('title_az', { ascending: true });
 
     if (error) throw error;
+
+    const slugsToSeed = ['return-policy', 'privacy-policy', 'terms-of-service'];
+    const slugs = data ? data.map((p: any) => p.slug) : [];
+    const missingSlugs = slugsToSeed.filter(s => !slugs.includes(s));
+
+    if (missingSlugs.length > 0) {
+      const seeds = [];
+      if (missingSlugs.includes('return-policy')) {
+        seeds.push({
+          title_az: 'Geri Qaytarma Qaydaları',
+          title_en: 'Return and Exchange Policy',
+          title_ru: 'Правила возврата',
+          slug: 'return-policy',
+          content_az: `<p><strong>RubikShop.az</strong> internet mağazasından alınan hər bir məhsul bizim üçün dəyərlidir. Biz müştərilərimizə yüksək səviyyəli xidmət və keyfiyyətli məhsullar təqdim etməyi hədəfləyirik.</p>
+
+<h3>1. Geri Qaytarma Şərtləri:</h3>
+<ul>
+  <li>Məhsulu istifadə etmədiyiniz, qutusuna, etiketlərinə və aksesuarlarına xələl gətirmədiyiniz təqdirdə, <strong>14 təqvim günü</strong> müddətində heç bir əlavə ödəniş etmədən tam geri qaytara və ya başqa modelə dəyişə bilərsiniz.</li>
+  <li>Professional sürətli Rubik kubları (speedcubing puzzle-ları) və onların aksesuarları yalnız zavod defekti olduğu halda geri qaytarıla və ya dəyişdirilə bilər.</li>
+  <li>İstifadə olunmuş, yağlanmış, tənzimlənmiş və ya mexaniki zədə görmüş məhsulların geri qaytarılması qəbul edilmir.</li>
+</ul>
+
+<h3>2. Çatdırılma və Geri Qaytarma Xərcləri:</h3>
+<ul>
+  <li>Əgər geri qaytarma məhsulun zavod qüsuru (defekti) ilə bağlıdırsa, geri qaytarma və ya dəyişdirilmə xərcləri tamamilə RubikShop.az tərəfindən qarşılanır.</li>
+  <li>Müştərinin şəxsi seçimi və ya qərar dəyişikliyi ilə bağlı geri qaytarmalarda kuryer xidməti haqqı müştəri tərəfindən ödənilir.</li>
+</ul>
+
+<h3>3. Sifarişin Qəbulu və Əlaqə:</h3>
+<p>Sifarişləriniz həm veb-saytımız, həm də rəsmi <strong>WhatsApp</strong> və ya <strong>Instagram (@rubikshop.az)</strong> hesablarımız vasitəsilə qəbul edilir. Sual və ya geri qaytarma müraciəti üçün bizimlə dərhal əlaqə saxlaya bilərsiniz.</p>
+
+<p><strong>Əlaqə nömrəsi (WhatsApp):</strong> +994 50 668 49 25<br>
+<strong>Instagram:</strong> <a href="https://instagram.com/rubikshop.az" target="_blank">@rubikshop.az</a></p>`,
+          content_en: `<p>Every product purchased from <strong>RubikShop.az</strong> is valuable to us. We aim to provide our customers with high-level service and high-quality products.</p>
+
+<h3>1. Return Conditions:</h3>
+<ul>
+  <li>If you have not used the product and have not damaged its box, labels, and accessories, you can return or exchange it for another model within <strong>14 calendar days</strong> without any additional charge.</li>
+  <li>Professional fast Rubik's cubes (speedcubing puzzles) and their accessories can only be returned or exchanged in case of a factory defect.</li>
+</ul>`,
+          content_ru: `<p>Каждый товар, приобретенный в интернет-магазине <strong>RubikShop.az</strong>, важен для нас. Мы стремимся предоставить нашим клиентам высокий уровень сервиса и качественную продукцию.</p>
+
+<h3>1. Условия возврата:</h3>
+<ul>
+  <li>Если вы не пользовались товаром и не повредили его коробку, этикетки и аксессуары, вы можете вернуть или обменять его на другую модель в течение <strong>14 календарных дней</strong> без какой-либо дополнительной оплаты.</li>
+</ul>`,
+          is_published: true
+        });
+      }
+      if (missingSlugs.includes('privacy-policy')) {
+        seeds.push({
+          title_az: 'Məxfilik Siyasəti',
+          title_en: 'Privacy Policy',
+          title_ru: 'Политика конфиденциальности',
+          slug: 'privacy-policy',
+          content_az: `<p><strong>RubikShop.az</strong> olaraq istifadəçilərimizin fərdi məlumatlarının qorunmasına və gizliliyinə böyük önəm veririk. Bu sənəd, saytımızda topladığımız məlumatların hansı məqsədlərlə istifadə olunduğunu izah edir.</p>
+
+<h3>1. Toplanan Məlumatlar:</h3>
+<ul>
+  <li>Sifariş zamanı daxil etdiyiniz ad, soyad, əlaqə nömrəsi (telefon), çatdırılma ünvanı və sosial media (Instagram) istifadəçi adı kimi məlumatlar qeydə alınır.</li>
+  <li>Ödəniş məlumatları (kart məlumatları) bizim sistemlərdə saxlanılmır.</li>
+</ul>
+
+<h3>2. Məlumatların İstifadə Məqsədi:</h3>
+<ul>
+  <li>Sifarişlərin hazırlanması və Azərbaycanda (Bakı daxili və rayonlara) çatdırılması.</li>
+  <li>Sifariş və ya çatdırılma ilə bağlı sizinlə WhatsApp və ya Instagram vasitəsilə əlaqə saxlamaq.</li>
+</ul>`,
+          content_en: `<p>As <strong>RubikShop.az</strong>, we attach great importance to the protection and privacy of our users' personal data.</p>`,
+          content_ru: `<p>Мы в <strong>RubikShop.az</strong> придаем большое значение защите и конфиденциальности персональных данных наших пользователей.</p>`,
+          is_published: true
+        });
+      }
+      if (missingSlugs.includes('terms-of-service')) {
+        seeds.push({
+          title_az: 'İstifadə Şərtləri',
+          title_en: 'Terms of Service',
+          title_ru: 'Условия использования',
+          slug: 'terms-of-service',
+          content_az: `<p><strong>RubikShop.az</strong> internet mağazasına xoş gəlmisiniz! Bu şərtlər veb-saytımızdan istifadə və məhsul alışı qaydalarını tənzimləyir.</p>
+
+<h3>1. Fəaliyyət Sahəmiz:</h3>
+<p>RubikShop.az rəsmi olaraq Azərbaycanda fəaliqqət göstərən, professional Rubik kubları, twisty puzzle-lar, kub yağları və tənzimləmə aksesuarlarının satışı ilə məşğul olan ixtisaslaşmış mağazadır.</p>
+
+<h3>2. Sifariş Qaydaları:</h3>
+<ul>
+  <li>Müştərilər sayt vasitəsilə sifariş yerləşdirə bilərlər. Sifariş təsdiqi üçün menecerimiz sizinlə WhatsApp və ya zəng vasitəsilə əlaqə saxlayacaqdır.</li>
+  <li>Sifarişlər həmçinin rəsmi <strong>Instagram (@rubikshop.az)</strong> və <strong>WhatsApp (+994 50 668 49 25)</strong> üzərindən də birbaşa qəbul edilir.</li>
+</ul>`,
+          content_en: `<p>Welcome to <strong>RubikShop.az</strong>! These terms govern your use of our website and purchase of products.</p>`,
+          content_ru: `<p>Добро пожаловать в <strong>RubikShop.az</strong>! Эти условия регулируют использование нашего веб-сайта и покупку товаров.</p>`,
+          is_published: true
+        });
+      }
+
+      await supabase.from('pages').insert(seeds);
+      
+      const refetched = await supabase
+        .from('pages')
+        .select('*')
+        .order('title_az', { ascending: true });
+      return { success: true, data: refetched.data };
+    }
+
     return { success: true, data };
   } catch (error: any) {
     console.error('getCMSPages Error:', error.message);

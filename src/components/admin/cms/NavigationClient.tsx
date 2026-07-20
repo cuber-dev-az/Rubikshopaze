@@ -61,6 +61,97 @@ export default function NavigationClient() {
   const [faqSortOrder, setFaqSortOrder] = useState(0);
   const [faqIsActive, setFaqIsActive] = useState(true);
 
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [draggedType, setDraggedType] = useState<'menu' | 'faq' | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number, type: 'menu' | 'faq') => {
+    setDraggedIndex(index);
+    setDraggedType(type);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", index.toString());
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number, type: 'menu' | 'faq') => {
+    if (draggedType !== type) return;
+    e.preventDefault();
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDraggedType(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetIndex: number, type: 'menu' | 'faq') => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedType !== type) return;
+    if (draggedIndex === targetIndex) {
+      handleDragEnd();
+      return;
+    }
+
+    if (type === 'menu') {
+      const items = [...navItems];
+      const [draggedItem] = items.splice(draggedIndex, 1);
+      items.splice(targetIndex, 0, draggedItem);
+      
+      const updatedItems = items.map((item, idx) => ({
+        ...item,
+        sort_order: idx
+      }));
+      setNavItems(updatedItems);
+      handleDragEnd();
+
+      try {
+        const promises = updatedItems.map((item, idx) => {
+          const original = navItems.find(n => n.id === item.id);
+          if (!original || original.sort_order !== idx) {
+            return updateNavigationItem(item.id, { sort_order: idx });
+          }
+          return null;
+        }).filter(Boolean);
+        
+        if (promises.length > 0) {
+          await Promise.all(promises);
+        }
+      } catch (err) {
+        console.error("Failed to update navigation sort orders in db", err);
+      }
+    } else {
+      const items = [...faqs];
+      const [draggedItem] = items.splice(draggedIndex, 1);
+      items.splice(targetIndex, 0, draggedItem);
+
+      const updatedFAQs = items.map((faq, idx) => ({
+        ...faq,
+        sort_order: idx
+      }));
+      setFaqs(updatedFAQs);
+      handleDragEnd();
+
+      try {
+        const promises = updatedFAQs.map((faq, idx) => {
+          const original = faqs.find(f => f.id === faq.id);
+          if (!original || original.sort_order !== idx) {
+            return updateFAQ(faq.id, { sort_order: idx });
+          }
+          return null;
+        }).filter(Boolean);
+        
+        if (promises.length > 0) {
+          await Promise.all(promises);
+        }
+      } catch (err) {
+        console.error("Failed to update FAQ sort orders in db", err);
+      }
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [activeTab]);
@@ -412,65 +503,84 @@ export default function NavigationClient() {
               <div className="p-8 text-center text-slate-400 font-bold">Heç bir naviqasiya linki tapılmadı.</div>
             ) : (
               <div className="space-y-3">
-                {navItems.map((item, index) => (
-                  <div key={item.id} className="flex items-center gap-4 bg-slate-950 border border-slate-800 p-4 rounded-2xl group hover:border-slate-700 transition-colors">
-                    <div className="flex flex-col">
-                      <button 
-                        disabled={index === 0} 
-                        onClick={() => handleMoveNav(index, 'up')}
-                        className="text-slate-500 hover:text-white disabled:opacity-30"
-                      >
-                        <MoveUp className="w-4 h-4" />
-                      </button>
-                      <button 
-                        disabled={index === navItems.length - 1} 
-                        onClick={() => handleMoveNav(index, 'down')}
-                        className="text-slate-500 hover:text-white disabled:opacity-30"
-                      >
-                        <MoveDown className="w-4 h-4" />
-                      </button>
+                {navItems.map((item, index) => {
+                  const isDragged = draggedIndex === index && draggedType === 'menu';
+                  const isDragOver = dragOverIndex === index && draggedIndex !== index && draggedType === 'menu';
+
+                  return (
+                    <div 
+                      key={item.id} 
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index, 'menu')}
+                      onDragOver={(e) => handleDragOver(e, index, 'menu')}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(e, index, 'menu')}
+                      className={`flex items-center gap-4 bg-slate-950 border p-4 rounded-2xl group transition-all cursor-grab active:cursor-grabbing ${
+                        isDragged ? 'opacity-40 border-dashed border-amber-500/50 bg-slate-900/50' : 
+                        isDragOver ? 'border-amber-500 bg-amber-500/10 scale-[1.01] shadow-lg shadow-amber-500/5' : 
+                        'border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <GripVertical className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors flex-shrink-0 cursor-grab" />
+                      
+                      <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          disabled={index === 0} 
+                          onClick={() => handleMoveNav(index, 'up')}
+                          className="text-slate-500 hover:text-white disabled:opacity-30"
+                        >
+                          <MoveUp className="w-4 h-4" />
+                        </button>
+                        <button 
+                          disabled={index === navItems.length - 1} 
+                          onClick={() => handleMoveNav(index, 'down')}
+                          className="text-slate-500 hover:text-white disabled:opacity-30"
+                        >
+                          <MoveDown className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                          <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Ad AZ</span>
+                          <span className="font-bold text-white text-sm">{item.label_az}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Keçid (Link)</span>
+                          <span className="font-mono text-slate-400 text-sm">{item.link_url}</span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Yerləşmə</span>
+                          <span className="inline-block px-2 py-0.5 bg-slate-850 text-slate-300 text-[10px] font-black uppercase tracking-wider rounded border border-slate-800">
+                            {item.location}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Status</span>
+                          {item.is_active ? (
+                            <span className="text-xs text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">Aktiv</span>
+                          ) : (
+                            <span className="text-xs text-slate-500 font-bold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">Passiv</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          onClick={() => handleOpenNavForm(item)}
+                          className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteNav(item.id)}
+                          className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Ad AZ</span>
-                        <span className="font-bold text-white text-sm">{item.label_az}</span>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Keçid (Link)</span>
-                        <span className="font-mono text-slate-400 text-sm">{item.link_url}</span>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Yerləşmə</span>
-                        <span className="inline-block px-2 py-0.5 bg-slate-850 text-slate-300 text-[10px] font-black uppercase tracking-wider rounded border border-slate-800">
-                          {item.location}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Status</span>
-                        {item.is_active ? (
-                          <span className="text-xs text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">Aktiv</span>
-                        ) : (
-                          <span className="text-xs text-slate-500 font-bold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">Passiv</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => handleOpenNavForm(item)}
-                        className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteNav(item.id)}
-                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -605,54 +715,73 @@ export default function NavigationClient() {
               <div className="p-8 text-center text-slate-400 font-bold">Heç bir sual tapılmadı.</div>
             ) : (
               <div className="space-y-3">
-                {faqs.map((faq, index) => (
-                  <div key={faq.id} className="flex gap-4 bg-slate-950 border border-slate-800 p-4 rounded-2xl group hover:border-slate-700 transition-colors items-start">
-                    <div className="flex flex-col">
-                      <button 
-                        disabled={index === 0} 
-                        onClick={() => handleMoveFaq(index, 'up')}
-                        className="text-slate-500 hover:text-white disabled:opacity-30"
-                      >
-                        <MoveUp className="w-4 h-4" />
-                      </button>
-                      <button 
-                        disabled={index === faqs.length - 1} 
-                        onClick={() => handleMoveFaq(index, 'down')}
-                        className="text-slate-500 hover:text-white disabled:opacity-30"
-                      >
-                        <MoveDown className="w-4 h-4" />
-                      </button>
-                    </div>
+                {faqs.map((faq, index) => {
+                  const isDragged = draggedIndex === index && draggedType === 'faq';
+                  const isDragOver = dragOverIndex === index && draggedIndex !== index && draggedType === 'faq';
 
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-mono">
-                          Sıra: {faq.sort_order}
-                        </span>
-                        {!faq.is_active && (
-                          <span className="text-xs text-slate-500 font-bold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">Passiv</span>
-                        )}
+                  return (
+                    <div 
+                      key={faq.id} 
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index, 'faq')}
+                      onDragOver={(e) => handleDragOver(e, index, 'faq')}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(e, index, 'faq')}
+                      className={`flex gap-4 bg-slate-950 border p-4 rounded-2xl group transition-all items-start cursor-grab active:cursor-grabbing ${
+                        isDragged ? 'opacity-40 border-dashed border-amber-500/50 bg-slate-900/50' : 
+                        isDragOver ? 'border-amber-500 bg-amber-500/10 scale-[1.01] shadow-lg shadow-amber-500/5' : 
+                        'border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <GripVertical className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors flex-shrink-0 cursor-grab mt-1" />
+
+                      <div className="flex flex-col" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          disabled={index === 0} 
+                          onClick={() => handleMoveFaq(index, 'up')}
+                          className="text-slate-500 hover:text-white disabled:opacity-30"
+                        >
+                          <MoveUp className="w-4 h-4" />
+                        </button>
+                        <button 
+                          disabled={index === faqs.length - 1} 
+                          onClick={() => handleMoveFaq(index, 'down')}
+                          className="text-slate-500 hover:text-white disabled:opacity-30"
+                        >
+                          <MoveDown className="w-4 h-4" />
+                        </button>
                       </div>
-                      <div className="font-bold text-white">{faq.question_az}</div>
-                      <div className="text-sm text-slate-400 leading-relaxed">{faq.answer_az}</div>
-                    </div>
 
-                    <div className="flex items-center gap-2 mt-1">
-                      <button 
-                        onClick={() => handleOpenFaqForm(faq)}
-                        className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteFaq(faq.id)}
-                        className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 font-mono">
+                            Sıra: {faq.sort_order}
+                          </span>
+                          {!faq.is_active && (
+                            <span className="text-xs text-slate-500 font-bold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">Passiv</span>
+                          )}
+                        </div>
+                        <div className="font-bold text-white">{faq.question_az}</div>
+                        <div className="text-sm text-slate-400 leading-relaxed">{faq.answer_az}</div>
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
+                        <button 
+                          onClick={() => handleOpenFaqForm(faq)}
+                          className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteFaq(faq.id)}
+                          className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
