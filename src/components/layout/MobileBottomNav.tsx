@@ -64,10 +64,10 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
 
   return (
     <div 
-      className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0d1117] border-t border-gray-800 z-50 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
+      className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-[#0d1117] border-t border-gray-800 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="flex items-center justify-around h-[64px] px-1">
+      <div className="flex items-center justify-around h-[64px] px-1 w-full">
         {navItems.map((item) => {
           // Precise active path segment match
           const isActive = item.href === `/${locale}`

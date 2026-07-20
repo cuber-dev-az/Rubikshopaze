@@ -16,6 +16,7 @@ import {
   Sparkles,
   Package,
   LogOut,
+  Heart,
 } from 'lucide-react';
 import { rubikTaxonomyGroups } from '@/lib/config/catalog';
 import { useCartStore } from '@/store/useCartStore';
@@ -31,9 +32,8 @@ interface HeaderProps {
 export function Header({ dict, locale }: HeaderProps) {
   const [mounted, setMounted] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isDesktopCategoryMenuOpen, setIsDesktopCategoryMenuOpen] = React.useState(false);
   const [isCartOpen, setIsCartOpen] = React.useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = React.useState<string | null>(null);
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
   
   const { user, userRole, signOut: authSignOut } = useAuthUser();
@@ -88,13 +88,11 @@ export function Header({ dict, locale }: HeaderProps) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     router.push(`/${locale}?search=${encodeURIComponent(searchQuery)}`);
-    setIsSearchOpen(false);
   };
 
   React.useEffect(() => {
     setIsMobileMenuOpen(false);
-    setActiveMegaMenu(null);
-    setIsSearchOpen(false);
+    setIsDesktopCategoryMenuOpen(false);
   }, [pathname]);
 
   const t = (obj: { az: string; en: string; ru: string }) => {
@@ -110,191 +108,146 @@ export function Header({ dict, locale }: HeaderProps) {
       </div>
 
       <header className="sticky top-0 z-40 w-full bg-card border-b border-border shadow-soft-sm backdrop-blur-md bg-opacity-95 dark:bg-opacity-90">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-20 items-center justify-between gap-4">
-            
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link href={`/${locale}`} className="flex items-center gap-2.5 group">
-                <span className="text-xl md:text-2xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg shadow-soft-sm group-hover:bg-rubik-brand-dark transition-all duration-300 tracking-tight">
-                  RubikShop<span className="text-rubik-yellow">.az</span>
-                </span>
-              </Link>
-            </div>
+        
+        {/* DESKTOP LAYOUT ARCHITECTURE RULES (hidden md:flex structural layer) */}
+        <div className="hidden md:flex items-center justify-between bg-[#0d1117] border-b border-gray-800 px-6 py-4 w-full gap-6">
+          
+          {/* LEFT-ALIGNED BLOCK */}
+          <div className="flex items-center gap-4 shrink-0">
+            {/* Standalone 3-lines hamburger menu drawer toggle button component */}
+            <button
+              onClick={() => setIsDesktopCategoryMenuOpen(!isDesktopCategoryMenuOpen)}
+              className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Desktop Menu Toggle"
+            >
+              {isDesktopCategoryMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
 
-            {/* Desktop Navigation (Mega Menus) */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
-              <Link
-                href={`/${locale}`}
-                className={`px-3 py-2 text-sm font-medium transition-colors ${
-                  pathname === `/${locale}` || pathname === `/${locale}/`
-                    ? 'text-rubik-brand font-bold'
-                    : 'text-foreground hover:text-rubik-brand'
-                }`}
-              >
-                {dict.navigation.home}
-              </Link>
-
-              {rubikTaxonomyGroups.map((group) => {
-                const isGroupActive = group.items.some((item) =>
-                  pathname.startsWith(`/${locale}/category/${encodeURIComponent(item.slug)}`)
-                );
-                return (
-                  <div
-                    key={group.id}
-                    className="relative"
-                    onMouseEnter={() => setActiveMegaMenu(group.id)}
-                    onMouseLeave={() => setActiveMegaMenu(null)}
-                  >
-                    <button className={`flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors cursor-pointer ${
-                      isGroupActive ? 'text-rubik-brand font-bold' : 'text-foreground hover:text-rubik-brand'
-                    }`}>
-                      <span>{t(group.title)}</span>
-                      <ChevronDown className="h-3.5 w-3.5 opacity-60" />
-                    </button>
-
-                    <AnimatePresence>
-                      {activeMegaMenu === group.id && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          transition={{ duration: 0.2 }}
-                          className="absolute left-1/2 -translate-x-1/2 top-full pt-2 w-[480px] sm:w-[600px] z-50 pointer-events-auto"
-                        >
-                          <div className="bg-card border border-border rounded-xl shadow-soft-xl overflow-hidden grid grid-cols-2 p-5 gap-4">
-                            <div className="col-span-2 border-b border-border/60 pb-2 mb-1 flex items-center justify-between">
-                              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                {t(group.title)}
-                              </h4>
-                              <span className="text-[10px] text-rubik-brand font-medium">Rubikshop Premium</span>
-                            </div>
-
-                            {group.items.map((item) => {
-                              const ItemIcon = item.icon || Package;
-                              const isItemActive = pathname.startsWith(`/${locale}/category/${encodeURIComponent(item.slug)}`);
-                              return (
-                                <Link
-                                  key={item.id}
-                                  href={`/${locale}/category/${encodeURIComponent(item.slug)}`}
-                                  className={`flex items-start gap-3 p-2.5 rounded-lg hover:bg-muted transition-colors ${
-                                    isItemActive ? 'bg-muted/50 border border-rubik-brand/10' : ''
-                                  }`}
-                                >
-                                  <div className="bg-rubik-brand/10 p-2 rounded-lg text-rubik-brand shrink-0">
-                                    <ItemIcon className="h-4 w-4" />
-                                  </div>
-                                  <div className="flex flex-col">
-                                    <span className={`text-sm font-bold hover:text-rubik-brand ${
-                                      isItemActive ? 'text-rubik-brand font-black' : 'text-foreground'
-                                    }`}>
-                                      {t(item.title)}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground line-clamp-1">
-                                      {t(item.description)}
-                                    </span>
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </nav>
-
-            {/* Icons, Multi-Language, Search */}
-            <div className="flex items-center gap-2 md:gap-4">
-              
-              {/* Search Bar Button (Desktop only) */}
-              <button
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className="hidden lg:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] items-center justify-center cursor-pointer"
-                aria-label="Axtarış"
-              >
-                <Search className="h-5 w-5" />
-              </button>
-
-              {/* Language Selector Dropdown (Desktop only) */}
-              <div className="hidden lg:flex items-center gap-1.5 bg-muted px-2.5 py-1.5 rounded-lg border border-border">
-                <Globe className="h-4 w-4 text-muted-foreground mr-1" />
-                {(['az', 'en', 'ru'] as const).map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => changeLanguage(lang)}
-                    className={`px-2.5 py-1 text-xs font-bold rounded transition-all duration-200 uppercase min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer ${
-                      locale === lang
-                        ? 'bg-rubik-brand text-white shadow-soft-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {lang}
-                  </button>
-                ))}
-              </div>
-
-              {mounted && (userRole === 'admin' || userRole === 'manager') && (
-                <Link
-                  href={`/${locale}/admin`}
-                  className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/25 transition-all duration-200 uppercase tracking-wider"
-                >
-                  Admin Panel
-                </Link>
-              )}
-
-              {/* User Profile (Desktop only) */}
-              <button
-                onClick={handleAccountClick}
-                className="hidden lg:flex p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] items-center justify-center"
-                aria-label="Account profile"
-              >
-                <User className="h-5 w-5" />
-              </button>
-
-              {mounted && user && (
-                <button
-                  onClick={handleSignOut}
-                  className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-black bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200 shadow-soft-sm cursor-pointer"
-                  title="Çıxış Et"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Çıxış Et</span>
-                </button>
-              )}
-
-              {/* Cart Toggle (Desktop only) */}
-              <button
-                onClick={() => setIsCartOpen(true)}
-                className="hidden lg:flex relative p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
-                aria-label="Səbət"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {mounted && totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-5 h-5 px-1 text-[10px] font-black text-white bg-rubik-brand border-2 border-card rounded-full animate-bounce">
-                    {totalItems}
-                  </span>
-                )}
-              </button>
-
-              {/* Mobile Menu Button - Hamburger (Shown below lg) */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-3 text-foreground hover:text-rubik-brand hover:bg-muted rounded-full transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
-                aria-label="Menyu"
-              >
-                {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-            </div>
-
+            {/* Brand Logo Link */}
+            <Link href={`/${locale}`} className="flex items-center gap-2 group">
+              <span className="text-xl md:text-2xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg shadow-soft-sm group-hover:bg-rubik-brand-dark transition-all duration-300 tracking-tight">
+                RubikShop<span className="text-rubik-yellow">.az</span>
+              </span>
+            </Link>
           </div>
+
+          {/* MIDDLE-ALIGNED BLOCK */}
+          <div className="flex-1 max-w-xl mx-auto">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
+              <Search className="absolute left-4 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="search"
+                placeholder="Məhsul axtar..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-24 py-2.5 bg-[#161b22] border border-gray-800 rounded-xl text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+              />
+              <button
+                type="submit"
+                className="absolute right-2 px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-black rounded-lg transition-colors cursor-pointer h-[34px] flex items-center justify-center"
+              >
+                Axtar
+              </button>
+            </form>
+          </div>
+
+          {/* RIGHT-ALIGNED BLOCK */}
+          <div className="flex items-center gap-3 shrink-0">
+            {/* Language Selection Bar (Desktop only) */}
+            <div className="flex items-center gap-1 bg-[#161b22] px-2 py-1 rounded-lg border border-gray-800">
+              {(['az', 'en', 'ru'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => changeLanguage(lang)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded transition-all duration-200 uppercase min-h-[32px] min-w-[32px] flex items-center justify-center cursor-pointer ${
+                    locale === lang
+                      ? 'bg-red-500 text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
+
+            {/* Kabinet (Account) */}
+            <button
+              onClick={handleAccountClick}
+              className="p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Kabinet"
+            >
+              <User className="h-5 w-5" />
+            </button>
+
+            {/* Seçilmişlər (Favorites/Wishlist) */}
+            <Link
+              href={`/${locale}/wishlist`}
+              className="p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Seçilmişlər"
+            >
+              <Heart className="h-5 w-5" />
+            </Link>
+
+            {/* Səbət (Shopping Cart) */}
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
+              aria-label="Səbət"
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {mounted && totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-5 h-5 px-1 text-[10px] font-black text-white bg-red-500 border-2 border-[#0d1117] rounded-full animate-bounce">
+                  {totalItems}
+                </span>
+              )}
+            </button>
+
+            {/* Admin shortcut if logged in */}
+            {mounted && (userRole === 'admin' || userRole === 'manager') && (
+              <Link
+                href={`/${locale}/admin`}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/25 transition-all duration-200 uppercase tracking-wider h-[38px]"
+              >
+                Admin
+              </Link>
+            )}
+
+            {mounted && user && (
+              <button
+                onClick={handleSignOut}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-all duration-200 border border-red-600/30 cursor-pointer h-[38px]"
+                title="Çıxış Et"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Çıxış</span>
+              </button>
+            )}
+          </div>
+
         </div>
 
-        {/* SUB-HEADER MOBILE SEARCH INPUT (Visible conditionally on mobile/tablet) */}
+        {/* MOBILE LAYOUT ARCHITECTURE RULES (flex md:hidden structural layer) */}
+        <div className="flex md:hidden items-center justify-between bg-[#0d1117] border-b border-gray-800 px-4 py-3 w-full">
+          {/* Left: Brand text logo */}
+          <Link href={`/${locale}`} className="flex items-center gap-2 group">
+            <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg shadow-soft-sm group-hover:bg-rubik-brand-dark transition-all duration-300 tracking-tight">
+              RubikShop<span className="text-rubik-yellow">.az</span>
+            </span>
+          </Link>
+
+          {/* Right: Hamburger button (Strictly clean header bar, no extra utility clutter icons) */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Menyu"
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+
+        {/* Conditional Sub-Row Search visibility (Mobile only) */}
         {showMobileSearch && (
-          <div className="lg:hidden px-4 pb-4 bg-card">
+          <div className="md:hidden px-4 pb-4 pt-1 bg-[#0d1117]">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
               <Search className="absolute left-3.5 h-4 w-4 text-gray-500 pointer-events-none" />
               <input
@@ -302,172 +255,181 @@ export function Header({ dict, locale }: HeaderProps) {
                 placeholder="Məhsul axtar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#161b22] border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#161b22] border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all"
               />
             </form>
           </div>
         )}
 
-        {/* Dynamic Desktop Interactive Search Banner */}
+        {/* DESKTOP CATEGORY MENU OVERLAY DRAWER */}
         <AnimatePresence>
-          {isSearchOpen && (
+          {isDesktopCategoryMenuOpen && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="hidden md:block border-t border-border bg-card overflow-hidden"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-full left-0 right-0 bg-[#0d1117] border-b border-gray-800 shadow-xl z-50 p-8 hidden md:block"
             >
-              <div className="max-w-3xl mx-auto px-4 py-4 md:py-6">
-                <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-                  <Search className="absolute left-4 h-5 w-5 text-muted-foreground pointer-events-none" />
-                  <input
-                    type="search"
-                    placeholder="Kub, marka, yağ və ya aksessuar axtarın..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-24 py-3 bg-muted border border-border rounded-xl text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-rubik-brand"
-                    autoFocus
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 px-4 py-1.5 bg-rubik-brand text-white text-sm font-black rounded-lg hover:bg-rubik-brand-dark transition-colors cursor-pointer"
-                  >
-                    Axtar
-                  </button>
-                </form>
+              <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+                {rubikTaxonomyGroups.map((group) => (
+                  <div key={group.id} className="space-y-4">
+                    <h3 className="text-sm font-black uppercase tracking-wider text-red-500 border-b border-gray-800 pb-2">
+                      {t(group.title)}
+                    </h3>
+                    <div className="grid gap-2">
+                      {group.items.map((item) => {
+                        const ItemIcon = item.icon || Package;
+                        return (
+                          <Link
+                            key={item.id}
+                            href={`/${locale}/category/${encodeURIComponent(item.slug)}`}
+                            onClick={() => setIsDesktopCategoryMenuOpen(false)}
+                            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-gray-800/50 transition-colors text-gray-300 hover:text-white"
+                          >
+                            <div className="bg-red-500/10 p-2 rounded-lg text-red-500 shrink-0">
+                              <ItemIcon className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold">{t(item.title)}</div>
+                              <div className="text-xs text-gray-400 line-clamp-1">{t(item.description)}</div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* FULL-SCREEN MOBILE OVERLAY NAV DRAWER (Visible below lg) */}
+        {/* FULL-SCREEN MOBILE OVERLAY NAV DRAWER */}
         <AnimatePresence>
           {isMobileMenuOpen && (
-            <React.Fragment>
-              {/* Drawer Container (Using z-[99999] high-level fixed standalone view to prevent parent layout clipping/truncation) */}
-              <motion.div
-                key="mobile-drawer-container"
-                initial={{ opacity: 0, y: '-100%' }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: '-100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                className="fixed inset-0 h-screen w-screen bg-[#0d1117] z-[99999] p-6 flex flex-col lg:hidden overflow-y-auto"
-              >
-                {/* Header Row */}
-                <div className="flex items-center justify-between border-b border-gray-800 pb-5">
-                  <Link 
-                    href={`/${locale}`} 
-                    className="flex items-center gap-2 group"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg tracking-tight">
-                      RubikShop<span className="text-rubik-yellow">.az</span>
+            <motion.div
+              key="mobile-drawer-container"
+              initial={{ opacity: 0, y: '-100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="fixed inset-0 h-screen w-screen bg-[#0d1117] z-[99999] p-6 flex flex-col md:hidden overflow-y-auto text-white"
+            >
+              {/* Header Row */}
+              <div className="flex items-center justify-between border-b border-gray-800 pb-5">
+                <Link 
+                  href={`/${locale}`} 
+                  className="flex items-center gap-2 group"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg tracking-tight">
+                    RubikShop<span className="text-rubik-yellow">.az</span>
+                  </span>
+                </Link>
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                  aria-label="Bağla"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
+
+              {/* Body Content */}
+              <div className="flex-1 flex flex-col justify-between pt-6 pb-10 gap-8">
+                
+                {/* Navigation List */}
+                <nav className="flex flex-col">
+                  {[
+                    { label: 'Kataloq', href: `/${locale}/category` },
+                    { label: 'Alqoritmlər & Öyrənmə', href: `/${locale}?category=learning-content` },
+                    { label: 'Çatdırılma və Ödəniş', href: `/${locale}/faq` },
+                    { label: 'Haqqımızda', href: `/${locale}/pages/about` },
+                    { label: 'Əlaqə', href: `/${locale}/faq` },
+                  ].map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`block py-3 text-xl font-medium text-white border-b border-gray-800 transition-colors ${
+                        pathname === item.href || pathname.startsWith(item.href + '/')
+                          ? 'text-red-500 font-bold border-red-500/40'
+                          : 'hover:text-red-500'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+
+                {/* Language Selection & User state */}
+                <div className="space-y-6">
+                  {/* Dil Seçimi */}
+                  <div className="space-y-3">
+                    <span className="text-xs font-black uppercase tracking-wider text-gray-400 block">
+                      {t({ az: 'Dil seçimi', en: 'Language', ru: 'Язык' })}
                     </span>
-                  </Link>
-                  <button
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    aria-label="Bağla"
-                  >
-                    <X className="h-5 w-5 text-white" />
-                  </button>
-                </div>
-
-                {/* Body Content */}
-                <div className="flex-1 flex flex-col justify-between pt-6 pb-10 gap-8">
-                  
-                  {/* Navigation List */}
-                  <nav className="flex flex-col">
-                    {[
-                      { label: 'Kataloq', href: `/${locale}/category` },
-                      { label: 'Alqoritmlər & Öyrənmə', href: `/${locale}?category=learning-content` },
-                      { label: 'Çatdırılma və Ödəniş', href: `/${locale}/faq` },
-                      { label: 'Haqqımızda', href: `/${locale}/pages/about` },
-                      { label: 'Əlaqə', href: `/${locale}/faq` },
-                    ].map((item) => (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={`block py-3 text-xl font-medium text-white border-b border-gray-800 transition-colors ${
-                          pathname === item.href || pathname.startsWith(item.href + '/')
-                            ? 'text-rubik-brand font-bold border-rubik-brand/40'
-                            : 'hover:text-rubik-brand'
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                  </nav>
-
-                  {/* Language Selection & User state */}
-                  <div className="space-y-6">
-                    {/* Dil Seçimi */}
-                    <div className="space-y-3">
-                      <span className="text-xs font-black uppercase tracking-wider text-gray-400 block">
-                        {t({ az: 'Dil seçimi', en: 'Language', ru: 'Язык' })}
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1 rounded-xl border border-gray-800">
-                        {(['az', 'en', 'ru'] as const).map((lang) => (
-                          <button
-                            key={lang}
-                            onClick={() => {
-                              changeLanguage(lang);
-                              setIsMobileMenuOpen(false);
-                            }}
-                            className={`py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[40px] flex items-center justify-center cursor-pointer ${
-                              locale === lang
-                                ? 'bg-rubik-brand text-white shadow-soft-sm'
-                                : 'text-gray-300 hover:text-white hover:bg-white/5'
-                            }`}
-                          >
-                            {lang}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* User State & Action Panel */}
-                    <div className="space-y-3 pt-4 border-t border-gray-800/60">
-                      {mounted && user ? (
-                        <React.Fragment>
-                          <button
-                            onClick={() => {
-                              setIsMobileMenuOpen(false);
-                              handleAccountClick();
-                            }}
-                            className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
-                          >
-                            Şəxsi Kabinet
-                          </button>
-                          <button
-                            onClick={() => {
-                              setIsMobileMenuOpen(false);
-                              handleSignOut();
-                            }}
-                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 text-sm font-black rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer min-h-[44px]"
-                          >
-                            <LogOut className="h-4 w-4" />
-                            <span>Çıxış Et</span>
-                          </button>
-                        </React.Fragment>
-                      ) : (
+                    <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1 rounded-xl border border-gray-800">
+                      {(['az', 'en', 'ru'] as const).map((lang) => (
                         <button
+                          key={lang}
                           onClick={() => {
+                            changeLanguage(lang);
                             setIsMobileMenuOpen(false);
-                            openModal('login');
                           }}
-                          className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-rubik-brand text-white text-sm font-black rounded-xl hover:bg-rubik-brand-dark transition-colors cursor-pointer min-h-[44px]"
+                          className={`py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[40px] flex items-center justify-center cursor-pointer ${
+                            locale === lang
+                              ? 'bg-red-500 text-white shadow-soft-sm'
+                              : 'text-gray-300 hover:text-white hover:bg-white/5'
+                          }`}
                         >
-                          Giriş / Qeydiyyat
+                          {lang}
                         </button>
-                      )}
+                      ))}
                     </div>
                   </div>
 
+                  {/* User State & Action Panel */}
+                  <div className="space-y-3 pt-4 border-t border-gray-800/60">
+                    {mounted && user ? (
+                      <React.Fragment>
+                        <button
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            handleAccountClick();
+                          }}
+                          className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
+                        >
+                          Şəxsi Kabinet
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            handleSignOut();
+                          }}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 text-sm font-black rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer min-h-[44px]"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          <span>Çıxış Et</span>
+                        </button>
+                      </React.Fragment>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          openModal('login');
+                        }}
+                        className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-red-500 text-white text-sm font-black rounded-xl hover:bg-red-600 transition-colors cursor-pointer min-h-[44px]"
+                      >
+                        Giriş / Qeydiyyat
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </motion.div>
-            </React.Fragment>
+
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </header>
