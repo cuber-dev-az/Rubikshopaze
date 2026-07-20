@@ -534,9 +534,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
                   </div>
 
                   <div className="p-4 md:p-5 flex flex-col flex-grow space-y-2.5">
-                    <h3 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
+                    <h2 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
                       {product.title}
-                    </h3>
+                    </h2>
 
                     <div className="flex items-baseline gap-2 mt-auto">
                       <span className="text-base md:text-lg font-black text-foreground">
@@ -637,13 +637,13 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
             <span className="px-3 py-1 bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold rounded-full uppercase tracking-wider">
               {t({ az: 'MƏHDUD DƏST TEKLİFİ', en: 'LIMITED EDITION BUNDLE', ru: 'ЛИМИТИРОВАННЫЙ НАБОР' })}
             </span>
-            <h3 className="text-2xl lg:text-3xl font-black text-white">
+            <h2 className="text-2xl lg:text-3xl font-black text-white">
               {t({
                 az: 'Professional Speedcuber Başlanğıc Paketi!',
                 en: 'Professional Speedcuber Starter Pack!',
                 ru: 'Профессиональный стартовый набор спидкубера!'
               })}
-            </h3>
+            </h2>
             <p className="text-gray-300 text-xs md:text-sm leading-relaxed max-w-xl">
               {t({
                 az: 'Dəstə daxildir: MoYu Super RS3M V2 Maqnitli kub, GAN Lube Premium silikon yağlama maddəsi və Rubikshop sürətli masaüstü xalçası. Ayrı-ayrılıqda 82 AZN deyil, cəmi 59 AZN!',
@@ -767,9 +767,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           <div className="bg-rubik-charcoal border border-slate-800 rounded-xl p-8 lg:p-12 text-white text-center space-y-6 max-w-4xl mx-auto shadow-md">
             <Users className="h-10 w-10 text-rubik-brand mx-auto animate-bounce" />
             <div className="space-y-2">
-              <h3 className="text-2xl font-black">
+              <h2 className="text-2xl font-black">
                 {t({ az: 'Sponsorluq Proqramına Qoşulun!', en: 'Apply for Team Sponsorship!', ru: 'Подайте заявку на спонсорство!' })}
-              </h3>
+              </h2>
               <p className="text-xs md:text-sm text-indigo-100 max-w-xl mx-auto leading-relaxed">
                 {t({
                   az: 'Siz rəsmi WCA yarışlarında iştirak edirsiniz? Ölkə rekordçusunuz yoxsa gələcək vəd edən gənc speedcubersiniz? Rubikshop AZ sizə peşəkar kub dəstəyi təklif edir.',
@@ -789,9 +789,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
               <span className="px-3 py-1 bg-rubik-green/15 text-rubik-green text-[10px] font-black rounded-full uppercase tracking-wider">
                 CUBING ACADEMY
               </span>
-              <h3 className="text-2xl lg:text-3xl font-black text-foreground">
+              <h2 className="text-2xl lg:text-3xl font-black text-foreground">
                 {t({ az: 'Kubun Sirrlərini Pulsuz Öyrənin!', en: 'Master the Cube for Free!', ru: 'Освойте сборку кубика бесплатно!' })}
-              </h3>
+              </h2>
               <p className="text-muted-foreground text-xs md:text-sm leading-relaxed">
                 {t({
                   az: 'Peşəkar speedcubing-ə ilk addımlarınızı atın. Bizim öyrədici materiallarımız və alqoritm cədvəllərimiz vasitəsilə 3x3 kubu 1 dəqiqənin altında həll etməyi asanlıqla öyrənin. Dərsliklər və WCA rəsmi qaydaları burada.',
@@ -845,9 +845,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
         <div className="space-y-10">
           <div className="flex items-end justify-between border-b border-border pb-4">
             <div>
-              <h3 className="text-2xl md:text-3xl font-black text-foreground font-sans tracking-tight">
-                {t({ az: 'Bloq və Xəbərlər', en: 'Blog & News Hub', ru: 'Блог и центр новостей' })}
-              </h3>
+              <h2 className="text-2xl md:text-3xl font-black text-foreground font-sans tracking-tight">
+                {t({ az: 'Bloq və Xəbərnəvislik', en: 'Blog & News Hub', ru: 'Блог и центр новостей' })}
+              </h2>
               <p className="text-muted-foreground text-sm mt-1">
                 {t({ az: 'Speedcubing sənətinin sirləri, gərginlik ayarları və son xəbərlər.', en: 'Tips, setup tutorials, and major speedcubing news.', ru: 'Советы, руководства по настройке и спидкубинг-новости.' })}
               </p>
@@ -871,9 +871,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
                 </div>
                 <div className="p-6 flex flex-col flex-grow space-y-3">
                   <span className="text-[10px] font-bold text-rubik-brand tracking-wider">{post.date}</span>
-                  <h4 className="text-base font-bold text-foreground group-hover:text-rubik-brand transition-colors line-clamp-2 leading-snug">
+                  <h3 className="text-base font-bold text-foreground group-hover:text-rubik-brand transition-colors line-clamp-2 leading-snug">
                     {t(post.title)}
-                  </h4>
+                  </h3>
                   <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-2">
                     {t(post.desc)}
                   </p>
@@ -887,9 +887,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
         <div className="max-w-3xl mx-auto space-y-8">
           <div className="text-center space-y-2">
             <HelpCircle className="h-8 w-8 text-rubik-brand mx-auto animate-pulse" />
-            <h3 className="text-2xl md:text-3xl font-black text-foreground font-sans">
+            <h2 className="text-2xl md:text-3xl font-black text-foreground font-sans">
               {t({ az: 'Tez-Tez Verilən Suallar', en: 'Frequently Asked Questions', ru: 'Часто задаваемые вопросы' })}
-            </h3>
+            </h2>
           </div>
 
           <div className="space-y-3.5">
@@ -932,13 +932,13 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
         <div className="bg-gradient-to-br from-rubik-brand to-rubik-brand-dark rounded-xl p-8 lg:p-16 text-white text-center space-y-6 shadow-md max-w-4xl mx-auto relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]"></div>
           <div className="relative z-10 space-y-4">
-            <h3 className="text-3xl md:text-4xl font-black leading-tight">
+            <h2 className="text-3xl md:text-4xl font-black leading-tight">
               {t({
                 az: 'Saniyələrinizi Qənaət Etməyə Hazırsınız?',
                 en: 'Ready to Save Your Precious Seconds?',
                 ru: 'Готовы сэкономить драгоценные секунды?'
               })}
-            </h3>
+            </h2>
             <p className="text-sm md:text-base text-white/95 max-w-lg mx-auto leading-relaxed">
               {t({
                 az: 'Daha yaxşı kəsiklər, daha hamar fırlanma mexanizmi və peşəkar tənzimləmə sayəsində növbəti PB-nizi təyin edin.',

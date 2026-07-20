@@ -95,9 +95,9 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         )}
       </div>
       <div className="p-4 flex flex-col flex-grow">
-        <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
+        <h2 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem]">
           {product.title}
-        </h3>
+        </h2>
         
         {product.discount_percent && product.discount_percent > 0 ? (
           <div className="mt-2 flex items-baseline gap-2">

@@ -231,9 +231,9 @@ export function CategoryClientContent({
             <span className="px-2.5 py-1 bg-white/10 text-white text-[10px] font-black tracking-widest rounded-full uppercase">
               SEZON ENDİRİMİ
             </span>
-            <h3 className="text-lg md:text-2xl font-black">
+            <h2 className="text-lg md:text-2xl font-black">
               Bütün GAN və MoYu flaqmanlarına xüsusi 15% Endirim!
-            </h3>
+            </h2>
             <p className="text-xs text-blue-100 max-w-lg">
               Sifariş zamanı rəsmi Rubikshop Premium Setup xidmətindən pulsuz yararlanın. Peşəkarlarımız sizin üçün kubu nizama salacaq.
             </p>
@@ -248,10 +248,10 @@ export function CategoryClientContent({
           {/* A. Sticky Filter Panel (Desktop only) */}
           <aside className="hidden lg:block lg:col-span-3 sticky top-28 bg-card border border-border rounded-2xl p-6 shadow-soft-sm space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 className="font-bold text-foreground flex items-center gap-2">
+              <h2 className="font-bold text-lg text-foreground flex items-center gap-2">
                 <Sliders className="h-4 w-4 text-rubik-brand" />
                 <span>Filtrlər</span>
-              </h3>
+              </h2>
               {(selectedBrands.length > 0 || selectedMechanics.length > 0 || minPrice > 0 || maxPrice < 250) && (
                 <button
                   onClick={clearAllFilters}
@@ -388,7 +388,7 @@ export function CategoryClientContent({
                   <Inbox className="h-10 w-10" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-foreground">Axtarışa uyğun məhsul tapılmadı</h3>
+                  <h2 className="text-xl font-bold text-foreground">Axtarışa uyğun məhsul tapılmadı</h2>
                   <p className="text-sm text-muted-foreground max-w-sm leading-relaxed mx-auto">
                     Seçdiyiniz qiymət və ya brend filtri üzrə anbarda heç bir məhsul yoxdur. Zəhmət olmasa filtrləri təmizləyib yenidən sınayın.
                   </p>
@@ -432,9 +432,9 @@ export function CategoryClientContent({
                         <span className="text-[10px] uppercase font-bold text-rubik-brand tracking-wider">
                           {product.brand} • {product.mechanics === 'maglev' ? 'MagLev' : product.mechanics === 'ball-core' ? 'Ball Core' : 'Magnetic'}
                         </span>
-                        <h3 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
+                        <h2 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
                           {product.title}
-                        </h3>
+                        </h2>
 
                         <div className="flex items-baseline gap-2 mt-auto">
                           <span className="text-base md:text-lg font-black text-foreground">
@@ -486,9 +486,9 @@ export function CategoryClientContent({
 
         {/* SEO Category Article & Information block */}
         <section className="bg-card border border-border rounded-3xl p-8 lg:p-12 space-y-6">
-          <h3 className="text-xl md:text-2xl font-black text-foreground">
+          <h2 className="text-xl md:text-2xl font-black text-foreground">
             {categoryTitle} Haqqında Ətraflı Məlumat
-          </h3>
+          </h2>
           <p className="text-muted-foreground text-xs md:text-sm leading-relaxed">
             Hər bir sürətli həll (speedcubing) həvəskarının ehtiyac duyduğu premium modellər Rubikshop-da bir araya gəlir. GAN, MoYu və QiYi brendlərinin flaqman məhsulları maqnit gücü və sürtünmə dərəcəsinə görə xüsusi olaraq qruplaşdırılmışdır. Bu məhsulların hamısı Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və rəsmi turnirlərdə istifadə edilə bilər.
           </p>
@@ -506,9 +506,9 @@ export function CategoryClientContent({
 
         {/* Targeted Accordion FAQ block */}
         <section className="space-y-6">
-          <h3 className="text-xl md:text-2xl font-black text-foreground text-center">
+          <h2 className="text-xl md:text-2xl font-black text-foreground text-center">
             Məhsullar Haqqında Sual-Cavablar
-          </h3>
+          </h2>
           <div className="max-w-3xl mx-auto space-y-3">
             {[
               { q: 'Bizdə satılan məhsullar zəmanətlidir?', a: 'Bəli, Rubikshop-da satılan hər bir professional sürətli kub modelinə rəsmi istehsalçı və orijinallıq zəmanəti verilir.' },

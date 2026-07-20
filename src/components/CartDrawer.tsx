@@ -53,6 +53,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+            aria-hidden="true"
           />
 
           {/* Slider Panel */}
@@ -73,6 +74,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                 <button
                   onClick={onClose}
                   className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all duration-200 cursor-pointer"
+                  aria-label="Səbəti bağla"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -148,6 +150,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                             <button
                               onClick={() => removeItem(item.id)}
                               className="text-muted-foreground hover:text-red-500 p-0.5 rounded-lg hover:bg-muted transition-all cursor-pointer shrink-0"
+                              aria-label="Məhsulu sil"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -161,6 +164,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                                 className="p-1 px-2 text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
+                                aria-label="Sayı azalt"
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
@@ -170,6 +174,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                               <button
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                 className="p-1 px-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                                aria-label="Sayı artır"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>

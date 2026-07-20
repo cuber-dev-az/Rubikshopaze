@@ -48,6 +48,7 @@ export function Footer({ dict, locale }: FooterProps) {
           <form onSubmit={handleSubscribe} className="w-full max-w-md flex flex-col sm:flex-row gap-2.5">
             <input
               type="email"
+              aria-label="E-poçt ünvanı"
               placeholder="E-poçt ünvanınızı daxil edin"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

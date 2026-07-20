@@ -68,8 +68,20 @@ const config: Config = {
         border: 'var(--border)',
         input: 'var(--input)',
         ring: 'var(--ring)',
+        gray: {
+          50: '#F9FAFB',
+          100: '#F3F4F6',
+          200: '#E5E7EB',
+          300: '#D1D5DB',
+          400: '#4B5563', // Elevated for WCAG AA compliance (was #9CA3AF)
+          500: '#374151', // Elevated for WCAG AA compliance (was #6B7280)
+          600: '#252F3F',
+          700: '#1F2937',
+          800: '#111827',
+          900: '#030712',
+        },
         success: {
-          DEFAULT: '#10B981',
+          DEFAULT: '#009B48', // Branded Rubik Green
           foreground: '#FFFFFF',
         },
         warning: {

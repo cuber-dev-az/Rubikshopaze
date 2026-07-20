@@ -65,12 +65,12 @@ function SuccessContent() {
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-soft-xl">
         
         {/* Success Header Visuals */}
-        <div className="bg-gradient-to-br from-green-500/10 via-emerald-500/[0.02] to-background p-8 md:p-12 text-center space-y-4 border-b border-border">
+        <div className="bg-gradient-to-br from-rubik-green/10 via-rubik-green/[0.02] to-background p-8 md:p-12 text-center space-y-4 border-b border-border">
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', damping: 15 }}
-            className="inline-flex p-4 bg-green-500 text-white rounded-full shadow-soft-lg"
+            className="inline-flex p-4 bg-rubik-green text-white rounded-full shadow-soft-lg"
           >
             <CheckCircle className="h-10 w-10 animate-pulse" />
           </motion.div>
@@ -87,7 +87,7 @@ function SuccessContent() {
               href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white font-black text-xs rounded-xl transition-all shadow-soft-md"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-rubik-green hover:bg-rubik-green-dark text-white font-black text-xs rounded-xl transition-all shadow-soft-md"
             >
               <PhoneCall className="h-4 w-4" />
               <span>WhatsApp ilə dərhal əlaqə qur</span>

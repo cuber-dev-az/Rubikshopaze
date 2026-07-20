@@ -13,7 +13,7 @@
   --card: #FFFFFF;
   --card-foreground: #121212;
   --muted: #F3F4F6;
-  --muted-foreground: #4B5563;
+  --muted-foreground: #374151;
   --border: #E5E7EB;
   --input: #E5E7EB;
   --ring: #D9383A;
@@ -51,8 +51,9 @@
   select:focus-visible,
   textarea:focus-visible,
   [tabindex="0"]:focus-visible {
-    outline: none !important;
-    box-shadow: 0 0 0 2px #0d1117, 0 0 0 4px #f97316 !important;
+    outline: 3px solid #ea580c !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
   }
 }
 
