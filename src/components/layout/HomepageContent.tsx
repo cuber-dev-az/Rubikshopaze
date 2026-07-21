@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
+import { createClient } from '@/lib/supabase/client';
 
 interface Product {
   id: string;
@@ -54,12 +55,21 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
   const [activeTab, setActiveTab] = React.useState<'new' | 'best' | 'sale'>('new');
   const [activeFaq, setActiveFaq] = React.useState<number | null>(null);
   const [currentBannerIndex, setCurrentBannerIndex] = React.useState(0);
+
+  // Dynamic DB States
+  const [heroProduct, setHeroProduct] = React.useState<any | null>(null);
+  const [bundleProduct, setBundleProduct] = React.useState<any | null>(null);
+  const [activeCampaign, setActiveCampaign] = React.useState<any | null>(null);
+  const [approvedReviews, setApprovedReviews] = React.useState<any[]>([]);
+  const [dbLoading, setDbLoading] = React.useState(true);
+
   React.useEffect(() => {
     if (banners && banners.length > 1) {
       const interval = setInterval(() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length), 5000);
       return () => clearInterval(interval);
     }
   }, [banners]);
+
   const addItem = useCartStore((state) => state.addItem);
 
   // Localization translator helper
@@ -102,6 +112,312 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
       quantity: 1,
       image_url: product.image_url,
     });
+  };
+
+  const handleAddBundleToCart = (bundle: any) => {
+    if (bundle.stock_quantity <= 0) return;
+    addItem({
+      id: bundle.id,
+      title: bundle.title,
+      price_azn: bundle.price_azn,
+      quantity: 1,
+      image_url: bundle.image_url,
+    });
+  };
+
+  // Fetch dynamic real-time data from Supabase client
+  React.useEffect(() => {
+    async function fetchDbData() {
+      try {
+        const supabaseClient = createClient();
+
+        // 1. Fetch Approved Reviews
+        const { data: reviewsData, error: reviewsError } = await supabaseClient
+          .from('reviews')
+          .select('id, rating, comment, created_at, profiles(full_name, avatar_url), products(title_az, title_en, title_ru)')
+          .eq('is_approved', true)
+          .order('created_at', { ascending: false });
+
+        if (!reviewsError && reviewsData) {
+          setApprovedReviews(reviewsData);
+        }
+
+        // 2. Fetch Featured / Recent Product for Hero Preview Card
+        const { data: featuredProducts, error: featuredError } = await supabaseClient
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false });
+
+        let chosenHero: any = null;
+        if (!featuredError && featuredProducts && featuredProducts.length > 0) {
+          chosenHero = featuredProducts[0];
+        } else {
+          const { data: recentProducts, error: recentError } = await supabaseClient
+            .from('products')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (!recentError && recentProducts && recentProducts.length > 0) {
+            chosenHero = recentProducts[0];
+          }
+        }
+
+        if (chosenHero) {
+          const titleKey = `title_${locale}` as keyof typeof chosenHero;
+          const descKey = `description_${locale}` as keyof typeof chosenHero;
+
+          setHeroProduct({
+            id: chosenHero.id,
+            title: (chosenHero[titleKey] || chosenHero.title_az || '') as string,
+            description: (chosenHero[descKey] || chosenHero.description_az || '') as string,
+            price_azn: Number(chosenHero.price_azn || 0),
+            image_url: chosenHero.image_url || 'https://picsum.photos/seed/default/600/600',
+            stock_quantity: Number(chosenHero.stock_quantity || 0),
+            compare_at_price_azn: chosenHero.compare_at_price_azn ? Number(chosenHero.compare_at_price_azn) : undefined,
+            original_price_azn: chosenHero.original_price_azn ? Number(chosenHero.original_price_azn) : undefined,
+            discount_percent: chosenHero.discount_percent ? Number(chosenHero.discount_percent) : undefined,
+            tags: chosenHero.tags || [],
+          });
+        }
+
+        // 3. Fetch Bundle Products (Category: bundles)
+        const { data: categoriesData } = await supabaseClient
+          .from('categories')
+          .select('id, slug_az, slug_en, slug_ru, name_az, name_en, name_ru');
+
+        let bundleCatIds: string[] = [];
+        if (categoriesData) {
+          bundleCatIds = categoriesData
+            .filter(c => 
+              c.slug_az?.toLowerCase() === 'bundles' ||
+              c.slug_en?.toLowerCase() === 'bundles' ||
+              c.slug_ru?.toLowerCase() === 'bundles' ||
+              c.name_az?.toLowerCase().includes('dəst') ||
+              c.name_en?.toLowerCase().includes('bundle')
+            )
+            .map(c => c.id);
+        }
+
+        let foundBundle: any = null;
+        if (bundleCatIds.length > 0) {
+          const { data: prodCats } = await supabaseClient
+            .from('product_categories')
+            .select('product_id')
+            .in('category_id', bundleCatIds);
+
+          if (prodCats && prodCats.length > 0) {
+            const prodIds = prodCats.map(pc => pc.product_id);
+            const { data: pData } = await supabaseClient
+              .from('products')
+              .select('*')
+              .eq('is_active', true)
+              .in('id', prodIds)
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (pData && pData.length > 0) {
+              const bProd = pData[0];
+              const titleKey = `title_${locale}` as keyof typeof bProd;
+              const descKey = `description_${locale}` as keyof typeof bProd;
+
+              foundBundle = {
+                id: bProd.id,
+                title: (bProd[titleKey] || bProd.title_az || '') as string,
+                description: (bProd[descKey] || bProd.description_az || '') as string,
+                price_azn: Number(bProd.price_azn || 0),
+                image_url: bProd.image_url || 'https://picsum.photos/seed/default/600/600',
+                stock_quantity: Number(bProd.stock_quantity || 0),
+                compare_at_price_azn: bProd.compare_at_price_azn ? Number(bProd.compare_at_price_azn) : undefined,
+                original_price_azn: bProd.original_price_azn ? Number(bProd.original_price_azn) : undefined,
+                discount_percent: bProd.discount_percent ? Number(bProd.discount_percent) : undefined,
+              };
+            }
+          }
+        }
+        setBundleProduct(foundBundle);
+
+        // 4. Fetch Active Campaigns
+        const nowStr = new Date().toISOString();
+        const { data: campaignsData } = await supabaseClient
+          .from('campaigns')
+          .select('*')
+          .eq('is_active', true)
+          .lte('start_date', nowStr)
+          .gte('end_date', nowStr)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (campaignsData && campaignsData.length > 0) {
+          setActiveCampaign(campaignsData[0]);
+        }
+
+      } catch (err) {
+        console.error('Error fetching dynamic homepage db data:', err);
+      } finally {
+        setDbLoading(false);
+      }
+    }
+
+    fetchDbData();
+  }, [locale]);
+
+  const renderPromotionalSection = () => {
+    if (dbLoading) return null;
+
+    if (!bundleProduct && !activeCampaign) {
+      return null;
+    }
+
+    // Prefer bundleProduct if it exists
+    if (bundleProduct) {
+      const originalPrice = bundleProduct.original_price_azn || bundleProduct.compare_at_price_azn;
+      const hasSale = originalPrice && originalPrice > bundleProduct.price_azn;
+
+      return (
+        <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="bg-gradient-to-r from-rubik-charcoal to-rubik-charcoal-dark border border-border/10 rounded-xl p-8 lg:p-12 shadow-md grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-4">
+              <span className="px-3 py-1 bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold rounded-full uppercase tracking-wider">
+                {t({ az: 'MƏHDUD DƏST TEKLİFİ', en: 'LIMITED EDITION BUNDLE', ru: 'ЛИМИТИРОВАННЫЙ НАБОР' })}
+              </span>
+              <h2 className="text-2xl lg:text-3xl font-black text-white">
+                {bundleProduct.title}
+              </h2>
+              <p className="text-gray-300 text-xs md:text-sm leading-relaxed max-w-xl">
+                {bundleProduct.description || t({
+                  az: 'Xüsusi endirimlə təqdim olunan kub dəstləri.',
+                  en: 'Exclusive puzzle packages available for a limited time.',
+                  ru: 'Эксклюзивные наборы кубиков, доступные в течение ограниченного времени.'
+                })}
+              </p>
+              <div className="flex items-baseline gap-3 pt-2">
+                <span className="text-2xl md:text-3xl font-black text-rubik-brand">{bundleProduct.price_azn.toFixed(2)} AZN</span>
+                {hasSale && (
+                  <span className="text-sm text-gray-500 line-through">{(originalPrice as number).toFixed(2)} AZN</span>
+                )}
+              </div>
+              <button
+                onClick={() => handleAddBundleToCart(bundleProduct)}
+                disabled={bundleProduct.stock_quantity <= 0}
+                className="px-6 py-3 bg-rubik-brand hover:bg-rubik-brand-dark disabled:bg-muted disabled:text-muted-foreground text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span>{bundleProduct.stock_quantity <= 0 ? dict.product.out_of_stock : t({ az: 'Paketi Səbətə Əlavə Et', en: 'Add Bundle to Cart', ru: 'Добавить набор в корзину' })}</span>
+              </button>
+            </div>
+            <div className="lg:col-span-5 flex justify-center">
+              <div className="relative w-64 h-64 bg-black/40 rounded-2xl border border-border/10 p-4 flex items-center justify-center">
+                <Image
+                  src={bundleProduct.image_url}
+                  alt={bundleProduct.title}
+                  fill
+                  referrerPolicy="no-referrer"
+                  className="object-contain p-6 hover:scale-105 transition-transform"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // Active Campaign display
+    if (activeCampaign) {
+      return (
+        <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="bg-gradient-to-r from-rubik-charcoal to-rubik-charcoal-dark border border-border/10 rounded-xl p-8 lg:p-12 shadow-md text-center max-w-4xl mx-auto space-y-6">
+            <span className="px-3 py-1 bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold rounded-full uppercase tracking-wider animate-pulse">
+              {t({ az: 'XÜSUSİ KAMPANİYA', en: 'SPECIAL CAMPAIGN', ru: 'СПЕЦИАЛЬНАЯ КАМПАНИЯ' })}
+            </span>
+            <h2 className="text-3xl lg:text-4xl font-black text-white">
+              {activeCampaign.name}
+            </h2>
+            <p className="text-gray-300 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
+              {t({
+                az: `Mağazamızdakı məhsullara ${activeCampaign.discount_percent}%-dək möhtəşəm endirim kampaniyası başladı! Fürsəti qaçırmayın.`,
+                en: `A magnificent campaign has started with up to ${activeCampaign.discount_percent}% off on select products!`,
+                ru: `Началась великолепная кампания со скидками до ${activeCampaign.discount_percent}% на выделенные товары!`
+              })}
+            </p>
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  const element = document.getElementById('catalog-grid');
+                  element?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-8 py-4 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2 mx-auto cursor-pointer"
+              >
+                <span>{t({ az: 'Kampaniyadakı Məhsulları Kəşf Et', en: 'Explore Campaign Products', ru: 'Посмотреть товары кампании' })}</span>
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    return null;
+  };
+
+  const renderReviewsSection = () => {
+    if (dbLoading || approvedReviews.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="space-y-12">
+        <div className="text-center space-y-3">
+          <h2 className="text-3xl font-black text-foreground font-sans tracking-tight">
+            {t({ az: 'Yerli Speedcuberlərin Rəyləri', en: 'Loved by Local Cubers', ru: 'Отзывы местных спидкуберов' })}
+          </h2>
+          <p className="text-muted-foreground text-sm max-w-xl mx-auto">
+            {t({
+              az: 'Azərbaycanın fərqli yaş qruplarından olan rəsmi yarış iştirakçılarının rəyləri.',
+              en: 'Hear from official Azerbaijani tournament speedcubers who solve with our gear.',
+              ru: 'Отзывы официальных участников соревнований из Азербайджана.'
+            })}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {approvedReviews.slice(0, 6).map((review, idx) => {
+            const userName = review.profiles?.full_name || t({ az: 'Anonim Müştəri', en: 'Anonymous Customer', ru: 'Анонимный клиент' });
+            const productName = review.products ? (review.products[`title_${locale}`] || review.products.title_az) : '';
+            
+            return (
+              <div key={review.id || idx} className="bg-card border border-border p-6 rounded-3xl relative shadow-soft-sm flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="flex gap-1 text-rubik-yellow">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        className={`h-4 w-4 ${i < review.rating ? 'fill-current' : 'text-gray-300 dark:text-gray-700'}`} 
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm text-foreground/80 italic leading-relaxed">&quot;{review.comment}&quot;</p>
+                </div>
+                <div className="flex items-center justify-between border-t border-border/60 pt-4 mt-6">
+                  <div>
+                    <span className="block text-sm font-bold text-foreground">{userName}</span>
+                    {productName && (
+                      <span className="block text-[10px] text-muted-foreground line-clamp-1">{productName}</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-black bg-rubik-brand/10 text-rubik-brand px-2.5 py-1 rounded-md">
+                    ★ {review.rating}.0
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   // FAQ contents
@@ -168,7 +484,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
       desc: {
         az: 'GAN 14, MoYu WeiLong V9 və Tornado V3 modellərinin ətraflı testi. Hansı kub sizin sürətiniz üçün daha uyğundur?',
         en: 'In-depth test of GAN 14, MoYu WeiLong V9, and Tornado V3 models. Which cube matches your turning style best?',
-        ru: 'Подробный тест моделей GAN 14, MoYu WeiLong V9 и Tornado V3. Какой куб лучше всего подходит для вашей скорости?'
+        ru: 'Подробный тест моделей GAN 14, МоYu WeiLong V9 и Tornado V3. Какой куб лучше всего подходит для вашей скорости?'
       },
       date: '11.07.2026',
       readTime: '5 min',
@@ -280,7 +596,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           </div>
         ) : (
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-            <div className="lg:col-span-7 space-y-6 md:space-y-8">
+            <div className={`${heroProduct ? 'lg:col-span-7' : 'lg:col-span-12 text-center flex flex-col items-center justify-center'} space-y-6 md:space-y-8`}>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold uppercase tracking-wider animate-pulse">
                 <Sparkles className="h-4 w-4" />
                 <span>{t({ az: 'Azərbaycan Speedcubing Flaqmanı', en: 'Azerbaijan Speedcubing Flagship', ru: 'Флагман Спидкубинга в Азербайджане' })}</span>
@@ -307,7 +623,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
                 })}
               </p>
 
-              <div className="flex flex-wrap items-center gap-4 pt-2">
+              <div className="flex flex-wrap items-center gap-4 pt-2 justify-center lg:justify-start">
                 <button
                   onClick={() => {
                     const element = document.getElementById('catalog-grid');
@@ -330,7 +646,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
               </div>
 
               {/* Quick Stats Banner */}
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border/10 max-w-lg">
+              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border/10 max-w-lg w-full">
                 <div>
                   <span className="block text-2xl md:text-3xl font-black text-rubik-brand font-mono">24h</span>
                   <span className="text-xs text-gray-400 font-sans">{t({ az: 'Sürətli Çatdırılma', en: 'Fast Delivery', ru: 'Быстрая доставка' })}</span>
@@ -346,60 +662,52 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
               </div>
             </div>
 
-            {/* Right-side high-tech preview card */}
-            <div className="lg:col-span-5 flex justify-center">
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, type: 'spring' }}
-                className="w-full max-w-sm bg-gradient-to-b from-rubik-charcoal-light to-rubik-charcoal border border-border/20 rounded-3xl p-6 shadow-soft-2xl relative"
-              >
-                <div className="absolute top-4 right-4 bg-rubik-yellow/15 border border-rubik-yellow/40 text-rubik-yellow text-[10px] font-black uppercase px-2 py-1 rounded-md">
-                  HOT FLAGSHIP
-                </div>
+            {/* Dynamic Featured Hero Product Card slot */}
+            {heroProduct ? (
+              <div className="lg:col-span-5 flex justify-center">
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, type: 'spring' }}
+                  className="w-full max-w-sm bg-gradient-to-b from-rubik-charcoal-light to-rubik-charcoal border border-border/20 rounded-3xl p-6 shadow-soft-2xl relative"
+                >
+                  <div className="absolute top-4 right-4 bg-rubik-yellow/15 border border-rubik-yellow/40 text-rubik-yellow text-[10px] font-black uppercase px-2 py-1 rounded-md">
+                    {t({ az: 'FLAQMAN', en: 'FLAGSHIP', ru: 'ФЛАГМАН' })}
+                  </div>
 
-                <div className="relative aspect-square w-full bg-black/30 rounded-2xl overflow-hidden p-4 mb-5 flex items-center justify-center">
-                  <Image
-                    src="https://picsum.photos/seed/flagship3x3/500/500"
-                    alt="Flagship Speedcube"
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-contain p-6 transform hover:rotate-12 transition-transform duration-500"
-                  />
-                </div>
+                  <div className="relative aspect-square w-full bg-black/30 rounded-2xl overflow-hidden p-4 mb-5 flex items-center justify-center">
+                    <Image
+                      src={heroProduct.image_url}
+                      alt={heroProduct.title}
+                      fill
+                      referrerPolicy="no-referrer"
+                      className="object-contain p-6 transform hover:rotate-12 transition-transform duration-500"
+                    />
+                  </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-bold text-white leading-tight">GAN 14 MagLev Pro 3x3</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">360° Ball-Core | UV-Coated</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <h3 className="text-lg font-bold text-white leading-tight line-clamp-1">{heroProduct.title}</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                          {heroProduct.description || t({ az: 'Premium Sürət Kubu', en: 'Premium Speedcube', ru: 'Премиум кубик' })}
+                        </p>
+                      </div>
+                      <span className="text-xl font-black text-rubik-brand shrink-0">{heroProduct.price_azn.toFixed(2)} AZN</span>
                     </div>
-                    <span className="text-xl font-black text-rubik-brand">159.00 AZN</span>
-                  </div>
 
-                  <div className="flex flex-wrap gap-1.5 pt-1.5">
-                    <span className="px-2 py-0.5 bg-black/40 text-gray-300 text-[10px] font-bold rounded">MagLev</span>
-                    <span className="px-2 py-0.5 bg-black/40 text-gray-300 text-[10px] font-bold rounded">UV Coated</span>
-                    <span className="px-2 py-0.5 bg-black/40 text-gray-300 text-[10px] font-bold rounded">Ball-Core</span>
-                    <span className="px-2 py-0.5 bg-black/40 text-gray-300 text-[10px] font-bold rounded">Adjustable</span>
+                    <button
+                      onClick={() => handleAddToCart(heroProduct)}
+                      disabled={heroProduct.stock_quantity <= 0}
+                      className="w-full mt-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>{heroProduct.stock_quantity <= 0 ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() => handleAddToCart({
-                      id: 'gan-14-pro-flagship',
-                      title: 'GAN 14 MagLev Pro 3x3 Speedcube',
-                      price_azn: 159.00,
-                      image_url: 'https://picsum.photos/seed/flagship3x3/500/500',
-                      stock_quantity: 4
-                    })}
-                    className="w-full mt-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <ShoppingBag className="h-4 w-4" />
-                    <span>{dict.product.add_to_cart}</span>
-                  </button>
-                </div>
-              </motion.div>
-            </div>
+                </motion.div>
+              </div>
+            ) : null}
           </div>
         )}
       </section>
@@ -489,7 +797,6 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           </div>
 
           {/* Product Cards Loop Grid */}
-
           {getActiveProducts().length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 px-4 text-center border border-dashed border-border rounded-2xl bg-muted/20">
               <Sparkles className="w-12 h-12 text-muted-foreground mb-4 opacity-50" />
@@ -503,79 +810,78 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {getActiveProducts().map((product) => {
+                const isOutOfStock = product.stock_quantity <= 0;
+                const originalPrice = product.original_price_azn || product.compare_at_price_azn;
+                const hasSale = originalPrice && originalPrice > product.price_azn;
+                const discountPercent = hasSale ? Math.round(((originalPrice - product.price_azn) / originalPrice) * 100) : 0;
+                return (
+                  <div
+                    key={product.id}
+                    className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group"
+                  >
+                    <div className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
+                      <Image
+                        src={product.image_url}
+                        alt={product.title}
+                        fill
+                        referrerPolicy="no-referrer"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                        className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
+                      />
 
-              const isOutOfStock = product.stock_quantity <= 0;
-              const originalPrice = product.original_price_azn || product.compare_at_price_azn;
-              const hasSale = originalPrice && originalPrice > product.price_azn;
-              const discountPercent = hasSale ? Math.round(((originalPrice - product.price_azn) / originalPrice) * 100) : 0;
-              return (
-                <div
-                  key={product.id}
-                  className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group"
-                >
-                  <div className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
-                    <Image
-                      src={product.image_url}
-                      alt={product.title}
-                      fill
-                      referrerPolicy="no-referrer"
-                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                      className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
-                    />
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
+                          <span className="text-white text-xs font-black tracking-wider px-3 py-1 bg-red-600 rounded-lg">
+                            {dict.product.out_of_stock}
+                          </span>
+                        </div>
+                      )}
 
-                    {isOutOfStock && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
-                        <span className="text-white text-xs font-black tracking-wider px-3 py-1 bg-red-600 rounded-lg">
-                          {dict.product.out_of_stock}
-                        </span>
-                      </div>
-                    )}
-
-                    {hasSale && (
-                      <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-soft-sm">
-                        -{discountPercent}% ENDİRİM
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-4 md:p-5 flex flex-col flex-grow space-y-2.5">
-                    <h2 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
-                      {product.title}
-                    </h2>
-
-                    <div className="flex items-baseline gap-2 mt-auto">
-                      <span className="text-base md:text-lg font-black text-foreground">
-                        {product.price_azn.toFixed(2)} AZN
-                      </span>
                       {hasSale && (
-                        <span className="text-xs text-muted-foreground line-through">
-                          {originalPrice.toFixed(2)} AZN
-                        </span>
+                        <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-soft-sm">
+                          -{discountPercent}% ENDİRİM
+                        </div>
                       )}
                     </div>
 
-                    <button
-                      onClick={() => handleAddToCart(product)}
-                      disabled={isOutOfStock}
-                      className={`w-full py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        isOutOfStock
-                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                          : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white active:scale-95'
-                      }`}
-                    >
-                      <ShoppingBag className="h-4 w-4" />
-                      <span>{isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
-                    </button>
+                    <div className="p-4 md:p-5 flex flex-col flex-grow space-y-2.5">
+                      <h2 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
+                        {product.title}
+                      </h2>
+
+                      <div className="flex items-baseline gap-2 mt-auto">
+                        <span className="text-base md:text-lg font-black text-foreground">
+                          {product.price_azn.toFixed(2)} AZN
+                        </span>
+                        {hasSale && (
+                          <span className="text-xs text-muted-foreground line-through">
+                            {originalPrice.toFixed(2)} AZN
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        disabled={isOutOfStock}
+                        className={`w-full py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          isOutOfStock
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                            : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white active:scale-95'
+                        }`}
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        <span>{isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
           )}
         </div>
       </section>
 
-      {/* 4. PROMO BANNERS SECTION */}
+      {/* 4. PROMO BANNERS & BUNDLE SECTION */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Shipping Banner */}
@@ -636,56 +942,8 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
           </div>
         </div>
 
-        {/* Special Bundle Section */}
-        <div className="bg-gradient-to-r from-rubik-charcoal to-rubik-charcoal-dark border border-border/10 rounded-xl p-8 lg:p-12 shadow-md grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          <div className="lg:col-span-7 space-y-4">
-            <span className="px-3 py-1 bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold rounded-full uppercase tracking-wider">
-              {t({ az: 'MƏHDUD DƏST TEKLİFİ', en: 'LIMITED EDITION BUNDLE', ru: 'ЛИМИТИРОВАННЫЙ НАБОР' })}
-            </span>
-            <h2 className="text-2xl lg:text-3xl font-black text-white">
-              {t({
-                az: 'Professional Speedcuber Başlanğıc Paketi!',
-                en: 'Professional Speedcuber Starter Pack!',
-                ru: 'Профессиональный стартовый набор спидкубера!'
-              })}
-            </h2>
-            <p className="text-gray-300 text-xs md:text-sm leading-relaxed max-w-xl">
-              {t({
-                az: 'Dəstə daxildir: MoYu Super RS3M V2 Maqnitli kub, GAN Lube Premium silikon yağlama maddəsi və Rubikshop sürətli masaüstü xalçası. Ayrı-ayrılıqda 82 AZN deyil, cəmi 59 AZN!',
-                en: 'Includes: MoYu Super RS3M V2 Magnetic cube, GAN Lube Premium silicone compound, and a Rubikshop training mat. Only 59 AZN instead of 82 AZN!',
-                ru: 'В комплекте: магнитный кубик MoYu Super RS3M V2, силиконовая смазка премиум-класса GAN Lube и коврик. Всего 59 AZN!'
-              })}
-            </p>
-            <div className="flex items-baseline gap-3 pt-2">
-              <span className="text-2xl md:text-3xl font-black text-rubik-brand">59.00 AZN</span>
-              <span className="text-sm text-gray-500 line-through">82.00 AZN</span>
-            </div>
-            <button
-              onClick={() => handleAddToCart({
-                id: 'special-starter-bundle-combo',
-                title: 'Professional Speedcuber Starter Pack (RS3M V2 + GAN Lube + Mat)',
-                price_azn: 59.00,
-                image_url: 'https://picsum.photos/seed/bundlepack/600/600',
-                stock_quantity: 10
-              })}
-              className="px-6 py-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <ShoppingBag className="h-4 w-4" />
-              <span>{t({ az: 'Paketi Səbətə Əlavə Et', en: 'Add Bundle to Cart', ru: 'Добавить набор в корзину' })}</span>
-            </button>
-          </div>
-          <div className="lg:col-span-5 flex justify-center">
-            <div className="relative w-64 h-64 bg-black/40 rounded-2xl border border-border/10 p-4 flex items-center justify-center">
-              <Image
-                src="https://picsum.photos/seed/bundlepack/600/600"
-                alt="Starter Pack Bundle"
-                fill
-                referrerPolicy="no-referrer"
-                className="object-contain p-6 hover:scale-105 transition-transform"
-              />
-            </div>
-          </div>
-        </div>
+        {/* Dynamic Promotional Campaign / Bundle Section */}
+        {renderPromotionalSection()}
       </section>
 
       {/* 5. TRUST & COMMUNITY SECTION */}
@@ -726,47 +984,8 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
             </div>
           </div>
 
-          {/* Testimonials */}
-          <div className="space-y-12">
-            <div className="text-center space-y-3">
-              <h2 className="text-3xl font-black text-foreground font-sans tracking-tight">
-                {t({ az: 'Yerli Speedcuberlərin Rəyləri', en: 'Loved by Local Cubers', ru: 'Отзывы местных спидкуберов' })}
-              </h2>
-              <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-                {t({
-                  az: 'Azərbaycanın fərqli yaş qruplarından olan rəsmi yarış iştirakçılarının rəyləri.',
-                  en: 'Hear from official Azerbaijani tournament speedcubers who solve with our gear.',
-                  ru: 'Отзывы официальных участников соревнований из Азербайджана.'
-                })}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                { name: 'Kənan M.', solveTime: '8.45s', text: { az: 'Rubikshop-dan aldığım Tornado V3 sayəsində rəsmi turnirdə 8 saniyəlik rekordumu qırdım. Məhsullar əladır!', en: 'Thanks to Tornado V3 I bought from Rubikshop, I broke my official sub-9 barrier in Baku! Awesome quality.', ru: 'Благодаря Tornado V3 из Rubikshop я обновил рекорд!' }, role: 'Azərbaycan Yarışçısı' },
-                { name: 'Aydan M.', solveTime: '12.10s', text: { az: 'Ölkədə belə bir ixtisaslaşmış mağazanın olması fəxrdir. Yağlama xidmətləri kubumu möhtəşəm dərəcədə sürətləndirdi.', en: 'Im proud to have a local specialized shop here. Lubrication service accelerated my GAN cube beyond expectations.', ru: 'Отличный специализированный магазин. Смазка ускорила мой куб!' }, role: 'Gənc Yarışçı' },
-                { name: 'Sənan S.', solveTime: '9.32s', text: { az: 'Müştəri xidmətləri suallarıma dərhal cavab verdi. 24 saat tamam olmadan kuryer kubumu qapıda təhvil verdi. Təşəkkür edirəm.', en: 'Customer service answered my config question immediately. Express courier delivered the box within 18 hours.', ru: 'Поддержка ответила на все вопросы сразу. Экспресс-доставка за 18 часов!' }, role: 'Speedcubing Ustası' }
-              ].map((test, idx) => (
-                <div key={idx} className="bg-card border border-border p-6 rounded-3xl relative shadow-soft-sm flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div className="flex gap-1 text-rubik-yellow">
-                      {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
-                    </div>
-                    <p className="text-sm text-foreground/80 italic leading-relaxed">&quot;{t(test.text)}&quot;</p>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-border/60 pt-4 mt-6">
-                    <div>
-                      <span className="block text-sm font-bold text-foreground">{test.name}</span>
-                      <span className="block text-[10px] text-muted-foreground">{test.role}</span>
-                    </div>
-                    <span className="text-xs font-black bg-rubik-brand/10 text-rubik-brand px-2.5 py-1 rounded-md">
-                      PB: {test.solveTime}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Dynamic Approved Reviews Section */}
+          {renderReviewsSection()}
 
           {/* Community Team Sponsorship */}
           <div className="bg-rubik-charcoal border border-slate-800 rounded-xl p-8 lg:p-12 text-white text-center space-y-6 max-w-4xl mx-auto shadow-md">

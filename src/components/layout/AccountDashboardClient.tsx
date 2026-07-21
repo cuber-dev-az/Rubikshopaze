@@ -29,14 +29,16 @@ import {
   Sparkles,
   Search,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  Calendar,
+  Trash2
 } from 'lucide-react';
 import { OrderTracker } from '@/components/account/OrderTracker';
-import { Calendar, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { supabase } from '@/lib/supabase/client';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { signOut } from '@/lib/actions/auth';
 
 interface AccountDashboardClientProps {
   locale: string;
@@ -50,8 +52,6 @@ interface AccountDashboardClientProps {
   };
 }
 
-import { signOut } from '@/lib/actions/auth';
-
 export function AccountDashboardClient({ locale, dict, initialProfile }: AccountDashboardClientProps) {
   const { user, loading } = useAuthUser();
 
@@ -62,6 +62,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
   const [fullName, setFullName] = React.useState(initialProfile?.fullName || '');
   const [phone, setPhone] = React.useState(initialProfile?.phone || '');
   const [email, setEmail] = React.useState(initialProfile?.email || '');
+  const [instagram, setInstagram] = React.useState('mirselim.sh');
 
   React.useEffect(() => {
     if (user) {
@@ -74,7 +75,6 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
     }
   }, [user, fullName, email]);
 
-  const [instagram, setInstagram] = React.useState('mirselim.sh');
   const [selectedAddressIndex, setSelectedAddressIndex] = React.useState(0);
   const [addresses, setAddresses] = React.useState<{ id: string; label: string; address: string; city: string }[]>([]);
   const [newAddressInput, setNewAddressInput] = React.useState('');
@@ -100,7 +100,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
   const [profileSuccessMsg, setProfileSuccessMsg] = React.useState(false);
 
   // Loyalty states
-  const [points, setPoints] = React.useState(350);
+  const [points, setPoints] = React.useState(0);
   const [referralCode] = React.useState('RUBIK-MIRS-2026');
   const [copiedReferral, setCopiedReferral] = React.useState(false);
 
@@ -111,23 +111,8 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
   const [ticketSubmitSuccess, setTicketSubmitSuccess] = React.useState(false);
   const [tickets, setTickets] = React.useState<any[]>([]);
 
-  // Wishlist / compare simulation
-  const [wishlist, setWishlist] = React.useState([
-    {
-      id: 'gan-14-maglev',
-      title: 'GAN 14 MagLev Magnetic flagship 3x3',
-      price_azn: 130.00,
-      image_url: 'https://picsum.photos/seed/gan14/200/200',
-      brand: 'GAN'
-    },
-    {
-      id: 'moyu-rs3m-v5',
-      title: 'MoYu RS3M V5 Ball-Core UV 3x3',
-      price_azn: 45.00,
-      image_url: 'https://picsum.photos/seed/moyu5/200/200',
-      brand: 'MoYu'
-    }
-  ]);
+  // Dynamic Wishlist state
+  const [wishlist, setWishlist] = React.useState<any[]>([]);
 
   // Order List
   const [orders, setOrders] = React.useState<any[]>([]);
@@ -137,6 +122,14 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
   const [loadingOrders, setLoadingOrders] = React.useState(true);
   const [loadingTickets, setLoadingTickets] = React.useState(true);
   const [loadingAddresses, setLoadingAddresses] = React.useState(true);
+
+  // Helper to resolve loyalty tier dynamically from current balance
+  const getTierName = (pts: number) => {
+    if (pts >= 1000) return 'Qızıl Üzv';
+    if (pts >= 500) return 'Gümüş Üzv';
+    if (pts >= 200) return 'Bürünc Üzv';
+    return 'Yeni Üzv';
+  };
 
   // Fetch real-time data from Supabase tables
   React.useEffect(() => {
@@ -155,11 +148,13 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
           .order('created_at', { ascending: false });
 
         if (userEmail && userPhone) {
-          query = query.or(`email.eq.${userEmail},phone.eq.${userPhone}`);
+          query = query.or(`email.eq.${userEmail},phone.eq.${userPhone},user_id.eq.${user.id}`);
         } else if (userEmail) {
-          query = query.eq('email', userEmail);
+          query = query.or(`email.eq.${userEmail},user_id.eq.${user.id}`);
         } else if (userPhone) {
-          query = query.eq('phone', userPhone);
+          query = query.or(`phone.eq.${userPhone},user_id.eq.${user.id}`);
+        } else {
+          query = query.eq('user_id', user.id);
         }
 
         const { data: ordersData, error: ordersErr } = await query;
@@ -192,8 +187,8 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                 id: item.id,
                 product_title: item.variants?.products?.title_az || 'Məhsul',
                 quantity: item.quantity,
-                unit_price_azn: Number(item.price_azn),
-                subtotal_azn: Number(item.total_azn),
+                unit_price_azn: Number(item.unit_price_azn || item.price_azn || 0),
+                subtotal_azn: Number(item.subtotal_azn || item.total_azn || 0),
                 image_url: item.variants?.products?.image_url || 'https://picsum.photos/seed/boxart/200/200'
               })) || []
             };
@@ -266,10 +261,65 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
       } finally {
         setLoadingAddresses(false);
       }
+
+      // 4. Fetch Loyalty Points Balance Tracker (Dynamic balance)
+      try {
+        let loyaltyPoints = 0;
+        const { data: lData, error: lErr } = await supabase
+          .from('loyalty_points')
+          .select('balance')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (!lErr && lData) {
+          loyaltyPoints = lData.balance || 0;
+        } else {
+          // Try fetching from profiles
+          const { data: pData, error: pErr } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (!pErr && pData && 'loyalty_points' in pData) {
+            loyaltyPoints = (pData as any).loyalty_points || 0;
+          }
+        }
+        setPoints(loyaltyPoints);
+      } catch (err) {
+        console.warn('Error fetching loyalty points:', err);
+      }
+
+      // 5. Fetch Wishlist dynamically
+      try {
+        const { data: wishlistData, error: wishlistErr } = await supabase
+          .from('wishlists')
+          .select('id, variants(id, price_azn, products(id, title_az, image_url, brand, slug))')
+          .eq('user_id', user.id);
+
+        if (wishlistErr) {
+          console.error('Error fetching wishlist:', wishlistErr);
+        } else if (wishlistData) {
+          const mappedWishlist = wishlistData.map((item: any) => ({
+            id: item.id,
+            product_id: item.variants?.products?.id || '',
+            slug: item.variants?.products?.slug || '',
+            title: item.variants?.products?.title_az || 'Məhsul',
+            price_azn: Number(item.variants?.price_azn || 0),
+            image_url: item.variants?.products?.image_url || 'https://picsum.photos/seed/boxart/200/200',
+            brand: item.variants?.products?.brand || 'Rubik'
+          }));
+          setWishlist(mappedWishlist);
+        }
+      } catch (err) {
+        console.error('Wishlist fetch error:', err);
+      }
     };
 
     fetchDashboardData();
   }, [user, initialProfile, email, phone]);
+
+  // Derived user metrics
+  const activeOrdersCount = orders.filter(o => ['pending', 'processing', 'shipped'].includes(o.status)).length;
+  const openTicketsCount = tickets.filter(t => t.status === 'Açıq' || t.status === 'open').length;
 
   if (loading) {
     return (
@@ -373,6 +423,25 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
     }
   };
 
+  // Remove Wishlist Item Handler
+  const handleRemoveWishlistItem = async (wishlistItemId: string) => {
+    try {
+      setWishlist(prev => prev.filter((item) => item.id !== wishlistItemId));
+      if (user) {
+        const { error } = await supabase
+          .from('wishlists')
+          .delete()
+          .eq('id', wishlistItemId)
+          .eq('user_id', user.id);
+        if (error) {
+          console.error('Error deleting wishlist item:', error);
+        }
+      }
+    } catch (err) {
+      console.error('Error removing wishlistItem:', err);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* Sidebar Navigation */}
@@ -389,7 +458,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
           </div>
           <div className="pt-2">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rubik-brand/10 text-rubik-brand font-black text-[10px] rounded-full uppercase tracking-wider">
-              <Award className="h-3.5 w-3.5 animate-bounce" /> {points} Loyalty Points
+              <Award className="h-3.5 w-3.5 animate-bounce" /> {points} Loyallıq Xalı
             </span>
           </div>
         </div>
@@ -424,6 +493,18 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
               </button>
             );
           })}
+
+          <div className="h-px bg-border/60 my-2 hidden lg:block" />
+          <button
+            onClick={async () => {
+              await signOut();
+              window.location.href = `/${locale}/`;
+            }}
+            className="w-full text-left px-4 py-3 text-xs font-bold rounded-2xl flex items-center gap-3 transition-all cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-50/50"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            <span>Çıxış</span>
+          </button>
         </div>
       </div>
 
@@ -443,7 +524,9 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
               {/* Welcome banner */}
               <div className="relative bg-gradient-to-r from-rubik-brand to-rubik-brand-dark rounded-xl p-6 md:p-8 text-white shadow-md overflow-hidden space-y-3">
                 <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-                <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full w-fit">VIP Müştəri</span>
+                <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-1 rounded-full w-fit">
+                  {getTierName(points)}
+                </span>
                 <h2 className="text-xl md:text-3xl font-black">Xoş gəldiniz, {fullName}!</h2>
                 <p className="text-xs text-white/90 max-w-md leading-relaxed">
                   İdman kubları və professional puzzle dünyasındakı xüsusi səyahətiniz üçün fərdi kabinetiniz tam hazırdır. Sifarişləri canlı izləyə bilərsiniz.
@@ -462,14 +545,18 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-black text-foreground font-mono">{points}</span>
-                      <span className="text-xs text-muted-foreground">points</span>
+                      <span className="text-xs text-muted-foreground">xal</span>
                     </div>
                     <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                      <div className="bg-rubik-brand h-full" style={{ width: '70%' }} />
+                      <div className="bg-rubik-brand h-full" style={{ width: `${Math.min(100, (points / 500) * 100)}%` }} />
                     </div>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-4">
-                    Gümüş statusa çatmaq üçün daha <strong>150 xal</strong> lazımdır.
+                  <p className="text-[10px] text-muted-foreground mt-4 font-semibold">
+                    {points >= 500 ? (
+                      <span>Təbrik edirik! Siz artıq Gümüş statusuna çatmısınız.</span>
+                    ) : (
+                      <span>Gümüş statusa çatmaq üçün daha <strong>{500 - points} xal</strong> lazımdır.</span>
+                    )}
                   </p>
                 </div>
 
@@ -481,8 +568,8 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                       <Truck className="h-5 w-5 text-blue-500 animate-pulse" />
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-foreground font-mono">1</span>
-                      <span className="text-xs text-muted-foreground">yoldadır</span>
+                      <span className="text-3xl font-black text-foreground font-mono">{activeOrdersCount}</span>
+                      <span className="text-xs text-muted-foreground">{activeOrdersCount > 0 ? 'yoldadır' : 'aktiv'}</span>
                     </div>
                   </div>
                   <button
@@ -494,7 +581,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                   </button>
                 </div>
 
-                {/* Support tickests card */}
+                {/* Support tickets card */}
                 <div className="bg-card border border-border rounded-3xl p-5 shadow-soft-sm flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -502,7 +589,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                       <HelpCircle className="h-5 w-5 text-purple-500" />
                     </div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-foreground font-mono">{tickets.filter(t => t.status !== 'Bağlı').length}</span>
+                      <span className="text-3xl font-black text-foreground font-mono">{openTicketsCount}</span>
                       <span className="text-xs text-muted-foreground">açıq sorğu</span>
                     </div>
                   </div>
@@ -529,35 +616,44 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                 </div>
 
                 <div className="divide-y divide-border/60">
-                  {orders.slice(0, 2).map((order) => (
-                    <div key={order.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex gap-4">
-                        <div className="p-3 bg-muted rounded-2xl flex-shrink-0 flex items-center justify-center">
-                          <ShoppingBag className="h-6 w-6 text-foreground" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-foreground font-mono">#{order.id.substring(0, 8).toUpperCase()}</span>
-                            <span className="text-[10px] text-muted-foreground">• {order.created_at}</span>
-                          </div>
-                          <p className="text-[11px] text-muted-foreground mt-1 font-medium leading-relaxed">
-                            {order.items.map((i) => `${i.product_title} (x${i.quantity})`).join(', ')}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between md:justify-end gap-6 pt-2 md:pt-0">
-                        <span className="text-xs font-black text-foreground font-mono">{order.total_amount_azn.toFixed(2)} AZN</span>
-                        <span className={`px-2.5 py-1 text-[9px] font-black rounded-lg uppercase tracking-wider ${
-                          order.status === 'shipped'
-                            ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                            : 'bg-green-50 text-green-600 border border-green-200'
-                        }`}>
-                          {order.status === 'shipped' ? 'Yoldadır' : 'Təslim edilib'}
-                        </span>
-                      </div>
+                  {orders.length === 0 ? (
+                    <div className="p-8 text-center space-y-4">
+                      <p className="text-xs text-muted-foreground font-medium">Sizin hələ ki heç bir sifarişiniz yoxdur.</p>
+                      <Link href={`/${locale}/category`} className="inline-flex px-5 py-2.5 bg-rubik-brand text-white font-black text-xs rounded-xl uppercase tracking-wider hover:bg-rubik-brand/90 transition-all">
+                        Alış-verişə Başla
+                      </Link>
                     </div>
-                  ))}
+                  ) : (
+                    orders.slice(0, 2).map((order) => (
+                      <div key={order.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex gap-4">
+                          <div className="p-3 bg-muted rounded-2xl flex-shrink-0 flex items-center justify-center">
+                            <ShoppingBag className="h-6 w-6 text-foreground" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-foreground font-mono">#{order.id.substring(0, 8).toUpperCase()}</span>
+                              <span className="text-[10px] text-muted-foreground">• {order.created_at}</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground mt-1 font-medium leading-relaxed">
+                              {order.items.map((i: any) => `${i.product_title} (x${i.quantity})`).join(', ')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between md:justify-end gap-6 pt-2 md:pt-0">
+                          <span className="text-xs font-black text-foreground font-mono">{order.total_amount_azn.toFixed(2)} AZN</span>
+                          <span className={`px-2.5 py-1 text-[9px] font-black rounded-lg uppercase tracking-wider ${
+                            order.status === 'shipped' || order.status === 'pending'
+                              ? 'bg-orange-50 text-orange-600 border border-orange-200'
+                              : 'bg-green-50 text-green-600 border border-green-200'
+                          }`}>
+                            {order.status === 'shipped' ? 'Yoldadır' : (order.status === 'pending' ? 'Gözləmədə' : 'Təslim edilib')}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -673,7 +769,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
               <div className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-6">
                 <div className="border-b border-border pb-4">
                   <h3 className="text-sm font-black text-foreground uppercase tracking-wider">Şəxsi Məlumatlar</h3>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Fərdi məlumatlarınızı və profil bəndlərini dəyişdirə bilərsiniz.</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Fərdi məlumatlarınızı və profil bəndlerini dəyişdirə bilərsiniz.</p>
                 </div>
 
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
@@ -863,13 +959,13 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                     <ShoppingBag className="h-8 w-8 text-muted-foreground opacity-60" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-foreground uppercase tracking-wider">Hələ ki heç bir sifarişiniz yoxdur</p>
+                    <p className="text-sm font-black text-foreground uppercase tracking-wider">Sizin hələ ki heç bir sifarişiniz yoxdur</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
                       Sifariş etdiyiniz kublar və aksesuarlar burada görünəcəkdir. İlk alış-verişinizi etmək üçün mağazamıza keçin!
                     </p>
                   </div>
-                  <Link href={`/${locale}/`} className="px-5 py-2.5 bg-rubik-brand text-white font-black text-xs rounded-xl uppercase tracking-wider hover:bg-rubik-brand/90 transition-all">
-                    Kataloqa keç
+                  <Link href={`/${locale}/category`} className="px-5 py-2.5 bg-rubik-brand text-white font-black text-xs rounded-xl uppercase tracking-wider hover:bg-rubik-brand/90 transition-all">
+                    Alış-verişə Başla
                   </Link>
                 </div>
               ) : (
@@ -995,13 +1091,13 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
 
                         <div className="flex items-center gap-2">
                           <Link
-                            href={`/${locale}/product/${item.id}`}
+                            href={`/${locale}/product/${item.slug || item.product_id}`}
                             className="px-3 py-1.5 bg-foreground text-card hover:bg-rubik-brand hover:text-white font-black text-[10px] rounded-lg transition-colors cursor-pointer"
                           >
-                            İncele
+                            İncələ
                           </Link>
                           <button
-                            onClick={() => setWishlist(wishlist.filter((w) => w.id !== item.id))}
+                            onClick={() => handleRemoveWishlistItem(item.id)}
                             className="p-1.5 text-muted-foreground hover:text-red-500 rounded-lg hover:bg-muted transition-colors cursor-pointer"
                           >
                             Sil
@@ -1042,17 +1138,19 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                       <Award className="h-5 w-5" />
                     </span>
                     <div>
-                      <h4 className="text-xs font-black text-foreground uppercase">Bürünc Üzv</h4>
-                      <p className="text-[10px] text-muted-foreground">Daimi 2% Endirim xüsusiyyəti</p>
+                      <h4 className="text-xs font-black text-foreground uppercase">{getTierName(points)}</h4>
+                      <p className="text-[10px] text-muted-foreground">Xüsusi Endirim xüsusiyyəti</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Hədəf Balansı</span>
-                  <p className="text-xs text-foreground font-semibold">Gümüş Üzv (500 Xal)</p>
+                  <p className="text-xs text-foreground font-semibold">
+                    {points >= 1000 ? 'Maksimum Səviyyə' : (points >= 500 ? 'Qızıl Üzv (1000 Xal)' : (points >= 200 ? 'Gümüş Üzv (500 Xal)' : 'Bürünc Üzv (200 Xal)'))}
+                  </p>
                   <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                    <div className="bg-yellow-500 h-full animate-pulse" style={{ width: '70%' }} />
+                    <div className="bg-yellow-500 h-full animate-pulse" style={{ width: `${points >= 1000 ? 100 : (points >= 500 ? (points/1000)*100 : (points >= 200 ? (points/500)*100 : (points/200)*100))}%` }} />
                   </div>
                 </div>
 
