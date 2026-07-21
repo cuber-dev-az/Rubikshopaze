@@ -51,6 +51,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [productType, setProductType] = useState('standard');
   const [status, setStatus] = useState('draft');
   const [imageUrl, setImageUrl] = useState('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState('');
   const [stock_quantity, setStock_quantity] = useState<number>(0);
   const [isFeatured, setIsFeatured] = useState(false);
@@ -127,6 +128,19 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setSlug(prod.slug || '');
             setStatus(prod.status || (prod.is_active ? 'publish' : 'draft'));
             setImageUrl(prod.image_url || '');
+            if (prod.gallery_images) {
+              if (Array.isArray(prod.gallery_images)) {
+                setGalleryImages(prod.gallery_images);
+              } else if (typeof prod.gallery_images === 'string') {
+                try {
+                  setGalleryImages(JSON.parse(prod.gallery_images));
+                } catch {
+                  setGalleryImages(prod.gallery_images.split(',').map((s: string) => s.trim()).filter(Boolean));
+                }
+              }
+            } else {
+              setGalleryImages([]);
+            }
             setVideoUrl(prod.video_url || '');
             setStock_quantity(prod.stock_quantity !== undefined && prod.stock_quantity !== null ? Number(prod.stock_quantity) : 0);
             setIsFeatured(prod.is_featured || false);
@@ -264,6 +278,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         is_featured: isFeatured,
         product_type: productType,
         tags: tagsArray,
+        gallery_images: galleryImages.map(img => img.trim()).filter(Boolean),
         seo_title: seoTitle || undefined,
         seo_description: seoDesc || undefined,
         weight_g: weightNumber !== null ? weightNumber : undefined,
@@ -654,6 +669,69 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       </div>
                       <p className="text-sm font-bold text-white mb-1">Şəkil URL-i boşdur</p>
                       <p className="text-xs text-slate-500">Məhsulun əsas şəkli olaraq göstəriləcək bir URL daxil edin</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* ƏLAVƏ QALEREYA ŞƏKİLLƏRİ */}
+                <div className="pt-6 border-t border-slate-800 space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider">Əlavə Qalereya Şəkilləri</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Məhsul səhifəsində mini şəkil qalereyası olaraq göstəriləcək şəkil linkləri</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryImages([...galleryImages, ''])}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 hover:text-amber-400 font-bold text-xs rounded-xl transition-colors border border-slate-700 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" /> + Əlavə Şəkil Əlavə Et
+                    </button>
+                  </div>
+
+                  {galleryImages.length === 0 ? (
+                    <div className="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl text-center text-xs text-slate-500">
+                      Əlavə qalereya şəkli əlavə edilməyib. Yuxarıdakı knopkadan əlavə edə bilərsiniz.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {galleryImages.map((imgUrl, index) => (
+                        <div key={index} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3">
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
+                            {imgUrl ? (
+                              <Image
+                                src={imgUrl}
+                                alt={`Qalereya ${index + 1}`}
+                                fill
+                                className="object-cover"
+                                unoptimized={true}
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <ImageIcon className="w-5 h-5 text-slate-600" />
+                            )}
+                          </div>
+                          <input
+                            type="url"
+                            value={imgUrl}
+                            onChange={(e) => {
+                              const updated = [...galleryImages];
+                              updated[index] = e.target.value;
+                              setGalleryImages(updated);
+                            }}
+                            placeholder="Əlavə şəkil URL-i daxil edin (https://...)"
+                            className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setGalleryImages(galleryImages.filter((_, i) => i !== index))}
+                            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+                            title="Şəkli Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

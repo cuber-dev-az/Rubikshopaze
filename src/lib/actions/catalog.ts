@@ -115,6 +115,7 @@ export async function createProduct(payload: {
   is_featured?: boolean;
   product_type?: string;
   tags?: string[];
+  gallery_images?: string[];
   seo_title?: string;
   seo_description?: string;
   weight_g?: number;
@@ -144,6 +145,7 @@ export async function createProduct(payload: {
       is_featured: payload.is_featured ?? false,
       product_type: payload.product_type ?? 'speedcube',
       tags: payload.tags ?? [],
+      gallery_images: payload.gallery_images ?? [],
       seo_title: payload.seo_title,
       seo_description: payload.seo_description,
       weight_g: payload.weight_g,
@@ -211,6 +213,7 @@ export async function updateProduct(id: string, payload: Partial<{
   is_featured: boolean;
   product_type: string;
   tags: string[];
+  gallery_images: string[];
   seo_title: string;
   seo_description: string;
   weight_g: number;
