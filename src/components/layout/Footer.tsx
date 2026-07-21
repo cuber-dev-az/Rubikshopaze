@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/';
+import Link from 'next/link';
 import { Send, Mail, MapPin, Phone, ShieldCheck, Heart, AlertCircle } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 
@@ -14,9 +14,13 @@ export function Footer({ dict, locale }: FooterProps) {
   const [email, setEmail] = React.useState('');
   const [subscribed, setSubscribed] = React.useState(false);
   
-  const [phone, setPhone] = React.useState('+994 50 668 49 25');
+  const [phone, setPhone] = React.useState('');
   const [emailVal, setEmailVal] = React.useState('info@rubikshop.az');
   const [addressVal, setAddressVal] = React.useState('Bakı şəhəri, Azərbaycan');
+
+  const t = (obj: { az: string; en: string; ru: string }) => {
+    return obj[locale as keyof typeof obj] || obj.az;
+  };
 
   React.useEffect(() => {
     async function loadFooterSettings() {
@@ -120,7 +124,7 @@ export function Footer({ dict, locale }: FooterProps) {
             </li>
             <li>
               <Link href={`/${locale}?category=bundles`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
-                <span>Endirimli Dəstlər (Bundles)</span>
+                <span>{t({ az: 'Endirimli Dəstlər (Bundles)', en: 'Discount Bundles', ru: 'Наборы со скидкой' })}</span>
               </Link>
             </li>
           </ul>
@@ -181,7 +185,9 @@ export function Footer({ dict, locale }: FooterProps) {
 
           {/* Secure Payment Badges */}
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="text-[10px] uppercase text-gray-500 font-bold tracking-widest mr-2">Təhlükəsiz Ödəniş</span>
+            <span className="text-[10px] uppercase text-gray-500 font-bold tracking-widest mr-2">
+              {t({ az: 'Təhlükəsiz Ödəniş', en: 'Secure Payment', ru: 'Безопасная Оплата' })}
+            </span>
             <div className="flex gap-2">
               <span className="bg-rubik-charcoal text-white text-[10px] font-bold px-2.5 py-1.5 rounded border border-border/10 tracking-wider shadow-soft-sm">
                 💳 Visa / MasterCard
@@ -190,7 +196,7 @@ export function Footer({ dict, locale }: FooterProps) {
                 📱 Apple Pay
               </span>
               <span className="bg-rubik-charcoal text-white text-[10px] font-bold px-2.5 py-1.5 rounded border border-border/10 tracking-wider shadow-soft-sm">
-                💵 Qapıda Ödəniş
+                💵 {t({ az: 'Qapıda Ödəniş', en: 'Cash on Delivery', ru: 'Оплата при получении' })}
               </span>
             </div>
           </div>

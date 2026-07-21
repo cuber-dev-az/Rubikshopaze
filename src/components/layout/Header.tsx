@@ -153,7 +153,7 @@ export function Header({ dict, locale }: HeaderProps) {
             <button
               onClick={handleAccountClick}
               className="p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Kabinet"
+              aria-label={dict.navigation.account || "Kabinet"}
             >
               <User className="h-5 w-5" />
             </button>
@@ -162,7 +162,7 @@ export function Header({ dict, locale }: HeaderProps) {
             <Link
               href={`/${locale}/wishlist`}
               className="p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label="Seçilmişlər"
+              aria-label={dict.navigation.wishlist || "Seçilmişlər"}
             >
               <Heart className="h-5 w-5" />
             </Link>
@@ -171,7 +171,7 @@ export function Header({ dict, locale }: HeaderProps) {
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
-              aria-label="Səbət"
+              aria-label={dict.navigation.cart || "Səbət"}
             >
               <ShoppingCart className="h-5 w-5" />
               {mounted && totalItems > 0 && (
@@ -195,7 +195,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <button
                 onClick={handleSignOut}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-all duration-200 border border-red-600/30 cursor-pointer h-[38px]"
-                title="Çıxış Et"
+                title={dict.header?.sign_out_long || "Çıxış Et"}
               >
                 <LogOut className="h-4 w-4" />
                 <span>{dict.header?.sign_out || "Çıxış"}</span>
@@ -218,7 +218,7 @@ export function Header({ dict, locale }: HeaderProps) {
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Menyu"
+            aria-label={t({ az: 'Menyu', en: 'Menu', ru: 'Меню' })}
           >
             <Menu className="h-6 w-6" />
           </button>
@@ -267,7 +267,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   <button
                     onClick={() => setIsMenuOpen(false)}
                     className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    aria-label="Bağla"
+                    aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
                   >
                     <X className="h-5 w-5 text-white" />
                   </button>

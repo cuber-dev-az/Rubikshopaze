@@ -74,10 +74,12 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
     >
       <div className="flex items-center justify-around h-[64px] px-1 w-full">
         {navItems.map((item) => {
-          // Precise active path segment match
-          const isActive = item.href === `/${locale}`
+          // Stable, key-based route matching
+          const isActive = item.id === 'home'
             ? pathname === `/${locale}` || pathname === `/${locale}/`
-            : pathname.startsWith(item.href);
+            : item.id === 'account'
+              ? pathname.startsWith(`/${locale}/account`) || pathname.startsWith(`/${locale}/admin`)
+              : pathname.startsWith(item.href);
           
           const Icon = item.icon;
 
