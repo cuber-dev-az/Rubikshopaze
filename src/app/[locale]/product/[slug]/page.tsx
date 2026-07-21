@@ -58,7 +58,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           surface_finish: 'Frosted / UV Option'
         },
         compatibility: 'Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və turnirlərdə istifadə edilə bilər.',
-        variants: dbProduct.variants || []
+        variants: dbProduct.variants || [],
+        gallery_images: dbProduct.gallery_images || dbProduct.images || null
       };
     }
   } catch (err) {

@@ -45,6 +45,8 @@ interface ProductDetailClientContentProps {
     specs: Record<string, string>;
     compatibility: string;
     variants?: any[];
+    gallery_images?: any;
+    images?: any;
   };
   relatedProducts: Array<{
     id: string;
@@ -87,9 +89,13 @@ export function ProductDetailClientContent({
   const [addonSetup, setAddonSetup] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'description' | 'specs' | 'compatibility' | 'shipping' | 'return' | 'faq'>('description');
 
-  // Interactive video / 360 modals
+  // Sync activeImage if product.image_url changes
+  React.useEffect(() => {
+    setActiveImage(product.image_url);
+  }, [product.image_url]);
+
+  // Interactive video modal
   const [showVideoModal, setShowVideoModal] = React.useState(false);
-  const [show360Modal, setShow360Modal] = React.useState(false);
 
   // Social action toggles
   const [isWishlisted, setIsWishlisted] = React.useState(false);
@@ -104,7 +110,7 @@ export function ProductDetailClientContent({
   const [reviewSubmitted, setReviewSubmitted] = React.useState(false);
 
   // Setup dynamic SKU and pricing
-  const basePrice = product.price_azn;
+  const basePrice = Number(product.price_azn || 0);
   const coatingCost = selectedCoating === 'UV Coated' ? 10 : 0;
   const coreCost = selectedCore === 'MagLev' ? 15 : selectedCore === 'Ball-Core' ? 25 : 0;
   const addonCost = addonSetup ? 5 : 0;
@@ -112,6 +118,8 @@ export function ProductDetailClientContent({
   const finalPrice = selectedVariant 
     ? Number(selectedVariant.price_azn || selectedVariant.price || basePrice)
     : basePrice + coatingCost + coreCost + addonCost;
+
+  const originalPrice = product.original_price || (product as any).discount_price || (product as any).compare_at_price_azn;
 
   const currentSku = selectedVariant 
     ? selectedVariant.sku 
@@ -124,22 +132,67 @@ export function ProductDetailClientContent({
   }, [reviews]);
 
   // Gallery images with dynamic variation
-  const { image_url: productImageAmt, gallery_images: productGalleryImages, images: productImages } = product as any;
   const galleryImages = React.useMemo(() => {
-    const secondaryImages = productGalleryImages || productImages || [];
-    const extraImages = Array.isArray(secondaryImages)
-      ? secondaryImages
-      : typeof secondaryImages === 'string'
-        ? secondaryImages.split(',').map((img: string) => img.trim()).filter(Boolean)
-        : [];
+    const secondaryImages = product.gallery_images || product.images || [];
+    let extraImages: string[] = [];
+    if (Array.isArray(secondaryImages)) {
+      extraImages = secondaryImages;
+    } else if (typeof secondaryImages === 'string') {
+      const trimmed = secondaryImages.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          extraImages = JSON.parse(trimmed);
+        } catch {
+          extraImages = trimmed.split(',').map((img: string) => img.trim()).filter(Boolean);
+        }
+      } else {
+        extraImages = trimmed.split(',').map((img: string) => img.trim()).filter(Boolean);
+      }
+    }
     
     // Completely purge any placeholder picsum.photos URLs from the secondary images
-    const cleanExtraImages = extraImages.filter((img: string) => !img.includes('picsum.photos'));
+    const cleanExtraImages = extraImages.filter((img: string) => img && !img.includes('picsum.photos'));
     
-    const list = [productImageAmt, ...cleanExtraImages].filter(Boolean);
+    const list = [product.image_url, ...cleanExtraImages].filter(Boolean);
     // Dedup array
-    return Array.from(new Set(list));
-  }, [productImageAmt, productGalleryImages, productImages]);
+    return Array.from(new Set(list)) as string[];
+  }, [product.image_url, product.gallery_images, product.images]);
+
+  const specsToDisplay = React.useMemo(() => {
+    const baseSpecs: Record<string, string> = {};
+    if (product.brand) baseSpecs['Brend'] = product.brand;
+    if (product.sku) baseSpecs['SKU'] = product.sku;
+    if (product.category_slug) baseSpecs['Kateqoriya'] = product.category_slug;
+    if (product.stock_quantity !== undefined) baseSpecs['Anbardakı Sayı'] = `${product.stock_quantity} ədəd`;
+    
+    let parsedSpecs: Record<string, string> = {};
+    if (typeof product.specs === 'object' && product.specs !== null) {
+      parsedSpecs = product.specs;
+    } else if (typeof product.specs === 'string') {
+      try {
+        parsedSpecs = JSON.parse(product.specs);
+      } catch {
+        // Ignore parsing error
+      }
+    }
+    
+    const mergedSpecs = { ...baseSpecs, ...parsedSpecs };
+    const translatedSpecs: Record<string, string> = {};
+    
+    Object.entries(mergedSpecs).forEach(([key, val]) => {
+      let displayKey = key;
+      if (key === 'weight') displayKey = 'Çəki';
+      else if (key === 'size') displayKey = 'Ölçü';
+      else if (key === 'material') displayKey = 'Material';
+      else if (key === 'core_type') displayKey = 'Daxili Növü';
+      else if (key === 'magnetic_strength') displayKey = 'Maqnit Gücü';
+      else if (key === 'tension_system') displayKey = 'Gərginlik Sistemi';
+      else if (key === 'surface_finish') displayKey = 'Səth Örtüyü';
+      translatedSpecs[displayKey] = String(val);
+    });
+    
+    return translatedSpecs;
+  }, [product]);
 
   const handleAddToCart = (redirect = false) => {
     const titleAddition = selectedVariant 
@@ -254,7 +307,7 @@ export function ProductDetailClientContent({
               )}
 
               {/* Media Overlays */}
-              <div className="absolute bottom-4 left-4 right-4 flex justify-between gap-2">
+              <div className="absolute bottom-4 left-4 flex gap-2">
                 <button
                   onClick={() => setShowVideoModal(true)}
                   className="bg-background/90 hover:bg-background backdrop-blur-sm border border-border px-3.5 py-2 rounded-xl text-xs font-bold text-foreground flex items-center gap-1.5 shadow-soft-sm cursor-pointer"
@@ -262,36 +315,31 @@ export function ProductDetailClientContent({
                   <Play className="h-3.5 w-3.5 text-rubik-brand fill-rubik-brand" />
                   <span>İnceleme Videosu</span>
                 </button>
-                <button
-                  onClick={() => setShow360Modal(true)}
-                  className="bg-background/90 hover:bg-background backdrop-blur-sm border border-border px-3.5 py-2 rounded-xl text-xs font-bold text-foreground flex items-center gap-1.5 shadow-soft-sm cursor-pointer"
-                >
-                  <Maximize2 className="h-3.5 w-3.5 text-blue-500" />
-                  <span>360° Görünüş</span>
-                </button>
               </div>
             </div>
 
             {/* Gallery Thumbnails */}
-            <div className="grid grid-cols-4 gap-3">
-              {galleryImages.map((img, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveImage(img)}
-                  className={`relative aspect-square w-full rounded-2xl bg-muted/40 border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
-                    activeImage === img ? 'border-rubik-brand shadow-soft-md scale-95' : 'border-transparent hover:border-border'
-                  }`}
-                >
-                  <Image
-                    src={img}
-                    alt={`${product.title} - ${idx}`}
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-contain p-2"
-                  />
-                </button>
-              ))}
-            </div>
+            {galleryImages.length > 1 && (
+              <div className="flex flex-wrap gap-3">
+                {galleryImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImage(img)}
+                    className={`relative w-16 h-16 rounded-2xl bg-muted/40 border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
+                      activeImage === img ? 'border-rubik-brand ring-2 ring-rubik-brand/20 shadow-soft-md scale-95' : 'border-transparent hover:border-border'
+                    }`}
+                  >
+                    <Image
+                      src={img}
+                      alt={`${product.title} - ${idx}`}
+                      fill
+                      referrerPolicy="no-referrer"
+                      className="object-contain p-2"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 2. Core Details & Operations (Right Column) */}
@@ -327,9 +375,9 @@ export function ProductDetailClientContent({
                   <span className="text-3xl font-black text-foreground">
                     {finalPrice.toFixed(2)} AZN
                   </span>
-                  {product.original_price && (
+                  {originalPrice && (
                     <span className="text-lg text-muted-foreground line-through font-semibold">
-                      {(product.original_price + coatingCost + addonCost).toFixed(2)} AZN
+                      {(Number(originalPrice) + coatingCost + addonCost).toFixed(2)} AZN
                     </span>
                   )}
                 </div>
@@ -619,11 +667,8 @@ export function ProductDetailClientContent({
                   exit={{ opacity: 0, y: 5 }}
                   className="space-y-4 text-sm text-muted-foreground leading-relaxed"
                 >
-                  <h4 className="text-base font-bold text-foreground">Professional Speedcube Təsviri</h4>
+                  <h4 className="text-base font-bold text-foreground">Məhsul Təsviri</h4>
                   <p>{product.description}</p>
-                  <p>
-                    GAN və MoYu flaqman modelləri xüsusi ball-core maqnit tənzimləmələri ilə qatları tam hizalayaraq sıçrayışlı rekordlara imza atmağa şərait yaradır. Sürtünməni azaldan daxili səthi və əlavə tənzimlənən yayları ilə istənilən fırlatma tipinə uyğunlaşdırıla bilir.
-                  </p>
                 </motion.div>
               )}
 
@@ -636,9 +681,9 @@ export function ProductDetailClientContent({
                 >
                   <h4 className="text-base font-bold text-foreground">Texniki Spesifikasiyalar</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Object.entries(product.specs).map(([key, val]) => (
+                    {Object.entries(specsToDisplay).map(([key, val]) => (
                       <div key={key} className="flex justify-between py-2 border-b border-border/60 text-xs md:text-sm">
-                        <span className="text-muted-foreground capitalize font-semibold">{key.replace('_', ' ')}</span>
+                        <span className="text-muted-foreground capitalize font-semibold">{key}</span>
                         <span className="text-foreground font-black font-mono">{val}</span>
                       </div>
                     ))}
@@ -824,46 +869,7 @@ export function ProductDetailClientContent({
           </div>
         </section>
 
-        {/* 5. Bundle Offer (Xüsusi Bundle təklifi) */}
-        <section className="bg-rubik-charcoal border border-slate-800 rounded-xl p-6 md:p-8 text-white relative overflow-hidden shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-          
-          <div className="space-y-2 relative z-10 text-center md:text-left">
-            <span className="px-2.5 py-1 bg-white/10 text-white text-[9px] font-black tracking-widest rounded-full uppercase">
-              PROFESSIONAL BUNDLE TƏKLİFİ
-            </span>
-            <h3 className="text-lg md:text-2xl font-black">
-              Bu Flaqmanı Alarkən GAN Lube və MoYu Mat qutusunu 20% Endirimlə Alın!
-            </h3>
-            <p className="text-xs text-gray-300 max-w-xl">
-              Hər şey daxil tam peşəkar sürətli həll dəsti. Kampaniyaya orijinal fırlatma yağı, böyük fırlatma matı və tənzimləmə qutusu daxildir.
-            </p>
-          </div>
 
-          <div className="shrink-0 flex flex-col items-center gap-2 relative z-10">
-            <div className="text-center">
-              <span className="block text-[10px] text-gray-400 line-through">{(finalPrice + 35).toFixed(2)} AZN</span>
-              <span className="text-xl md:text-2xl font-black text-rubik-brand">{(finalPrice + 24.5).toFixed(2)} AZN</span>
-            </div>
-            <button
-              onClick={() => {
-                // Add main cube plus bundle items to cart
-                addItem({
-                  id: `${product.id}-bundle`,
-                  title: `${product.title} (Elite Pack - Cube + Mat + Lube Bundle)`,
-                  price_azn: finalPrice + 24.5,
-                  quantity: 1,
-                  image_url: product.image_url
-                });
-                setShowAddedToCartToast(true);
-                setTimeout(() => setShowAddedToCartToast(false), 3000);
-              }}
-              className="px-5 py-3 bg-yellow-400 text-slate-900 hover:bg-yellow-300 font-black text-xs md:text-sm rounded-xl shadow-soft-md cursor-pointer transition-all active:scale-95 whitespace-nowrap"
-            >
-              Dəsti Səbətə At
-            </button>
-          </div>
-        </section>
 
         {/* 6. Recommendations / Related products list */}
         <section className="space-y-6">
@@ -977,48 +983,6 @@ export function ProductDetailClientContent({
                 </span>
                 <p className="text-[10px] text-gray-300 max-w-xs relative z-10">
                   Bu video Azərbaycanın ən məşhur sürətli kub idmançısı tərəfindən test edilərək hazırlanmışdır.
-                </p>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* 360 Degree View Modal Placeholder */}
-      <AnimatePresence>
-        {show360Modal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShow360Modal(false)}
-              className="fixed inset-0 bg-black z-50"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-0 m-auto z-50 max-w-md h-fit max-h-[90vh] bg-card border border-border p-6 rounded-3xl shadow-soft-2xl space-y-4"
-            >
-              <div className="flex justify-between items-center border-b border-border pb-3">
-                <h3 className="font-bold text-foreground text-sm">360° İnteraktiv Baxış</h3>
-                <button onClick={() => setShow360Modal(false)} className="p-1 hover:bg-muted rounded-lg text-foreground cursor-pointer">X</button>
-              </div>
-              <div className="aspect-square w-full bg-muted/40 rounded-2xl flex flex-col items-center justify-center gap-3 overflow-hidden text-center relative p-6">
-                <Image
-                  src={product.image_url}
-                  alt={product.title}
-                  width={200}
-                  height={200}
-                  referrerPolicy="no-referrer"
-                  className="object-contain animate-spin [animation-duration:8s]"
-                />
-                <span className="text-xs font-black text-foreground uppercase tracking-widest mt-4">
-                  İnteraktiv model fırlanır
-                </span>
-                <p className="text-[10px] text-muted-foreground max-w-xs">
-                  Siçan və ya barmağınız vasitəsilə kubun hər bir tərəfini 3D olaraq yaxından görə bilərsiniz.
                 </p>
               </div>
             </motion.div>
