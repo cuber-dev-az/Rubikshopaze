@@ -60,14 +60,14 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   };
 
   return (
-    <div className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative">
+    <div className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group">
       {product.discount_percent && product.discount_percent > 0 ? (
-        <div className="absolute top-3 left-3 z-10 bg-rubik-brand text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md">
+        <div className="absolute top-3 left-3 z-20 bg-rubik-brand text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md">
           -{product.discount_percent}%
         </div>
       ) : null}
 
-      <div className="absolute top-3 right-3 z-10">
+      <div className="absolute top-3 right-3 z-20">
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -75,7 +75,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
             handleWishlistToggle();
           }}
           disabled={isWishlistLoading}
-          className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand"
+          className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand cursor-pointer"
           aria-label={isWishlisted ? "Seçilmişlərdən sil" : "Seçilmişlərə əlavə et"}
         >
           {isWishlistLoading ? (
@@ -86,66 +86,68 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         </button>
       </div>
 
+      {/* Stretched Link Pattern for semantic validity and flawless touch UX */}
       <Link
         href={`/${locale}/product/${product.slug || product.id}`}
-        className="flex flex-col flex-grow cursor-pointer group"
-      >
-        <div className="relative aspect-square w-full bg-gray-50">
-          <Image
-            src={product.image_url}
-            alt={product.title}
-            fill
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-            className="object-cover p-4 transition-transform duration-300 group-hover:scale-[1.03]"
-            priority={false}
-            referrerPolicy="no-referrer"
-          />
-          {isOutOfStock && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px]">
-              <span className="text-white font-bold tracking-wider px-3 py-1 bg-rubik-brand rounded-xl">
-                {dict.product.out_of_stock}
-              </span>
-            </div>
-          )}
-        </div>
+        className="absolute inset-0 z-10 cursor-pointer"
+        aria-label={product.title}
+      />
+
+      <div className="relative aspect-square w-full bg-gray-50">
+        <Image
+          src={product.image_url}
+          alt={product.title}
+          fill
+          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+          className="object-cover p-4 transition-transform duration-300 group-hover:scale-[1.03]"
+          priority={false}
+          referrerPolicy="no-referrer"
+        />
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px] z-20">
+            <span className="text-white font-bold tracking-wider px-3 py-1 bg-rubik-brand rounded-xl">
+              {dict.product.out_of_stock}
+            </span>
+          </div>
+        )}
+      </div>
+      
+      <div className="p-4 flex flex-col flex-grow relative">
+        <h2 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
+          {product.title}
+        </h2>
         
-        <div className="p-4 flex flex-col flex-grow">
-          <h2 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
-            {product.title}
-          </h2>
-          
-          {product.discount_percent && product.discount_percent > 0 ? (
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-lg font-black text-rubik-brand font-mono">
-                {product.price_azn.toFixed(2)} AZN
-              </span>
-              <span className="text-xs text-gray-500 line-through font-mono">
-                {product.original_price_azn?.toFixed(2)} AZN
-              </span>
-            </div>
-          ) : (
-            <p className="mt-2 text-lg font-bold text-gray-900">
+        {product.discount_percent && product.discount_percent > 0 ? (
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-lg font-black text-rubik-brand font-mono">
               {product.price_azn.toFixed(2)} AZN
-            </p>
-          )}
-          
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddToCart();
-            }}
-            disabled={isOutOfStock}
-            className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200 ${
-              isOutOfStock
-                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark active:scale-[0.98]'
-            }`}
-          >
-            {isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}
-          </button>
-        </div>
-      </Link>
+            </span>
+            <span className="text-xs text-gray-500 line-through font-mono">
+              {product.original_price_azn?.toFixed(2)} AZN
+            </span>
+          </div>
+        ) : (
+          <p className="mt-2 text-lg font-bold text-gray-900">
+            {product.price_azn.toFixed(2)} AZN
+          </p>
+        )}
+        
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleAddToCart();
+          }}
+          disabled={isOutOfStock}
+          className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200 relative z-20 cursor-pointer ${
+            isOutOfStock
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark active:scale-[0.98]'
+          }`}
+        >
+          {isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}
+        </button>
+      </div>
     </div>
   );
 }
