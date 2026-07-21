@@ -250,7 +250,12 @@ export default function AdminSidebar({
                     return (
                       <Link
                         key={item.id}
-                        href={item.href || '#'}
+                        href={item.href || 'javascript:void(0)'}
+                        onClick={(e) => {
+                          if (!item.href) {
+                            e.preventDefault();
+                          }
+                        }}
                         className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                           isSingleActive
                             ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/10'

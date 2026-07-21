@@ -124,14 +124,22 @@ export function ProductDetailClientContent({
   }, [reviews]);
 
   // Gallery images with dynamic variation
+  const { image_url: productImageAmt, gallery_images: productGalleryImages, images: productImages } = product as any;
   const galleryImages = React.useMemo(() => {
-    return [
-      product.image_url,
-      'https://picsum.photos/seed/altcube1/600/600',
-      'https://picsum.photos/seed/altcube2/600/600',
-      'https://picsum.photos/seed/boxart/600/600'
-    ];
-  }, [product.image_url]);
+    const secondaryImages = productGalleryImages || productImages || [];
+    const extraImages = Array.isArray(secondaryImages)
+      ? secondaryImages
+      : typeof secondaryImages === 'string'
+        ? secondaryImages.split(',').map((img: string) => img.trim()).filter(Boolean)
+        : [];
+    
+    // Completely purge any placeholder picsum.photos URLs from the secondary images
+    const cleanExtraImages = extraImages.filter((img: string) => !img.includes('picsum.photos'));
+    
+    const list = [productImageAmt, ...cleanExtraImages].filter(Boolean);
+    // Dedup array
+    return Array.from(new Set(list));
+  }, [productImageAmt, productGalleryImages, productImages]);
 
   const handleAddToCart = (redirect = false) => {
     const titleAddition = selectedVariant 

@@ -213,7 +213,11 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     const errors: Record<string, string> = {};
     
     if (!name.trim()) {
-      errors.name = dict.checkout?.validation_name_required || 'Ad və Soyad sahəsi mütləqdir.';
+      errors.name = dict.checkout?.validation_name_required || t({
+        az: 'Ad və Soyad sahəsi mütləqdir.',
+        en: 'Name and Surname is required.',
+        ru: 'Имя и Фамилия обязательны для заполнения.'
+      });
     } else if (name.trim().length < 2) {
       errors.name = t({
         az: 'Zəhmət olmasa ən azı 2 simvoldan ibarət ad qeyd edin.',
@@ -233,7 +237,11 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     }
 
     if (!cleanPhone) {
-      errors.phone = dict.checkout?.validation_phone_required || 'Mobil nömrə sahəsi mütləqdir.';
+      errors.phone = dict.checkout?.validation_phone_required || t({
+        az: 'Mobil nömrə sahəsi mütləqdir.',
+        en: 'Mobile number is required.',
+        ru: 'Мобильный номер обязателен.'
+      });
     } else if (!/^\+994(50|51|55|70|77|99|10|60)[0-9]{7}$/.test(formattedPhone)) {
       errors.phone = t({
         az: 'Doğru Azərbaycan nömrəsi daxil edin. Məs: +994501234567',
@@ -244,7 +252,11 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
 
     if (deliveryMethod !== 'metro') {
       if (!address.trim()) {
-        errors.address = dict.checkout?.validation_address_required || 'Çatdırılma ünvanı mütləqdir.';
+        errors.address = dict.checkout?.validation_address_required || t({
+          az: 'Çatdırılma ünvanı mütləqdir.',
+          en: 'Delivery address is required.',
+          ru: 'Адрес доставки обязателен.'
+        });
       } else if (address.trim().length < 5) {
         errors.address = t({
           az: 'Zəhmət olmasa daha ətraflı ünvan daxil edin (ən azı 5 simvol).',
@@ -254,12 +266,20 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
       }
     } else {
       if (!selectedMetroStation) {
-        errors.metroStation = dict.checkout?.validation_metro_required || 'Zəhmət olmasa çatdırılma üçün metro stansiyasını seçin.';
+        errors.metroStation = dict.checkout?.validation_metro_required || t({
+          az: 'Zəhmət olmasa çatdırılma üçün metro stansiyasını seçin.',
+          en: 'Please select a metro station for delivery.',
+          ru: 'Пожалуйста, выберите станцию метро для доставки.'
+        });
       }
     }
 
     if (!termsAccepted) {
-      errors.terms = dict.checkout?.validation_terms_required || 'Sifariş üçün alış-veriş şərtlərini qəbul etməlisiniz.';
+      errors.terms = dict.checkout?.validation_terms_required || t({
+        az: 'Sifariş üçün alış-veriş şərtlərini qəbul etməlisiniz.',
+        en: 'You must accept the terms and conditions to order.',
+        ru: 'Вы должны принять условия покупки для совершения заказа.'
+      });
     }
 
     setValidationErrors(errors);

@@ -246,10 +246,24 @@ export default function CustomerProfileClient({ customerId }: { customerId: stri
           </div>
 
           {/* Internal Notes */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md">
-            <h3 className="text-sm font-black text-white mb-4 uppercase tracking-wider flex items-center gap-2">
-              <FileText className="w-4 h-4 text-amber-500" /> Daxili CRM Qeydləri
-            </h3>
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <FileText className="w-4 h-4 text-amber-500" /> Daxili CRM Qeydləri
+              </h3>
+              <button
+                onClick={handleSaveCRM}
+                disabled={saving}
+                className="px-3 py-1 bg-amber-500/15 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 text-[11px] font-black uppercase tracking-wider rounded-lg border border-amber-500/30 transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
+              >
+                {saving ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Save className="w-3 h-3" />
+                )}
+                Qeydi Saxla
+              </button>
+            </div>
             <textarea 
               rows={4}
               placeholder="Yalnız adminlər görə bilər..."
@@ -257,7 +271,7 @@ export default function CustomerProfileClient({ customerId }: { customerId: stri
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             ></textarea>
-            <p className="text-[10px] text-slate-500 mt-2">Daxili qeydlər müştəriyə göstərilmir, daxili komanda üçündür.</p>
+            <p className="text-[10px] text-slate-500">Daxili qeydlər müştəriyə göstərilmir, daxili komanda üçündür.</p>
           </div>
 
         </div>

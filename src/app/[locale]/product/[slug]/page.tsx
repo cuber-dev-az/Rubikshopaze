@@ -66,6 +66,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const reviewsRes = await getProductReviews(activeProduct?.id || '');
   const realReviews = reviewsRes.success ? reviewsRes.data : [];
 
+  const reviewsCount = realReviews.length;
+  const ratingSum = realReviews.reduce((acc, r: any) => acc + (r.rating || 0), 0);
+  const ratingValue = reviewsCount > 0 ? (ratingSum / reviewsCount).toFixed(1) : null;
+
   const { data: dbRelated } = await supabase
     .from('products')
     .select('*')
@@ -83,8 +87,6 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     brand: p.brand || ''
   }));
 
-
-
   if (!activeProduct) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center">
@@ -95,7 +97,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   // JSON-LD Product Schema for outstanding SEO compliance
-  const jsonLdSchema = {
+  const jsonLdSchema: any = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: activeProduct.title,
@@ -118,13 +120,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         '@type': 'Organization',
         name: 'Rubikshop.az'
       }
-    },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.9',
-      reviewCount: '48'
     }
   };
+
+  if (reviewsCount > 0 && ratingValue) {
+    jsonLdSchema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: ratingValue,
+      reviewCount: reviewsCount.toString()
+    };
+  }
 
   return (
     <>

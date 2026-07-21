@@ -10,6 +10,10 @@ import { revalidatePath } from 'next/cache';
 // =========================================================================
 
 export async function seedMockOrders() {
+  if (process.env.NODE_ENV === 'production') {
+    return { success: false, error: 'Order seeding is strictly disabled in production environments.' };
+  }
+
   try {
     const supabase = await createServerSupabaseClient();
     
