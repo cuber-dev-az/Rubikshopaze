@@ -21,19 +21,20 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   // 1. Fetch matching product from Supabase if available
   let activeProduct = null;
   try {
+    const decodedSlug = decodeURIComponent(slug).trim();
     const titleColumn = `title_${locale}`;
     const descColumn = `description_${locale}`;
     const { data: dbProduct, error } = await supabase
       .from('products')
       .select('*, variants(*)')
-      .or(`slug.eq.${slug},id.eq.${slug}`)
-      .single();
+      .or(`slug.eq.${decodedSlug},id.eq.${decodedSlug}`)
+      .maybeSingle();
 
     if (!error && dbProduct) {
       activeProduct = {
         id: dbProduct.id,
         title: (dbProduct[titleColumn] || dbProduct.title_az || dbProduct.title_en || dbProduct.title_ru || dbProduct.title || '') as string,
-        price_azn: Number(dbProduct.price_azn || 0),
+        price_azn: Number(dbProduct.price_azn || dbProduct.price || 0),
         original_price: dbProduct.compare_at_price_azn ? Number(dbProduct.compare_at_price_azn) : undefined,
         image_url: dbProduct.image_url || 'https://picsum.photos/seed/default/600/600',
         stock_quantity: Number(dbProduct.stock_quantity || 0),
@@ -52,7 +53,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         },
         compatibility: 'Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və turnirlərdə istifadə edilə bilər.',
         variants: dbProduct.variants || [],
-        gallery_images: dbProduct.gallery_images || dbProduct.images || null
+        gallery_images: dbProduct.gallery_images || dbProduct.images || null,
+        has_setup: dbProduct.has_setup
       };
     }
   } catch (err) {

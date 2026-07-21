@@ -1478,22 +1478,66 @@ export async function addOrderInternalNote(orderId: string, note: string) {
 // PRODUCTS MANAGEMENT (ADMIN SERVER ACTIONS)
 // =========================================================================
 
+export async function strictSlugify(text: string): Promise<string> {
+  if (!text) return '';
+  let str = text.toLowerCase();
+
+  // Explicitly map Azerbaijani and special characters
+  const charMap: Record<string, string> = {
+    'ə': 'e',
+    'ı': 'i',
+    'ö': 'o',
+    'ü': 'u',
+    'ğ': 'g',
+    'ç': 'c',
+    'ş': 's',
+    'Ə': 'e',
+    'I': 'i',
+    'İ': 'i',
+    'Ö': 'o',
+    'Ü': 'u',
+    'Ğ': 'g',
+    'Ç': 'c',
+    'Ş': 's',
+  };
+
+  str = str.replace(/[əıöüğçşƏIİÖÜĞÇŞ]/g, (m) => charMap[m] || m);
+
+  // Strip parentheses, brackets, and special punctuation completely
+  str = str.replace(/[\(\)\[\]\{\}\/\\#\?!\.,;:'"<>@$%^&*+=~`]/g, ' ');
+
+  // Keep only alphanumeric and whitespace / hyphens
+  str = str.replace(/[^a-z0-9\s-]/g, '');
+
+  // Collapse spaces and multiple hyphens into a single hyphen
+  str = str.trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-');
+
+  return str;
+}
+
 async function resolveUniqueSlug(supabase: any, rawSlug: string, productId?: string) {
-  let slug = rawSlug ? rawSlug.trim() : '';
-  if (!slug) {
-    slug = `product-${Date.now()}`;
+  let cleanSlug = await strictSlugify(rawSlug);
+  if (!cleanSlug) {
+    cleanSlug = `product-${Date.now()}`;
   }
 
-  let query = supabase.from('products').select('id').eq('slug', slug);
-  if (productId) {
-    query = query.neq('id', productId);
+  let slug = cleanSlug;
+  let counter = 1;
+
+  while (counter < 100) {
+    let query = supabase.from('products').select('id').eq('slug', slug);
+    if (productId) {
+      query = query.neq('id', productId);
+    }
+
+    const { data: existing } = await query.maybeSingle();
+    if (!existing) {
+      break;
+    }
+    counter++;
+    slug = `${cleanSlug}-${counter}`;
   }
 
-  const { data: existing } = await query.maybeSingle();
-  if (existing) {
-    const suffix = Date.now().toString().slice(-4);
-    slug = `${slug}-${suffix}`;
-  }
   return slug;
 }
 
@@ -1539,7 +1583,7 @@ function mapVariantsPayload(variants: any[], basePrice: number, productId?: stri
 export async function createProduct(payload: any) {
   try {
     const supabase = await createServerSupabaseClient();
-    const rawSlug = payload.slug || (payload.title_az ? payload.title_az.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : '');
+    const rawSlug = payload.slug || payload.title_az || payload.title_en || 'product';
     const finalSlug = await resolveUniqueSlug(supabase, rawSlug);
     const safeGallery = formatGalleryImages(payload.gallery_images);
     const basePrice = Number(payload.price_azn || payload.price || 0);
@@ -1556,7 +1600,7 @@ export async function createProduct(payload: any) {
       compare_at_price_azn: payload.compare_at_price_azn,
       brand_id: payload.brand_id,
       is_active: payload.is_active ?? true,
-      status: payload.status ?? (payload.is_active ? 'publish' : 'draft'),
+      status: payload.status || (payload.is_active !== false ? 'active' : 'draft'),
       image_url: payload.image_url,
       video_url: payload.video_url,
       stock_quantity: payload.stock_quantity ?? 0,
@@ -1608,8 +1652,8 @@ export async function updateProduct(id: string, payload: any) {
     const supabase = await createServerSupabaseClient();
     const { category_ids, variants, ...directFields } = payload;
 
-    if (directFields.slug || directFields.title_az) {
-      const rawSlug = directFields.slug || (directFields.title_az ? directFields.title_az.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : '');
+    if (directFields.slug || directFields.title_az || directFields.title_en) {
+      const rawSlug = directFields.slug || directFields.title_az || directFields.title_en || '';
       if (rawSlug) {
         directFields.slug = await resolveUniqueSlug(supabase, rawSlug, id);
       }
