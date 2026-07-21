@@ -2,6 +2,7 @@ import { getDictionary } from '@/i18n/dictionaries';
 import { ProductDetailClientContent } from '@/components/layout/ProductDetailClientContent';
 import { supabase } from '@/lib/supabase/client';
 import { getProductReviews } from '@/lib/actions/reviews';
+import { notFound } from 'next/navigation';
 
 export const revalidate = 60;
 
@@ -13,21 +14,20 @@ interface ProductPageProps {
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
-  const { locale, slug } = await params;
+  const { locale, slug: rawParamSlug } = await params;
   const dict = await getDictionary(locale);
 
-  // Fallback high-fidelity Speedcubing products with rich specs & data
-  
+  const rawSlug = decodeURIComponent(rawParamSlug || '').trim();
+
   // 1. Fetch matching product from Supabase if available
   let activeProduct = null;
   try {
-    const decodedSlug = decodeURIComponent(slug).trim();
     const titleColumn = `title_${locale}`;
     const descColumn = `description_${locale}`;
     const { data: dbProduct, error } = await supabase
       .from('products')
       .select('*, variants(*)')
-      .or(`slug.eq.${decodedSlug},id.eq.${decodedSlug}`)
+      .or(`slug.eq.${rawSlug},slug.ilike.${rawSlug},id.eq.${rawSlug}`)
       .maybeSingle();
 
     if (!error && dbProduct) {
@@ -61,12 +61,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     console.error('Supabase product query error:', err);
   }
 
-  
+  if (!activeProduct) {
+    notFound();
+  }
 
-  
-  // Generate Recommendations/Related products
-  
-  const reviewsRes = await getProductReviews(activeProduct?.id || '');
+  const reviewsRes = await getProductReviews(activeProduct.id);
   const realReviews = reviewsRes.success ? reviewsRes.data : [];
 
   const reviewsCount = realReviews.length;
@@ -77,7 +76,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     .from('products')
     .select('*')
     .eq('is_active', true)
-    .neq('id', activeProduct?.id)
+    .neq('id', activeProduct.id)
     .limit(4);
 
   const relatedList = (dbRelated || []).map(p => ({

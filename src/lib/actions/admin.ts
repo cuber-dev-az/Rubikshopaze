@@ -1600,7 +1600,7 @@ export async function createProduct(payload: any) {
       compare_at_price_azn: payload.compare_at_price_azn,
       brand_id: payload.brand_id,
       is_active: payload.is_active ?? true,
-      status: payload.status || (payload.is_active !== false ? 'active' : 'draft'),
+      status: payload.status || 'active',
       image_url: payload.image_url,
       video_url: payload.video_url,
       stock_quantity: payload.stock_quantity ?? 0,
@@ -1663,6 +1663,13 @@ export async function updateProduct(id: string, payload: any) {
       directFields.gallery_images = formatGalleryImages(directFields.gallery_images);
     }
 
+    if (directFields.is_active === undefined) {
+      directFields.is_active = true;
+    }
+    if (!directFields.status) {
+      directFields.status = 'active';
+    }
+
     const basePrice = Number(directFields.price_azn || directFields.price || 0);
 
     const { data: product, error: prodError } = await supabase
@@ -1711,6 +1718,10 @@ export async function saveProduct(productId: string | null | undefined, payload:
   } else {
     return createProduct(payload);
   }
+}
+
+export async function upsertProduct(payload: any, productId?: string) {
+  return saveProduct(productId, payload);
 }
 
 export async function deleteProduct(id: string) {

@@ -60,9 +60,14 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   };
 
   const productTitle = (product as any).name || product.title;
+  const productSlug = product.slug ? encodeURIComponent(product.slug.trim()) : product.id;
+  const productUrl = `/${locale}/product/${productSlug}`;
 
   return (
-    <div className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group">
+    <Link 
+      href={productUrl} 
+      className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group cursor-pointer block"
+    >
       {product.discount_percent && product.discount_percent > 0 ? (
         <div className="absolute top-3 left-3 z-20 bg-rubik-brand text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none">
           -{product.discount_percent}%
@@ -83,13 +88,6 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           )}
         </button>
       </div>
-
-      {/* Stretched Link Pattern for semantic validity and flawless touch UX */}
-      <Link
-        href={`/${locale}/product/${product.slug || product.id}`}
-        className="absolute inset-0 z-10 cursor-pointer"
-        aria-label={productTitle}
-      />
 
       <div className="relative aspect-square w-full bg-gray-50">
         <Image
@@ -142,6 +140,6 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           {isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}
         </button>
       </div>
-    </div>
+    </Link>
   );
 }
