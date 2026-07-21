@@ -25,6 +25,7 @@ export interface Product {
   compare_at_price_azn?: number;
   original_price_azn?: number;
   discount_percent?: number;
+  slug?: string;
 }
 
 export async function getActiveProducts() {
@@ -55,5 +56,6 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product {
     compare_at_price_azn: raw.compare_at_price_azn ? Number(raw.compare_at_price_azn) : undefined,
     original_price_azn: raw.original_price_azn ? Number(raw.original_price_azn) : undefined,
     discount_percent: raw.discount_percent ? Number(raw.discount_percent) : undefined,
+    slug: raw.slug || undefined,
   };
 }

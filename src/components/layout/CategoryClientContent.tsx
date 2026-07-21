@@ -37,6 +37,7 @@ interface Product {
   brand?: string;
   mechanics?: 'magnetic' | 'maglev' | 'ball-core' | 'standard' | string;
   created_at?: string;
+  slug?: string;
 }
 
 interface CategoryClientContentProps {
@@ -412,8 +413,15 @@ export function CategoryClientContent({
                   return (
                     <div
                       key={product.id}
-                      className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group"
+                      className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group relative"
                     >
+                      {/* Stretched Link for perfect clickability across the whole card */}
+                      <Link
+                        href={`/${locale}/product/${product.slug || product.id}`}
+                        className="absolute inset-0 z-10 cursor-pointer"
+                        aria-label={product.title}
+                      />
+
                       <div className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
                         <Image
                           src={product.image_url}
@@ -425,7 +433,7 @@ export function CategoryClientContent({
                         />
 
                         {isOutOfStock && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1.5px]">
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1.5px] z-20 pointer-events-none">
                             <span className="text-white text-xs font-black tracking-wider px-3 py-1 bg-red-600 rounded-lg shadow-soft-sm">
                               {dict.product.out_of_stock}
                             </span>
@@ -433,7 +441,7 @@ export function CategoryClientContent({
                         )}
                       </div>
 
-                      <div className="p-4 md:p-5 flex flex-col flex-grow space-y-2.5">
+                      <div className="p-4 md:p-5 flex flex-col flex-grow space-y-2.5 relative">
                         <span className="text-[10px] uppercase font-bold text-rubik-brand tracking-wider">
                           {product.brand} • {product.mechanics === 'maglev' ? 'MagLev' : product.mechanics === 'ball-core' ? 'Ball Core' : 'Magnetic'}
                         </span>
@@ -448,7 +456,9 @@ export function CategoryClientContent({
                         </div>
 
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             if (!isOutOfStock) {
                               addItem({
                                 id: product.id,
@@ -460,7 +470,7 @@ export function CategoryClientContent({
                             }
                           }}
                           disabled={isOutOfStock}
-                          className={`w-full py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          className={`w-full py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer relative z-20 ${
                             isOutOfStock
                               ? 'bg-muted text-muted-foreground cursor-not-allowed'
                               : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white active:scale-95'
