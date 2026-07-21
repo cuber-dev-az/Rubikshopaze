@@ -94,207 +94,25 @@ export async function getProductById(id: string) {
   }
 }
 
-export async function createProduct(payload: {
-  title_az: string;
-  title_en: string;
-  title_ru: string;
-  description_az: string;
-  description_en: string;
-  description_ru: string;
-  slug: string;
-  price_azn: number;
-  compare_at_price_azn?: number;
-  brand_id?: string;
-  is_active?: boolean;
-  status?: string;
-  image_url?: string;
-  video_url?: string;
-  stock_quantity?: number;
-  category_ids?: string[];
-  variants?: any[];
-  is_featured?: boolean;
-  product_type?: string;
-  tags?: string[];
-  gallery_images?: string[];
-  seo_title?: string;
-  seo_description?: string;
-  weight_g?: number;
-  is_magnetic?: boolean;
-  size_mm?: number;
-  difficulty_level?: string;
-}) {
-  try {
-    const supabase = await createServerSupabaseClient();
+import * as adminActions from '@/lib/actions/admin';
 
-    const insertObj: any = {
-      title_az: payload.title_az,
-      title_en: payload.title_en,
-      title_ru: payload.title_ru,
-      description_az: payload.description_az,
-      description_en: payload.description_en,
-      description_ru: payload.description_ru,
-      slug: payload.slug,
-      price_azn: payload.price_azn,
-      compare_at_price_azn: payload.compare_at_price_azn,
-      brand_id: payload.brand_id,
-      is_active: payload.is_active ?? true,
-      status: payload.status ?? (payload.is_active ? 'publish' : 'draft'),
-      image_url: payload.image_url,
-      video_url: payload.video_url,
-      stock_quantity: payload.stock_quantity ?? 0,
-      is_featured: payload.is_featured ?? false,
-      product_type: payload.product_type ?? 'speedcube',
-      tags: payload.tags ?? [],
-      gallery_images: payload.gallery_images ?? [],
-      seo_title: payload.seo_title,
-      seo_description: payload.seo_description,
-      weight_g: payload.weight_g,
-      is_magnetic: payload.is_magnetic ?? false,
-      size_mm: payload.size_mm,
-      difficulty_level: payload.difficulty_level ?? 'başlanğıc',
-    };
-
-    const { data: product, error: prodError } = await supabase
-      .from('products')
-      .insert(insertObj)
-      .select()
-      .single();
-
-    if (prodError) throw prodError;
-
-    if (payload.category_ids && payload.category_ids.length > 0) {
-      const mappings = payload.category_ids.map((catId) => ({
-        product_id: product.id,
-        category_id: catId,
-      }));
-      const { error: catError } = await supabase.from('product_categories').insert(mappings);
-      if (catError) throw catError;
-    }
-
-    if (payload.variants && payload.variants.length > 0) {
-      const variantsToInsert = payload.variants.map((v: any) => ({
-        product_id: product.id,
-        sku: v.sku,
-        name: v.name,
-        price: v.price,
-        stock: v.stock,
-        is_active: true
-      }));
-      const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
-      if (varError) throw varError;
-    }
-
-    revalidatePath('/[locale]', 'layout');
-    return { success: true, data: product };
-  } catch (error: any) {
-    console.error('createProduct Error:', error.message);
-    return { success: false, error: error.message };
-  }
+export async function createProduct(payload: any) {
+  return adminActions.createProduct(payload);
 }
 
-export async function updateProduct(id: string, payload: Partial<{
-  title_az: string;
-  title_en: string;
-  title_ru: string;
-  description_az: string;
-  description_en: string;
-  description_ru: string;
-  slug: string;
-  price_azn: number;
-  compare_at_price_azn: number;
-  brand_id: string;
-  is_active: boolean;
-  status: string;
-  image_url: string;
-  video_url: string;
-  stock_quantity: number;
-  category_ids: string[];
-  variants: any[];
-  is_featured: boolean;
-  product_type: string;
-  tags: string[];
-  gallery_images: string[];
-  seo_title: string;
-  seo_description: string;
-  weight_g: number;
-  is_magnetic: boolean;
-  size_mm: number;
-  difficulty_level: string;
-}>) {
-  try {
-    const supabase = await createServerSupabaseClient();
-    const { category_ids, variants, ...directFields } = payload;
+export async function updateProduct(id: string, payload: any) {
+  return adminActions.updateProduct(id, payload);
+}
 
-    const { data: product, error: prodError } = await supabase
-      .from('products')
-      .update(directFields)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (prodError) throw prodError;
-
-    if (category_ids !== undefined) {
-      // Clear existing and rewrite
-      await supabase.from('product_categories').delete().eq('product_id', id);
-      if (category_ids.length > 0) {
-        const mappings = category_ids.map((catId) => ({
-          product_id: id,
-          category_id: catId,
-        }));
-        const { error: catError } = await supabase.from('product_categories').insert(mappings);
-        if (catError) throw catError;
-      }
-    }
-
-    if (variants !== undefined) {
-      // Clear existing and rewrite
-      const { error: delVarError } = await supabase.from('variants').delete().eq('product_id', id);
-      if (delVarError) throw delVarError;
-
-      if (variants.length > 0) {
-        const variantsToInsert = variants.map((v: any) => ({
-          product_id: id,
-          sku: v.sku,
-          name: v.name,
-          price: v.price,
-          stock: v.stock,
-          is_active: true
-        }));
-        const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
-        if (varError) throw varError;
-      }
-    }
-
-    revalidatePath('/[locale]', 'layout');
-    return { success: true, data: product };
-  } catch (error: any) {
-    console.error('updateProduct Error:', error.message);
-    return { success: false, error: error.message };
-  }
+export async function saveProduct(productId: string | null | undefined, payload: any) {
+  return adminActions.saveProduct(productId, payload);
 }
 
 export async function deleteProduct(id: string) {
-  try {
-    const supabase = await createServerSupabaseClient();
-    
-    // Write audit log BEFORE we delete the record to know which ID is deleted, or as part of the action.
-    const { createAuditLog } = await import('@/lib/actions/audit');
-    await createAuditLog({
-      action: 'Məhsul silindi',
-      table_name: 'products',
-      record_id: id,
-    });
-
-    const { error } = await supabase.from('products').delete().eq('id', id);
-    if (error) throw error;
-    revalidatePath('/[locale]', 'layout');
-    return { success: true };
-  } catch (error: any) {
-    console.error('deleteProduct Error:', error.message);
-    return { success: false, error: error.message };
-  }
+  return adminActions.deleteProduct(id);
 }
+
+
 
 
 // =========================================================================

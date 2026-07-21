@@ -1474,3 +1474,220 @@ export async function addOrderInternalNote(orderId: string, note: string) {
   }
 }
 
+// =========================================================================
+// PRODUCTS MANAGEMENT (ADMIN SERVER ACTIONS)
+// =========================================================================
+
+async function resolveUniqueSlug(supabase: any, rawSlug: string, productId?: string) {
+  let slug = rawSlug ? rawSlug.trim() : '';
+  if (!slug) {
+    slug = `product-${Date.now()}`;
+  }
+
+  let query = supabase.from('products').select('id').eq('slug', slug);
+  if (productId) {
+    query = query.neq('id', productId);
+  }
+
+  const { data: existing } = await query.maybeSingle();
+  if (existing) {
+    const suffix = Date.now().toString().slice(-4);
+    slug = `${slug}-${suffix}`;
+  }
+  return slug;
+}
+
+function formatGalleryImages(gallery_images: any): string[] {
+  if (!gallery_images) return [];
+  if (Array.isArray(gallery_images)) {
+    return gallery_images.map((img: any) => String(img).trim()).filter(Boolean);
+  }
+  if (typeof gallery_images === 'string') {
+    try {
+      const parsed = JSON.parse(gallery_images);
+      if (Array.isArray(parsed)) {
+        return parsed.map((img: any) => String(img).trim()).filter(Boolean);
+      }
+    } catch {
+      return gallery_images.split(',').map((s: string) => s.trim()).filter(Boolean);
+    }
+  }
+  return [];
+}
+
+function mapVariantsPayload(variants: any[], basePrice: number, productId?: string) {
+  if (!variants || !Array.isArray(variants) || variants.length === 0) {
+    return [];
+  }
+  return variants.map((v: any) => {
+    const variantPrice = Number(v.price_azn || v.price || basePrice || 0);
+    const item: any = {
+      sku: v.sku || '',
+      name: v.name || '',
+      price_azn: variantPrice,
+      price: variantPrice,
+      stock: Number(v.stock ?? v.stock_quantity ?? 0),
+      is_active: v.is_active ?? true
+    };
+    if (productId) {
+      item.product_id = productId;
+    }
+    return item;
+  });
+}
+
+export async function createProduct(payload: any) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const rawSlug = payload.slug || (payload.title_az ? payload.title_az.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : '');
+    const finalSlug = await resolveUniqueSlug(supabase, rawSlug);
+    const safeGallery = formatGalleryImages(payload.gallery_images);
+    const basePrice = Number(payload.price_azn || payload.price || 0);
+
+    const insertObj: any = {
+      title_az: payload.title_az,
+      title_en: payload.title_en,
+      title_ru: payload.title_ru,
+      description_az: payload.description_az,
+      description_en: payload.description_en,
+      description_ru: payload.description_ru,
+      slug: finalSlug,
+      price_azn: basePrice,
+      compare_at_price_azn: payload.compare_at_price_azn,
+      brand_id: payload.brand_id,
+      is_active: payload.is_active ?? true,
+      status: payload.status ?? (payload.is_active ? 'publish' : 'draft'),
+      image_url: payload.image_url,
+      video_url: payload.video_url,
+      stock_quantity: payload.stock_quantity ?? 0,
+      is_featured: payload.is_featured ?? false,
+      product_type: payload.product_type ?? 'speedcube',
+      tags: payload.tags ?? [],
+      gallery_images: safeGallery,
+      seo_title: payload.seo_title,
+      seo_description: payload.seo_description,
+      weight_g: payload.weight_g,
+      is_magnetic: payload.is_magnetic ?? false,
+      size_mm: payload.size_mm,
+      difficulty_level: payload.difficulty_level ?? 'başlanğıc',
+    };
+
+    const { data: product, error: prodError } = await supabase
+      .from('products')
+      .insert(insertObj)
+      .select()
+      .single();
+
+    if (prodError) throw prodError;
+
+    if (payload.category_ids && payload.category_ids.length > 0) {
+      const mappings = payload.category_ids.map((catId: string) => ({
+        product_id: product.id,
+        category_id: catId,
+      }));
+      const { error: catError } = await supabase.from('product_categories').insert(mappings);
+      if (catError) throw catError;
+    }
+
+    const variantsToInsert = mapVariantsPayload(payload.variants || [], basePrice, product.id);
+    if (variantsToInsert.length > 0) {
+      const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
+      if (varError) throw varError;
+    }
+
+    revalidatePath('/[locale]', 'layout');
+    return { success: true, data: product };
+  } catch (error: any) {
+    console.error('createProduct Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateProduct(id: string, payload: any) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { category_ids, variants, ...directFields } = payload;
+
+    if (directFields.slug || directFields.title_az) {
+      const rawSlug = directFields.slug || (directFields.title_az ? directFields.title_az.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') : '');
+      if (rawSlug) {
+        directFields.slug = await resolveUniqueSlug(supabase, rawSlug, id);
+      }
+    }
+
+    if (directFields.gallery_images !== undefined) {
+      directFields.gallery_images = formatGalleryImages(directFields.gallery_images);
+    }
+
+    const basePrice = Number(directFields.price_azn || directFields.price || 0);
+
+    const { data: product, error: prodError } = await supabase
+      .from('products')
+      .update(directFields)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (prodError) throw prodError;
+
+    if (category_ids !== undefined) {
+      await supabase.from('product_categories').delete().eq('product_id', id);
+      if (category_ids.length > 0) {
+        const mappings = category_ids.map((catId: string) => ({
+          product_id: id,
+          category_id: catId,
+        }));
+        const { error: catError } = await supabase.from('product_categories').insert(mappings);
+        if (catError) throw catError;
+      }
+    }
+
+    if (variants !== undefined) {
+      const { error: delVarError } = await supabase.from('variants').delete().eq('product_id', id);
+      if (delVarError) throw delVarError;
+
+      const variantsToInsert = mapVariantsPayload(variants || [], basePrice, id);
+      if (variantsToInsert.length > 0) {
+        const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
+        if (varError) throw varError;
+      }
+    }
+
+    revalidatePath('/[locale]', 'layout');
+    return { success: true, data: product };
+  } catch (error: any) {
+    console.error('updateProduct Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function saveProduct(productId: string | null | undefined, payload: any) {
+  if (productId) {
+    return updateProduct(productId, payload);
+  } else {
+    return createProduct(payload);
+  }
+}
+
+export async function deleteProduct(id: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    try {
+      const { createAuditLog } = await import('@/lib/actions/audit');
+      await createAuditLog({
+        action: 'Məhsul silindi',
+        table_name: 'products',
+        record_id: id,
+      });
+    } catch {}
+
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) throw error;
+    revalidatePath('/[locale]', 'layout');
+    return { success: true };
+  } catch (error: any) {
+    console.error('deleteProduct Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
