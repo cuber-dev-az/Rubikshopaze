@@ -1,3 +1,6 @@
+'use client';
+
+import * as React from 'react';
 import Link from 'next/link';
 import type { ApplicationDictionary } from '@/types/application.types';
 
@@ -7,6 +10,27 @@ interface FooterProps {
 }
 
 export function Footer({ dict, locale }: FooterProps) {
+  const [phone, setPhone] = React.useState('+994 50 668 49 25');
+  const [email, setEmail] = React.useState('info@rubikshop.az');
+  const [address, setAddress] = React.useState('Bakı, Azərbaycan');
+
+  React.useEffect(() => {
+    async function loadFooterSettings() {
+      try {
+        const { getSettings } = await import('@/lib/actions/settings');
+        const res = await getSettings('general');
+        if (res.success && res.data) {
+          if (res.data.contactPhone) setPhone(res.data.contactPhone);
+          if (res.data.contactEmail) setEmail(res.data.contactEmail);
+          if (res.data.address) setAddress(res.data.address);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    loadFooterSettings();
+  }, []);
+
   return (
     <footer className="bg-rubik-secondary text-gray-400 py-12 mt-auto">
       <div className="max-w-screen-2xl mx-auto px-4 md:px-8">
@@ -16,27 +40,27 @@ export function Footer({ dict, locale }: FooterProps) {
               RubikShop
             </Link>
             <p className="text-sm max-w-xs">
-              Premium speedcubing products and accessories. Designed for professional cubers.
+              {dict.footer?.bio_desc || "Premium speedcubing products and accessories. Designed for professional cubers."}
             </p>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4">Məlumat / Info</h4>
+            <h4 className="text-white font-semibold mb-4">{dict.footer?.useful_links || "Məlumat / Info"}</h4>
             <ul className="space-y-2 text-sm">
               <li><Link href={`/${locale}`} className="hover:text-white transition-colors">{dict.navigation.home}</Link></li>
               <li><Link href={`/${locale}/admin`} className="hover:text-white transition-colors">{dict.navigation.admin}</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="text-white font-semibold mb-4">Əlaqə / Contact</h4>
+            <h4 className="text-white font-semibold mb-4">{dict.footer?.contact_us || "Əlaqə / Contact"}</h4>
             <ul className="space-y-2 text-sm">
-              <li>Baku, Azerbaijan</li>
-              <li>info@rubikshop.az</li>
-              <li>+994 50 000 00 00</li>
+              <li>{address}</li>
+              <li>{email}</li>
+              <li><a href={`tel:${phone}`} className="hover:text-white transition-colors">{phone}</a></li>
             </ul>
           </div>
         </div>
         <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row items-center justify-between text-sm">
-          <p>© {new Date().getFullYear()} RubikShop. Bütün hüquqlar qorunur.</p>
+          <p>© {new Date().getFullYear()} RubikShop. {dict.footer?.all_rights_reserved || "Bütün hüquqlar qorunur."}</p>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <span className="hover:text-white cursor-pointer transition-colors">Instagram</span>
             <span className="hover:text-white cursor-pointer transition-colors">WhatsApp</span>

@@ -100,7 +100,7 @@ export function Header({ dict, locale }: HeaderProps) {
       {/* Top Banner Accent */}
       <div className="bg-rubik-brand text-white text-xs font-sans py-2 px-4 text-center tracking-wide font-medium flex items-center justify-center gap-2">
         <Sparkles className="h-3 w-3 shrink-0 animate-pulse" />
-        <span>Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma.</span>
+        <span>{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
       </div>
 
       <header className="sticky top-0 z-40 w-full bg-card border-b border-border shadow-soft-sm backdrop-blur-md bg-opacity-95 dark:bg-opacity-90">
@@ -133,7 +133,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <Search className="absolute left-4 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="search"
-                placeholder="Məhsul axtar..."
+                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-24 py-2.5 bg-[#161b22] border border-gray-800 rounded-xl text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
@@ -142,7 +142,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 type="submit"
                 className="absolute right-2 px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-black rounded-lg transition-colors cursor-pointer h-[34px] flex items-center justify-center"
               >
-                Axtar
+                {dict.header?.search_button || "Axtar"}
               </button>
             </form>
           </div>
@@ -198,7 +198,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 title="Çıxış Et"
               >
                 <LogOut className="h-4 w-4" />
-                <span>Çıxış</span>
+                <span>{dict.header?.sign_out || "Çıxış"}</span>
               </button>
             )}
           </div>
@@ -231,7 +231,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <Search className="absolute left-3.5 h-4 w-4 text-gray-500 pointer-events-none" />
               <input
                 type="search"
-                placeholder="Məhsul axtar..."
+                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-[#161b22] border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all"
@@ -279,7 +279,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   {/* Language Selection Bar - PLACED EXCLUSIVELY HERE */}
                   <div className="space-y-3">
                     <span className="text-xs font-black uppercase tracking-wider text-gray-400 block">
-                      {t({ az: 'Dil seçimi', en: 'Language', ru: 'Язык' })}
+                      {dict.header?.language_title || "Dil seçimi"}
                     </span>
                     <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1.5 rounded-xl border border-gray-800">
                       {(['az', 'en', 'ru'] as const).map((lang) => (
@@ -305,15 +305,15 @@ export function Header({ dict, locale }: HeaderProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
                       <span className="text-xs font-black uppercase tracking-wider text-gray-500 block pb-1 border-b border-gray-800">
-                        {t({ az: 'Səhifələr', en: 'Pages', ru: 'Страницы' })}
+                        {dict.header?.pages_title || "Səhifələr"}
                       </span>
                       <nav className="flex flex-col">
                         {[
-                          { label: 'Kataloq', href: `/${locale}/category` },
-                          { label: 'Alqoritmlər & Öyrənmə', href: `/${locale}?category=learning-content` },
-                          { label: 'Çatdırılma və Ödəniş', href: `/${locale}/faq` },
-                          { label: 'Haqqımızda', href: `/${locale}/pages/about` },
-                          { label: 'Əlaqə', href: `/${locale}/faq` },
+                          { label: dict.header?.nav_catalog || 'Kataloq', href: `/${locale}/category` },
+                          { label: dict.header?.nav_learning || 'Alqoritmlər & Öyrənmə', href: `/${locale}?category=learning-content` },
+                          { label: dict.header?.nav_delivery || 'Çatdırılma və Ödəniş', href: `/${locale}/faq` },
+                          { label: dict.header?.nav_about || 'Haqqımızda', href: `/${locale}/pages/about` },
+                          { label: dict.header?.nav_contact || 'Əlaqə', href: `/${locale}/faq` },
                         ].map((item) => (
                           <Link
                             key={item.label}
@@ -333,7 +333,7 @@ export function Header({ dict, locale }: HeaderProps) {
 
                     <div className="space-y-4">
                       <span className="text-xs font-black uppercase tracking-wider text-gray-500 block pb-1 border-b border-gray-800">
-                        {t({ az: 'Məhsul Qrupları', en: 'Categories', ru: 'Категории' })}
+                        {dict.header?.categories_title || "Məhsul Qrupları"}
                       </span>
                       <div className="grid grid-cols-2 gap-2">
                         {rubikTaxonomyGroups.map((group) => {
@@ -366,7 +366,7 @@ export function Header({ dict, locale }: HeaderProps) {
                           }}
                           className="flex-1 inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
                         >
-                          Şəxsi Kabinet
+                          {dict.header?.my_account || "Şəxsi Kabinet"}
                         </button>
                         <button
                           onClick={() => {
@@ -376,7 +376,7 @@ export function Header({ dict, locale }: HeaderProps) {
                           className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 text-sm font-black rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer min-h-[44px]"
                         >
                           <LogOut className="h-4 w-4" />
-                          <span>Çıxış Et</span>
+                          <span>{dict.header?.sign_out_long || "Çıxış Et"}</span>
                         </button>
                       </div>
                     ) : (
@@ -387,7 +387,7 @@ export function Header({ dict, locale }: HeaderProps) {
                         }}
                         className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-red-500 text-white text-sm font-black rounded-xl hover:bg-red-600 transition-colors cursor-pointer min-h-[44px]"
                       >
-                        Giriş / Qeydiyyat
+                        {dict.header?.login_register || "Giriş / Qeydiyyat"}
                       </button>
                     )}
                   </div>

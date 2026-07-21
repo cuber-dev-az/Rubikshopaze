@@ -36,6 +36,7 @@ interface Product {
   category_slug?: string;
   brand?: string;
   mechanics?: 'magnetic' | 'maglev' | 'ball-core' | 'standard' | string;
+  created_at?: string;
 }
 
 interface CategoryClientContentProps {
@@ -159,8 +160,12 @@ export function CategoryClientContent({
     } else if (sortOption === 'stock_high') {
       result.sort((a, b) => b.stock_quantity - a.stock_quantity);
     } else {
-      // mock newest
-      result.reverse();
+      // sort by newest (created_at descending)
+      result.sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
     }
 
     return result;

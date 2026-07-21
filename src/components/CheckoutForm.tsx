@@ -21,11 +21,9 @@ import {
   ShieldCheck,
   Check,
   Percent,
-  Ticket,
   Lock,
   Wallet,
   Building,
-  HelpCircle,
   Loader2
 } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
@@ -44,11 +42,12 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   const {
     items,
     appliedCoupon,
-    getTotalPrice,
-    getDiscountAmount,
-    getFinalPrice,
     clearCart
   } = useCartStore();
+
+  const t = React.useCallback((obj: { az: string; en: string; ru: string }) => {
+    return obj[locale as keyof typeof obj] || obj.az;
+  }, [locale]);
 
   // Authentication State Simulation
   const [checkoutMode, setCheckoutMode] = React.useState<'guest' | 'login'>('guest');
@@ -76,11 +75,9 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [couponInput, setCouponInput] = React.useState('');
-  const { applyCoupon, removeCoupon } = useCartStore();
+  const { applyCoupon } = useCartStore();
 
   const subtotal = useCartStore((state) => state.items.reduce((total, item) => total + item.price_azn * item.quantity, 0));
-  const discountType = useCartStore((state) => state.discountType);
-  const discountValue = useCartStore((state) => state.discountValue);
   const discountAmount = useCartStore((state) => {
     const subtotal = state.items.reduce((total, item) => total + item.price_azn * item.quantity, 0);
     if (state.discountType === 'percentage') return (subtotal * state.discountValue) / 100;
@@ -135,26 +132,28 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     return shippingPrices.standard;
   }, [subtotal, deliveryMethod, shippingPrices]);
 
-    const [couponError, setCouponError] = React.useState('');
+  const [couponError, setCouponError] = React.useState('');
   const [isCouponLoading, setIsCouponLoading] = React.useState(false);
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
     setCouponError('');
     setIsCouponLoading(true);
     
-    // 1. Try to validate as a coupon
     const res = await validateCoupon(couponInput, subtotal);
     if (res.success && res.coupon) {
       applyCoupon(res.coupon.code, res.coupon.discount_type as any, res.coupon.discount_value);
       setCouponInput('');
     } else {
-      // 2. Try to validate as a gift card
       const gcRes = await validateGiftCard(couponInput);
       if (gcRes.success && gcRes.giftCard) {
         applyCoupon(gcRes.giftCard.code, 'fixed', gcRes.giftCard.current_balance);
         setCouponInput('');
       } else {
-        setCouponError(res.error || gcRes.error || 'Daxil edilən kod keçərsizdir.');
+        setCouponError(res.error || gcRes.error || t({
+          az: 'Daxil edilən kod keçərsizdir.',
+          en: 'The code entered is invalid.',
+          ru: 'Введенный код недействителен.'
+        }));
       }
     }
     setIsCouponLoading(false);
@@ -170,22 +169,27 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         <div className="p-4 bg-rubik-brand/10 text-rubik-brand rounded-full">
           <ShoppingBag className="h-12 w-12" />
         </div>
-        <h2 className="text-xl font-black text-foreground uppercase tracking-wide">Səbətiniz boşdur</h2>
+        <h2 className="text-xl font-black text-foreground uppercase tracking-wide">
+          {dict.cart.empty}
+        </h2>
         <p className="text-xs text-muted-foreground max-w-sm">
-          Çatdırılma qeydiyyatı etmək üçün zəhmət olmasa səbətinizə məhsul əlavə edin. Sürətli kubları kəşf edib rekordlarınızı yeniləyin!
+          {t({
+            az: 'Çatdırılma qeydiyyatı etmək üçün zəhmət olmasa səbətinizə məhsul əlavə edin. Sürətli kubları kəşf edib rekordlarınızı yeniləyin!',
+            en: 'Please add products to your cart to register delivery. Discover speedcubes and renew your records!',
+            ru: 'Пожалуйста, добавьте товары в корзину для оформления доставки. Откройте для себя скоростные кубики и обновите свои рекорды!'
+          })}
         </p>
         <Link
           href={`/${locale}`}
           className="inline-flex items-center justify-center px-6 py-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-black text-xs rounded-xl hover:shadow-soft-md transition-all cursor-pointer gap-2"
         >
-          <span>Kataloqa keçid</span>
+          <span>{t({ az: 'Kataloqa keçid', en: 'Go to Catalog', ru: 'Перейти в каталог' })}</span>
           <ChevronRight className="h-4 w-4" />
         </Link>
       </div>
     );
   }
 
-  // Real Supabase Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -201,19 +205,21 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     if (res.error) {
       setAuthError(res.error);
     } else {
-      // Reload page so session is active server-side
       window.location.reload();
     }
   };
 
-  // Field Validation
   const validateForm = () => {
     const errors: Record<string, string> = {};
     
     if (!name.trim()) {
-      errors.name = 'Ad və Soyad sahəsi mütləqdir.';
+      errors.name = dict.checkout?.validation_name_required || 'Ad və Soyad sahəsi mütləqdir.';
     } else if (name.trim().length < 2) {
-      errors.name = 'Zəhmət olmasa ən azı 2 simvoldan ibarət ad qeyd edin.';
+      errors.name = t({
+        az: 'Zəhmət olmasa ən azı 2 simvoldan ibarət ad qeyd edin.',
+        en: 'Please enter a name of at least 2 characters.',
+        ru: 'Пожалуйста, введите имя не менее чем из 2 символов.'
+      });
     }
 
     const cleanPhone = phone.replace(/\s+/g, '');
@@ -227,32 +233,39 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     }
 
     if (!cleanPhone) {
-      errors.phone = 'Mobil nömrə sahəsi mütləqdir.';
+      errors.phone = dict.checkout?.validation_phone_required || 'Mobil nömrə sahəsi mütləqdir.';
     } else if (!/^\+994(50|51|55|70|77|99|10|60)[0-9]{7}$/.test(formattedPhone)) {
-      errors.phone = 'Doğru Azərbaycan nömrəsi daxil edin. Məs: +994501234567';
+      errors.phone = t({
+        az: 'Doğru Azərbaycan nömrəsi daxil edin. Məs: +994501234567',
+        en: 'Enter a valid Azerbaijani number. E.g.: +994501234567',
+        ru: 'Введите корректный азербайджанский номер. Напр: +994501234567'
+      });
     }
 
     if (deliveryMethod !== 'metro') {
       if (!address.trim()) {
-        errors.address = 'Çatdırılma ünvanı mütləqdir.';
+        errors.address = dict.checkout?.validation_address_required || 'Çatdırılma ünvanı mütləqdir.';
       } else if (address.trim().length < 5) {
-        errors.address = 'Zəhmət olmasa daha ətraflı ünvan daxil edin (ən azı 5 simvol).';
+        errors.address = t({
+          az: 'Zəhmət olmasa daha ətraflı ünvan daxil edin (ən azı 5 simvol).',
+          en: 'Please enter a more detailed address (at least 5 characters).',
+          ru: 'Пожалуйста, введите более подробный адрес (не менее 5 символов).'
+        });
       }
     } else {
       if (!selectedMetroStation) {
-        errors.metroStation = 'Zəhmət olmasa çatdırılma üçün metro stansiyasını seçin.';
+        errors.metroStation = dict.checkout?.validation_metro_required || 'Zəhmət olmasa çatdırılma üçün metro stansiyasını seçin.';
       }
     }
 
     if (!termsAccepted) {
-      errors.terms = 'Sifariş üçün alış-veriş şərtlərini qəbul etməlisiniz.';
+      errors.terms = dict.checkout?.validation_terms_required || 'Sifariş üçün alış-veriş şərtlərini qəbul etməlisiniz.';
     }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  // Order submission
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -269,11 +282,32 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         formattedPhone = '+994' + cleanPhone;
       }
 
-      // Map friendly delivery method names for Azerbaijani audience
+      const tMsg = {
+        title: t({ az: 'YENİ SİFARİŞ', en: 'NEW ORDER', ru: 'НОВЫЙ ЗАКАЗ' }),
+        customer: t({ az: 'Müştəri', en: 'Customer', ru: 'Клиент' }),
+        phone: t({ az: 'Telefon', en: 'Phone', ru: 'Телефон' }),
+        instagram: t({ az: 'Instagram', en: 'Instagram', ru: 'Instagram' }),
+        delivery: t({ az: 'Çatdırılma Metodu', en: 'Delivery Method', ru: 'Метод Доставки' }),
+        address: t({ az: 'Ünvan', en: 'Address', ru: 'Адрес' }),
+        metro: t({ az: 'Görüş stansiyası', en: 'Metro Station', ru: 'Станция Метро' }),
+        gift: t({ az: 'Hədiyyə Qeydi', en: 'Gift Note', ru: 'Подарочная Запись' }),
+        products: t({ az: 'Sifariş Məhsulları', en: 'Ordered Products', ru: 'Товары в Заказе' }),
+        coupon: t({ az: 'Kupon', en: 'Coupon', ru: 'Купон' }),
+        payment: t({ az: 'Ödəniş Metodu', en: 'Payment Method', ru: 'Метод Оплаты' }),
+        paymentBank: t({ az: 'Kartdan Karta (Bank köçürməsi)', en: 'Card Transfer (Bank Transfer)', ru: 'Перевод на Карту (Банковский перевод)' }),
+        paymentCod: t({ az: 'Qapıda Nəğd Ödəniş', en: 'Cash on Delivery', ru: 'Оплата наличными при получении' }),
+        total: t({ az: 'Yekun Cəm', en: 'Total Amount', ru: 'Итоговая Сумма' }),
+        footer: t({
+          az: 'Zəhmət olmasa, sifarişi təsdiqləmək və çatdırılmanı təşkil etmək üçün bu mesajı bizə göndərin.',
+          en: 'Please send this message to us to confirm the order and arrange delivery.',
+          ru: 'Пожалуйста, отправьте это сообщение нам, чтобы подтвердить заказ и организовать доставку.'
+        })
+      };
+
       const deliveryLabelMap = {
-        standard: 'Kuryer Çatdırılması (1-2 Gün)',
-        express: 'Sürətli Çatdırılma (3 Saat)',
-        metro: `Metro stansiyası: ${selectedMetroStation}`
+        standard: t({ az: 'Kuryer Çatdırılması (1-2 Gün)', en: 'Courier Delivery (1-2 Days)', ru: 'Доставка Курьером (1-2 Дня)' }),
+        express: t({ az: 'Sürətli Çatdırılma (3 Saat)', en: 'Express Delivery (3 Hours)', ru: 'Экспресс Доставка (3 Часа)' }),
+        metro: t({ az: `Metro stansiyası: ${selectedMetroStation}`, en: `Metro station: ${selectedMetroStation}`, ru: `Станция метро: ${selectedMetroStation}` })
       };
 
       const payload = {
@@ -301,34 +335,34 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
       if (response.success && response.orderId) {
         const formattedOrderId = response.orderId.substring(0, 8).toUpperCase();
         
-        let message = `🔴 *RUBIKSHOP.AZ - YENİ SİFARİŞ (#${formattedOrderId})* 🔴\n\n`;
-        message += `👤 *Müştəri:* ${name.trim()}\n`;
-        message += `📞 *Telefon:* ${formattedPhone}\n`;
-        message += `📸 *Instagram:* @${instagram.trim() || 'Yoxdur'}\n\n`;
+        let message = `🔴 *RUBIKSHOP.AZ - ${tMsg.title} (#${formattedOrderId})* 🔴\n\n`;
+        message += `👤 *${tMsg.customer}:* ${name.trim()}\n`;
+        message += `📞 *${tMsg.phone}:* ${formattedPhone}\n`;
+        message += `📸 *${tMsg.instagram}:* @${instagram.trim() || 'Yoxdur'}\n\n`;
         
-        message += `🚚 *Çatdırılma Metodu:* ${deliveryLabelMap[deliveryMethod]}\n`;
+        message += `🚚 *${tMsg.delivery}:* ${deliveryLabelMap[deliveryMethod]}\n`;
         if (deliveryMethod !== 'metro') {
-          message += `📍 *Ünvan:* ${address.trim()}\n`;
+          message += `📍 *${tMsg.address}:* ${address.trim()}\n`;
         } else {
-          message += `📍 *Görüş stansiyası:* ${selectedMetroStation} metrosu\n`;
+          message += `📍 *${tMsg.metro}:* ${selectedMetroStation} ${t({ az: 'metrosu', en: 'metro', ru: 'метро' })}\n`;
         }
         
         if (isGift && giftNote) {
-          message += `🎁 *Hədiyyə Qeydi:* "${giftNote}"\n`;
+          message += `🎁 *${tMsg.gift}:* "${giftNote}"\n`;
         }
         
-        message += `\n📦 *Sifariş Məhsulları:*\n`;
+        message += `\n📦 *${tMsg.products}:*\n`;
         items.forEach((item) => {
           message += `• ${item.title} (x${item.quantity}) — ${(item.price_azn * item.quantity).toFixed(2)} AZN\n`;
         });
 
         if (appliedCoupon) {
-          message += `\n🎫 *Kupon:* ${appliedCoupon} (-${discountAmount.toFixed(2)} AZN)\n`;
+          message += `\n🎫 *${tMsg.coupon}:* ${appliedCoupon} (-${discountAmount.toFixed(2)} AZN)\n`;
         }
         
-        message += `\n💳 *Ödəniş Metodu:* ${paymentMethod === 'bank_transfer' ? 'Kartdan Karta (Bank köçürməsi)' : 'Qapıda Nəğd Ödəniş'}\n`;
-        message += `💰 *Yekun Cəm:* *${totalAmount.toFixed(2)} AZN*\n\n`;
-        message += `⚡ _Zəhmət olmasa, sifarişi təsdiqləmək və çatdırılmanı təşkil etmək üçün bu mesajı bizə göndərin._`;
+        message += `\n💳 *${tMsg.payment}:* ${paymentMethod === 'bank_transfer' ? tMsg.paymentBank : tMsg.paymentCod}\n`;
+        message += `💰 *${tMsg.total}:* *${totalAmount.toFixed(2)} AZN*\n\n`;
+        message += `⚡ _${tMsg.footer}_`;
 
         const encodedMessage = encodeURIComponent(message);
         const waLink = `https://wa.me/${waNumber}?text=${encodedMessage}`;
@@ -341,11 +375,23 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         }
       } else {
         setIsProcessing(false);
-        setValidationErrors({ submit: response.error || 'Sifariş qeyd edilərkən xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.' });
+        setValidationErrors({
+          submit: response.error || t({
+            az: 'Sifariş qeyd edilərkən xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.',
+            en: 'An error occurred while placing the order. Please try again.',
+            ru: 'Произошла ошибка при оформлении заказа. Пожалуйста, попробуйте еще раз.'
+          })
+        });
       }
     } catch (err: any) {
       setIsProcessing(false);
-      setValidationErrors({ submit: 'Gözlənilməyən xəta baş verdi. İnternet əlaqənizi yoxlayın.' });
+      setValidationErrors({
+        submit: t({
+          az: 'Gözlənilməyən xəta baş verdi. İnternet əlaqənizi yoxlayın.',
+          en: 'An unexpected error occurred. Please check your internet connection.',
+          ru: 'Произошла непредвиденная ошибка. Пожалуйста, проверьте интернет-соединение.'
+        })
+      });
     }
   };
 
@@ -358,7 +404,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
           className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-rubik-brand transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Səbətə qayıt</span>
+          <span>{t({ az: 'Səbətə qayıt', en: 'Back to Cart', ru: 'Назад в корзину' })}</span>
         </Link>
       </div>
 
@@ -374,7 +420,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   1
                 </span>
                 <h2 className="text-base font-black text-foreground uppercase tracking-wider">
-                  Müştəri məlumatları
+                  {t({ az: 'Müştəri məlumatları', en: 'Customer Information', ru: 'Информация о клиенте' })}
                 </h2>
               </div>
 
@@ -388,7 +434,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    Qonaq qismində
+                    {t({ az: 'Qonaq qismində', en: 'As Guest', ru: 'Как Гость' })}
                   </button>
                   <button
                     onClick={() => setCheckoutMode('login')}
@@ -398,7 +444,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    Daxil olmaqla
+                    {t({ az: 'Daxil olmaqla', en: 'With Login', ru: 'С Входом' })}
                   </button>
                 </div>
               )}
@@ -416,8 +462,12 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   <div className="flex items-center gap-3">
                     <CheckCircle className="h-6 w-6 text-green-600" />
                     <div>
-                      <p className="text-xs font-bold text-green-900">Hesabınıza daxil olmusunuz</p>
-                      <p className="text-[10px] text-green-700">Məlumatlarınız avtomatik olaraq dolduruldu.</p>
+                      <p className="text-xs font-bold text-green-900">
+                        {t({ az: 'Hesabınıza daxil olmusunuz', en: 'Logged in successfully', ru: 'Вы вошли в систему' })}
+                      </p>
+                      <p className="text-[10px] text-green-700">
+                        {t({ az: 'Məlumatlarınız avtomatik olaraq dolduruldu.', en: 'Your info was auto-filled.', ru: 'Ваши данные были заполнены автоматически.' })}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -429,7 +479,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                     }}
                     className="text-[10px] text-green-800 underline font-bold hover:text-green-950"
                   >
-                    Çıxış et
+                    {t({ az: 'Çıxış et', en: 'Sign Out', ru: 'Выйти' })}
                   </button>
                 </motion.div>
               ) : checkoutMode === 'login' ? (
@@ -443,7 +493,9 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">E-poçt ünvanı</label>
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                        {t({ az: 'E-poçt ünvanı', en: 'Email Address', ru: 'Эл. Почта' })}
+                      </label>
                       <input
                         type="email"
                         required
@@ -454,7 +506,9 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Şifrə</label>
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">
+                        {t({ az: 'Şifrə', en: 'Password', ru: 'Пароль' })}
+                      </label>
                       <input
                         type="password"
                         required
@@ -465,12 +519,14 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                       />
                     </div>
                   </div>
+                  {authError && <p className="text-xs text-red-600 font-bold">{authError}</p>}
                   <button
                     type="submit"
-                    className="px-5 py-2.5 bg-foreground text-card hover:bg-rubik-brand hover:text-white text-xs font-black rounded-xl transition-all flex items-center gap-1.5"
+                    disabled={isAuthLoading}
+                    className="px-5 py-2.5 bg-foreground text-card hover:bg-rubik-brand hover:text-white text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Lock className="h-3.5 w-3.5" />
-                    <span>Daxil ol və Doldur</span>
+                    {isAuthLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
+                    <span>{t({ az: 'Daxil ol və Doldur', en: 'Login & Autofill', ru: 'Войти и заполнить' })}</span>
                   </button>
                 </motion.form>
               ) : (
@@ -483,13 +539,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 >
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                      <User className="h-3 w-3" /> Ad və Soyad *
+                      <User className="h-3 w-3" /> {dict.checkout?.name || "Ad və Soyad"} *
                     </label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Məs: Mirsəlim Şahbazov"
+                      placeholder={dict.checkout?.name_placeholder || "Məs: Mirsəlim Şahbazov"}
                       className={`w-full bg-muted border rounded-xl px-3.5 py-2.5 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
                         validationErrors.name ? 'border-red-500 bg-red-50/10' : 'border-border'
                       }`}
@@ -503,13 +559,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                      <Phone className="h-3 w-3" /> Telefon nömrəsi *
+                      <Phone className="h-3 w-3" /> {dict.checkout?.phone || "Mobil Nömrə"} *
                     </label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+994 50 123 45 67"
+                      placeholder={dict.checkout?.phone_placeholder || "+994 50 123 45 67"}
                       className={`w-full bg-muted border rounded-xl px-3.5 py-2.5 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
                         validationErrors.phone ? 'border-red-500 bg-red-50/10' : 'border-border'
                       }`}
@@ -536,13 +592,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                         <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                         <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                       </svg>
-                      <span>Instagram İstifadəçi Adı</span>
+                      <span>{dict.checkout?.instagram || "Instagram"}</span>
                     </label>
                     <input
                       type="text"
                       value={instagram}
                       onChange={(e) => setInstagram(e.target.value)}
-                      placeholder="Məs: rubikshop.az (Könüllü)"
+                      placeholder={dict.checkout?.instagram_placeholder || "Məs: rubikshop.az (Könüllü)"}
                       className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                     />
                   </div>
@@ -558,7 +614,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 2
               </span>
               <h2 className="text-base font-black text-foreground uppercase tracking-wider">
-                Çatdırılma detalları
+                {dict.checkout?.delivery_details || "Çatdırılma detalları"}
               </h2>
             </div>
 
@@ -583,12 +639,12 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                     </span>
                   )}
                 </div>
-                <h4 className="text-xs font-black text-foreground">Kuryer (Standart)</h4>
+                <h4 className="text-xs font-black text-foreground">{dict.checkout?.delivery_kuryer || "Kuryer (Standart)"}</h4>
                 <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
-                  Ünvana kuryer vasitəsilə 1-2 iş günü ərzində çatdırılır.
+                  {dict.checkout?.delivery_kuryer_desc || "Ünvana kuryer vasitəsilə 1-2 iş günü ərzində çatdırılır."}
                 </p>
                 <span className="block mt-3 text-xs font-mono font-bold text-foreground">
-                  {subtotal >= freeShippingThreshold ? 'Pulsuz' : `${shippingPrices.standard.toFixed(2)} AZN`}
+                  {subtotal >= freeShippingThreshold ? (dict.checkout?.free_delivery || 'Pulsuz') : `${shippingPrices.standard.toFixed(2)} AZN`}
                 </span>
               </button>
 
@@ -611,12 +667,12 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                     </span>
                   )}
                 </div>
-                <h4 className="text-xs font-black text-foreground">Sürətli (Express)</h4>
+                <h4 className="text-xs font-black text-foreground">{dict.checkout?.delivery_express || "Sürətli Çatdırılma"}</h4>
                 <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
-                  Sifariş verildikdən cəmi 3 saat sonra qapınızda! (Bakı daxili)
+                  {dict.checkout?.delivery_express_desc || "Bakı daxili 3 saat ərzində çatdırılma."}
                 </p>
                 <span className="block mt-3 text-xs font-mono font-bold text-foreground">
-                  {subtotal >= freeShippingThreshold ? 'Pulsuz' : `${shippingPrices.express.toFixed(2)} AZN`}
+                  {subtotal >= freeShippingThreshold ? (dict.checkout?.free_delivery || 'Pulsuz') : `${shippingPrices.express.toFixed(2)} AZN`}
                 </span>
               </button>
 
@@ -639,17 +695,17 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                     </span>
                   )}
                 </div>
-                <h4 className="text-xs font-black text-foreground">Metrostansiyalar</h4>
+                <h4 className="text-xs font-black text-foreground">{dict.checkout?.delivery_metro || "Metroya Çatdırılma"}</h4>
                 <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
-                  İstənilən metro stansiyasının çıxışında kuryerimizlə görüş.
+                  {dict.checkout?.delivery_metro_desc || "İstənilən metro stansiyasına çatdırılma."}
                 </p>
                 <span className="block mt-3 text-xs font-mono font-bold text-green-600 font-black">
-                  {shippingPrices.metro === 0 ? 'Pulsuz' : `${shippingPrices.metro.toFixed(2)} AZN`}
+                  {shippingPrices.metro === 0 ? (dict.checkout?.free_delivery || 'Pulsuz') : `${shippingPrices.metro.toFixed(2)} AZN`}
                 </span>
               </button>
             </div>
 
-            {/* Address textarea or Metro Station Dropdown based on method */}
+            {/* Address textarea or Metro Dropdown */}
             <AnimatePresence mode="wait">
               {deliveryMethod !== 'metro' ? (
                 <motion.div
@@ -660,13 +716,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   className="space-y-1.5 overflow-hidden"
                 >
                   <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> Çatdırılma ünvanı *
+                    <MapPin className="h-3 w-3" /> {dict.checkout?.address || "Çatdırılma Ünvanı"} *
                   </label>
                   <textarea
                     rows={3}
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Məsələn: Nizami küçəsi 142, bina 3, mənzil 12 (Yaxınlıqdakı əsas obyektləri qeyd edə bilərsiniz)"
+                    placeholder={dict.checkout?.address_placeholder || "Məsələn: Nizami küçəsi 142, bina 3..."}
                     className={`w-full bg-muted border rounded-xl px-3.5 py-2.5 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
                       validationErrors.address ? 'border-red-500 bg-red-50/10' : 'border-border'
                     }`}
@@ -686,7 +742,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   className="space-y-1.5 overflow-hidden"
                 >
                   <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <Building className="h-3 w-3" /> Çatdırılacaq Metro Stansiyası *
+                    <Building className="h-3 w-3" /> {dict.checkout?.select_metro || "Metro stansiyası seçin"} *
                   </label>
                   <select
                     value={selectedMetroStation}
@@ -695,7 +751,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                       validationErrors.metroStation ? 'border-red-500 bg-red-50/10' : 'border-border'
                     }`}
                   >
-                    <option value="">-- Metro Stansiyasını Seçin --</option>
+                    <option value="">-- {dict.checkout?.select_metro || "Metro stansiyası seçin"} --</option>
                     {[
                       'İçərişəhər', 'Sahil', '28 May', 'Gənclik', 'Nəriman Nərimanov', 'Ulduz', 'Koroğlu', 
                       'Qara Qarayev', 'Nefçilər', 'Xalqlar Dostluğu', 'Əhmədli', 'Həzi Aslanov', 
@@ -703,7 +759,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                       'Azadlıq Prospekti', 'Dərnəgül', 'Xətai', 'Cəfər Cabbarlı', '8 Noyabr', 'Avtovağzal'
                     ].map((station) => (
                       <option key={station} value={station}>
-                        {station} stansiyası
+                        {station} {t({ az: 'stansiyası', en: 'station', ru: 'станция' })}
                       </option>
                     ))}
                   </select>
@@ -716,7 +772,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
               )}
             </AnimatePresence>
 
-            {/* Gift Wrapping / Perks */}
+            {/* Gift Wrapping */}
             <div className="bg-muted/40 p-4 rounded-2xl border border-border space-y-3.5">
               <label className="flex items-center gap-3.5 cursor-pointer">
                 <input
@@ -727,7 +783,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 />
                 <span className="text-xs font-bold text-foreground flex items-center gap-1.5 select-none">
                   <Gift className="h-4 w-4 text-rubik-brand" />
-                  Bu sifariş hədiyyədir? (Hədiyyə kağızı pulsuzdur)
+                  {dict.checkout?.gift_option || "Bu sifariş hədiyyədir? (Hədiyyə kağızı pulsuzdur)"}
                 </span>
               </label>
 
@@ -739,12 +795,18 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                     exit={{ opacity: 0, height: 0 }}
                     className="space-y-1.5 overflow-hidden pt-1"
                   >
-                    <label className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Hədiyyə qeydi</label>
+                    <label className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">
+                      {dict.checkout?.gift_note || "Hədiyyə qeydi (Könüllü)"}
+                    </label>
                     <input
                       type="text"
                       value={giftNote}
                       onChange={(e) => setGiftNote(e.target.value)}
-                      placeholder="Ad günün mübarək! Ümid edirəm bu flaqman Maqnetik Kubu bəyənəcəksən..."
+                      placeholder={t({
+                        az: 'Ad günün mübarək! Ümid edirəm bu flaqman Maqnetik Kubu bəyənəcəksən...',
+                        en: 'Happy Birthday! Hope you love this flagship magnetic cube...',
+                        ru: 'С Днем Рождения! Надеюсь, тебе понравится этот флагманский магнитный кубик...'
+                      })}
                       className="w-full bg-background border border-border rounded-xl px-3.5 py-2 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                     />
                   </motion.div>
@@ -760,7 +822,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 3
               </span>
               <h2 className="text-base font-black text-foreground uppercase tracking-wider">
-                Ödəniş növü
+                {dict.checkout?.payment_details || "Ödəniş detalları"}
               </h2>
             </div>
 
@@ -770,7 +832,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 onClick={() => setPaymentMethod('bank_transfer')}
                 className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer flex flex-col justify-between ${
                   paymentMethod === 'bank_transfer'
-                    ? 'border-rubik-brand bg-rubik-brand/5 font-bold'
+                    ? 'border-rubik-brand bg-rubik-brand/5'
                     : 'border-border hover:border-foreground/10'
                 }`}
               >
@@ -785,13 +847,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                       </span>
                     )}
                   </div>
-                  <h4 className="text-xs font-black text-foreground">Kartdan Karta (Bank Köçürməsi)</h4>
+                  <h4 className="text-xs font-black text-foreground">{dict.checkout?.payment_bank || "Kartla / Köçürmə ilə Ödəniş"}</h4>
                   <p className="text-[10px] text-muted-foreground leading-normal">
-                    Ödəniş mütəxəssisimizlə WhatsApp vasitəsilə əlaqə quraraq kart məlumatlarını əldə edin və köçürmə edin.
+                    {dict.checkout?.payment_bank_desc || "Kartdan karta və ya hesaba köçürmə."}
                   </p>
                 </div>
                 <span className="block mt-4 text-[9px] font-black text-rubik-brand uppercase tracking-wider">
-                  Ən çox seçilən
+                  {t({ az: 'Ən çox seçilən', en: 'Most Popular', ru: 'Самый Популярный' })}
                 </span>
               </button>
 
@@ -800,7 +862,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 onClick={() => setPaymentMethod('cod')}
                 className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
                   paymentMethod === 'cod'
-                    ? 'border-rubik-brand bg-rubik-brand/5 font-bold'
+                    ? 'border-rubik-brand bg-rubik-brand/5'
                     : 'border-border hover:border-foreground/10'
                 }`}
               >
@@ -815,13 +877,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                       </span>
                     )}
                   </div>
-                  <h4 className="text-xs font-black text-foreground">Qapıda Nəğd Ödəniş</h4>
+                  <h4 className="text-xs font-black text-foreground">{dict.checkout?.payment_cod || "Qapıda Nəğd Ödəniş"}</h4>
                   <p className="text-[10px] text-muted-foreground leading-normal">
-                    Məhsulu kuryerdən təslim alarkən yerində nəğd ödəniş edin. (Metro pickup daxil olmaqla)
+                    {dict.checkout?.payment_cod_desc || "Məhsulu kuryerdən təslim alarkən yerində nəğd ödəniş edin."}
                   </p>
                 </div>
                 <span className="block mt-4 text-[9px] font-black text-muted-foreground uppercase tracking-wider">
-                  Təhlükəsiz limitli
+                  {t({ az: 'Təhlükəsiz limitli', en: 'Secure COD', ru: 'Надежный Наложенный' })}
                 </span>
               </button>
             </div>
@@ -837,7 +899,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 className="h-4 w-4 mt-0.5 rounded border-border text-rubik-brand focus:ring-rubik-brand cursor-pointer"
               />
               <span className="text-xs text-muted-foreground leading-relaxed select-none">
-                Mən <span className="text-foreground underline hover:text-rubik-brand">rubikshop.az-ın Alış-veriş Qaydalarını, Geri qaytarma Şərtlərini</span> və fərdi məlumatların qorunması siyasətini tam oxudum və qəbul edirəm.
+                {dict.checkout?.accept_terms || "İstifadə Şərtlərini qəbul edirəm"}
               </span>
             </label>
             {validationErrors.terms && (
@@ -854,10 +916,10 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
           <div className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-5">
             <h3 className="text-sm font-black text-foreground uppercase tracking-wider pb-3.5 border-b border-border flex items-center gap-2">
               <ShoppingBag className="h-4 w-4 text-rubik-brand" />
-              Sifarişiniz
+              {dict.checkout?.order_summary || "Sifariş Xülasəsi"}
             </h3>
 
-            {/* Cart products list short */}
+            {/* Cart products list */}
             <div className="max-h-60 overflow-y-auto divide-y divide-border/60 pr-1 space-y-3.5">
               {items.map((item) => (
                 <div key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
@@ -874,7 +936,9 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   <div className="flex-1 min-w-0">
                     <h4 className="text-[11px] font-bold text-foreground leading-snug line-clamp-2">{item.title}</h4>
                     <div className="flex items-center justify-between mt-1 text-[10px]">
-                      <span className="text-muted-foreground font-mono">Ədəd: {item.quantity}</span>
+                      <span className="text-muted-foreground font-mono">
+                        {dict.cart.quantity || "Say"}: {item.quantity}
+                      </span>
                       <span className="font-bold text-foreground font-mono">{(item.price_azn * item.quantity).toFixed(2)} AZN</span>
                     </div>
                   </div>
@@ -882,11 +946,11 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
               ))}
             </div>
 
-                        {/* Coupon Application */}
+            {/* Coupon Application */}
             {!appliedCoupon && (
               <div className="pt-4 border-t border-border/80">
                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider mb-2 block">
-                  Promo Kodunuz Var?
+                  {t({ az: 'Promo Kodunuz Var?', en: 'Have a Promo Code?', ru: 'Есть Промо-Код?' })}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -900,46 +964,46 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                     type="button"
                     onClick={handleApplyCoupon}
                     disabled={isCouponLoading || !couponInput.trim()}
-                    className="px-4 py-2.5 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 text-xs font-bold rounded-xl transition-colors"
+                    className="px-4 py-2.5 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 text-xs font-bold rounded-xl transition-colors cursor-pointer"
                   >
-                    {isCouponLoading ? 'Yoxlanır...' : 'Tətbiq Et'}
+                    {isCouponLoading ? (t({ az: 'Yoxlanır...', en: 'Checking...', ru: 'Проверка...' })) : (dict.checkout?.apply_coupon || 'Tətbiq Et')}
                   </button>
                 </div>
                 {couponError && <p className="text-red-500 text-[10px] mt-1 font-bold">{couponError}</p>}
               </div>
             )}
             
-            {/* Coupon display short */}
+            {/* Coupon display */}
             {appliedCoupon && (
               <div className="flex justify-between items-center bg-green-50 text-green-700 p-2.5 rounded-xl border border-green-100 text-xs font-bold">
                 <span className="flex items-center gap-1.5">
                   <Percent className="h-3.5 w-3.5" />
-                  <span>Kupon ({appliedCoupon})</span>
+                  <span>{t({ az: `Kupon (${appliedCoupon})`, en: `Coupon (${appliedCoupon})`, ru: `Купон (${appliedCoupon})` })}</span>
                 </span>
                 <span className="font-mono">-{discountAmount.toFixed(2)} AZN</span>
               </div>
             )}
 
-            {/* Financial break down */}
+            {/* Financial breakdown */}
             <div className="pt-4 border-t border-border/80 space-y-2.5 text-xs">
               <div className="flex justify-between text-muted-foreground">
-                <span>Cəm</span>
+                <span>{dict.cart.total || "Cəm"}</span>
                 <span className="font-bold text-foreground font-mono">{subtotal.toFixed(2)} AZN</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
-                <span>Çatdırılma</span>
+                <span>{dict.checkout?.delivery_fee || "Çatdırılma"}</span>
                 <span className="font-bold text-foreground font-mono">
-                  {shippingCost === 0 ? 'Pulsuz' : `${shippingCost.toFixed(2)} AZN`}
+                  {shippingCost === 0 ? (dict.checkout?.free_delivery || 'Pulsuz') : `${shippingCost.toFixed(2)} AZN`}
                 </span>
               </div>
               {appliedCoupon && (
                 <div className="flex justify-between text-green-600 font-bold">
-                  <span>Endirim</span>
+                  <span>{dict.checkout?.discount || "Endirim"}</span>
                   <span className="font-mono">-{discountAmount.toFixed(2)} AZN</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-black text-foreground pt-3.5 border-t border-border">
-                <span>YEKUN CƏM</span>
+                <span>{t({ az: 'YEKUN CƏM', en: 'TOTAL AMOUNT', ru: 'ИТОГОВАЯ СУММА' })}</span>
                 <span className="font-mono text-base text-rubik-brand">{totalAmount.toFixed(2)} AZN</span>
               </div>
             </div>
@@ -961,24 +1025,32 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
               ) : (
                 <ShoppingBag className="h-4.5 w-4.5" />
               )}
-              <span>{isProcessing ? 'Sifarişiniz hazırlanır...' : 'Sifarişi WhatsApp-a Göndər'}</span>
+              <span>
+                {isProcessing
+                  ? t({ az: 'Sifarişiniz hazırlanır...', en: 'Preparing your order...', ru: 'Ваш заказ обрабатывается...' })
+                  : dict.checkout?.submit_whatsapp || 'Sifarişi WhatsApp-a Göndər'}
+              </span>
               {!isProcessing && <ChevronRight className="h-4 w-4" />}
             </button>
 
             <div className="text-center">
               <span className="text-[10px] text-muted-foreground flex items-center justify-center gap-1.5">
-                <Lock className="h-3 w-3" /> Bütün sifarişlər dərhal qorunur.
+                <Lock className="h-3 w-3" /> {dict.checkout?.security_notice || "Bütün sifarişlər dərhal qorunur."}
               </span>
             </div>
           </div>
 
-          {/* Checkout Guarantee Panel */}
+          {/* Guarantee Panel */}
           <div className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-4">
             <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1">
-              <ShieldCheck className="h-4.5 w-4.5 text-green-600" /> Professional Dəstək
+              <ShieldCheck className="h-4.5 w-4.5 text-green-600" /> {t({ az: 'Peşəkar Dəstək', en: 'Professional Support', ru: 'Профессиональная Поддержка' })}
             </h4>
             <p className="text-[10px] text-muted-foreground leading-normal">
-              Sifarişiniz dərhal peşəkar sürətli kubçulardan ibarət komandamız tərəfindən idarə olunacaqdır. Hər bir kub yola salınmazdan əvvəl xüsusi silikon yağları ilə yağlanıb optimal vəziyyətə gətirilir.
+              {t({
+                az: 'Sifarişiniz dərhal peşəkar sürətli kubçulardan ibarət komandamız tərəfindən idarə olunacaqdır. Hər bir kub yola salınmazdan əvvəl xüsusi silikon yağları ilə yağlanıb optimal vəziyyətə gətirilir.',
+                en: 'Your order will be handled immediately by our professional speedcubing experts. Each cube is lubed with specialized silicone compounds before dispatch.',
+                ru: 'Ваш заказ будет немедленно обработан нашей профессиональной командой спидкуберов. Каждая головоломка смазывается силиконовыми смазками перед отправкой.'
+              })}
             </p>
           </div>
         </div>

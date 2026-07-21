@@ -1342,3 +1342,131 @@ export async function registerUploadedFile(payload: {
     return { success: false, error: error.message };
   }
 }
+
+export async function getOrderDetail(orderId: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    
+    // Fetch order
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .select('*, order_items(*, variants(*, products(*))))')
+      .eq('id', orderId)
+      .maybeSingle();
+
+    if (orderError) throw orderError;
+    if (!order) return { success: false, error: 'Sifariş tapılmadı' };
+
+    // Fetch shipment for tracking number
+    const { data: shipment } = await supabase
+      .from('shipments')
+      .select('*')
+      .eq('order_id', orderId)
+      .maybeSingle();
+
+    // Map database enterprise schema columns back to expected frontend fields
+    const shippingAddressStr = order.shipping_address || '';
+    const hasInstagram = shippingAddressStr.includes(' | Instagram: @');
+    const deliveryAddress = hasInstagram 
+      ? shippingAddressStr.split(' | Instagram: @')[0] 
+      : shippingAddressStr;
+    const customerInstagram = hasInstagram 
+      ? shippingAddressStr.split(' | Instagram: @')[1] 
+      : 'Yoxdur';
+
+    const mappedOrder = {
+      ...order,
+      customer_name: order.full_name,
+      customer_phone: order.phone,
+      customer_instagram: customerInstagram,
+      delivery_address: deliveryAddress,
+      delivery_method: deliveryAddress.includes('Metrosu') ? 'Metro' : 'Courier',
+      total_amount_azn: Number(order.total),
+      checkout_platform: 'whatsapp',
+      status: order.shipping_status === 'pending' ? 'pending' : (order.shipping_status === 'delivered' ? 'completed' : 'cancelled'),
+      tracking_number: shipment?.tracking_number || '',
+      carrier: shipment?.carrier || '',
+      order_items: order.order_items?.map((item: any) => ({
+        ...item,
+        product_title: item.variants?.products?.title_az || 'Məhsul',
+        unit_price_azn: Number(item.price_azn),
+        subtotal_azn: Number(item.total_azn),
+        sku: item.variants?.sku || item.variants?.products?.id || 'SKU-NONE',
+        image_url: item.variants?.products?.image_url || 'https://picsum.photos/seed/boxart/200/200'
+      })) || []
+    };
+
+    // Fetch audit logs for history/notes
+    const { data: logs } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .eq('record_id', orderId)
+      .eq('table_name', 'orders')
+      .order('created_at', { ascending: false });
+
+    return { success: true, order: mappedOrder, logs: logs || [] };
+  } catch (error: any) {
+    console.error('getOrderDetail Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateOrderTracking(orderId: string, trackingNumber: string, carrier?: string) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    
+    // Upsert into shipments
+    const { error } = await supabase
+      .from('shipments')
+      .upsert({
+        order_id: orderId,
+        tracking_number: trackingNumber || null,
+        carrier: carrier || 'post_delivery',
+        status: 'shipped'
+      }, { onConflict: 'order_id' });
+
+    if (error) throw error;
+
+    // Also write an audit log
+    try {
+      const { createAuditLog } = await import('@/lib/actions/audit');
+      await createAuditLog({
+        action: `İzləmə nömrəsi yeniləndi: ${trackingNumber}`,
+        table_name: 'orders',
+        record_id: orderId,
+        new_values: { tracking_number: trackingNumber }
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed:', auditErr);
+    }
+
+    revalidatePath('/[locale]/admin/orders', 'layout');
+    return { success: true };
+  } catch (error: any) {
+    console.error('updateOrderTracking Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function addOrderInternalNote(orderId: string, note: string) {
+  try {
+    if (!note.trim()) return { success: false, error: 'Qeyd boş ola bilməz' };
+    
+    const { createAuditLog } = await import('@/lib/actions/audit');
+    const res = await createAuditLog({
+      action: 'Internal Note Added',
+      table_name: 'orders',
+      record_id: orderId,
+      new_values: { note: note }
+    });
+
+    if (!res.success) throw new Error(res.error);
+
+    revalidatePath('/[locale]/admin/orders', 'layout');
+    return { success: true };
+  } catch (error: any) {
+    console.error('addOrderInternalNote Error:', error.message);
+    return { success: false, error: error.message };
+  }
+}
+

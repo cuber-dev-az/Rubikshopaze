@@ -35,28 +35,33 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
 
   const navItems = [
     {
-      name: 'Əsas',
+      id: 'home',
+      name: dict.navigation.home || 'Əsas',
       href: `/${locale}`,
       icon: Home,
     },
     {
-      name: 'Kataloq', 
+      id: 'catalog',
+      name: dict.navigation.catalog || 'Kataloq', 
       href: `/${locale}/category`, 
       icon: LayoutGrid,
     },
     {
-      name: 'Seçilmişlər',
+      id: 'wishlist',
+      name: dict.navigation.wishlist || 'Seçilmişlər',
       href: `/${locale}/wishlist`,
       icon: Heart,
     },
     {
-      name: 'Səbət',
+      id: 'cart',
+      name: dict.navigation.cart || 'Səbət',
       href: `/${locale}/cart`,
       icon: ShoppingCart,
       badge: mounted && totalItems > 0 ? totalItems : undefined,
     },
     {
-      name: 'Kabinet',
+      id: 'account',
+      name: dict.navigation.account || 'Kabinet',
       href: `/${locale}/account`,
       icon: User,
     }
@@ -78,9 +83,9 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
 
           return (
             <button
-              key={item.name}
+              key={item.id}
               onClick={() => {
-                if (item.name === 'Kabinet') {
+                if (item.id === 'account') {
                   handleAccountClick();
                 } else {
                   router.push(item.href);

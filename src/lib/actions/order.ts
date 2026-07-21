@@ -3,7 +3,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://npqecrxvllvuoxaybnoq.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder_key';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseServiceKey) {
+  throw new Error("SUPABASE_SERVICE_ROLE_KEY environment variable is required but is missing! Please configure it in your environment variables.");
+}
 
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -343,62 +347,5 @@ export async function getOrdersByPhone(phone: string) {
   } catch (error: any) {
     return { success: false, error: error.message, data: [] };
   }
-}
-
-function getMockOrders(phone: string) {
-  return [
-    {
-      id: 'ord_91a4b8c2',
-      customer_name: 'Mirsəlim Şahbazov',
-      customer_phone: phone,
-      customer_instagram: 'mirselim.sh',
-      delivery_address: 'Xətai rayonu, Nobel prospekti 15',
-      delivery_method: 'Sürətli Çatdırılma (3 Saat)',
-      total_amount_azn: 145.00,
-      checkout_platform: 'whatsapp',
-      status: 'shipped', // awaiting_payment, confirmed, packed, shipped, delivered
-      created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      order_items: [
-        {
-          id: 'item_1',
-          product_title: 'GAN 14 MagLev Magnetic flagship 3x3',
-          quantity: 1,
-          unit_price_azn: 130.00,
-          subtotal_azn: 130.00,
-          image_url: 'https://picsum.photos/seed/gan14/200/200'
-        },
-        {
-          id: 'item_2',
-          product_title: 'GAN Lube Magic 10ml Premium',
-          quantity: 1,
-          unit_price_azn: 15.00,
-          subtotal_azn: 15.00,
-          image_url: 'https://picsum.photos/seed/ganlube/200/200'
-        }
-      ]
-    },
-    {
-      id: 'ord_52b8c9d1',
-      customer_name: 'Mirsəlim Şahbazov',
-      customer_phone: phone,
-      customer_instagram: 'mirselim.sh',
-      delivery_address: 'Nizami küçəsi 142',
-      delivery_method: 'Kuryer Çatdırılması (1-2 Gün)',
-      total_amount_azn: 45.00,
-      checkout_platform: 'whatsapp',
-      status: 'delivered',
-      created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-      order_items: [
-        {
-          id: 'item_3',
-          product_title: 'MoYu RS3M V5 Ball-Core UV 3x3',
-          quantity: 1,
-          unit_price_azn: 45.00,
-          subtotal_azn: 45.00,
-          image_url: 'https://picsum.photos/seed/moyu5/200/200'
-        }
-      ]
-    }
-  ];
 }
 

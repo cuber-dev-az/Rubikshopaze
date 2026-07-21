@@ -1,9 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { Send, Mail, MapPin, Phone, HelpCircle, ShieldCheck, Heart, BookOpen, AlertCircle } from 'lucide-react';
+import Link from 'next/';
+import { Send, Mail, MapPin, Phone, ShieldCheck, Heart, AlertCircle } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 
 interface FooterProps {
@@ -12,13 +11,29 @@ interface FooterProps {
 }
 
 export function Footer({ dict, locale }: FooterProps) {
-
-
-
-
-
   const [email, setEmail] = React.useState('');
   const [subscribed, setSubscribed] = React.useState(false);
+  
+  const [phone, setPhone] = React.useState('+994 50 668 49 25');
+  const [emailVal, setEmailVal] = React.useState('info@rubikshop.az');
+  const [addressVal, setAddressVal] = React.useState('Bakı şəhəri, Azərbaycan');
+
+  React.useEffect(() => {
+    async function loadFooterSettings() {
+      try {
+        const { getSettings } = await import('@/lib/actions/settings');
+        const res = await getSettings('general');
+        if (res.success && res.data) {
+          if (res.data.contactPhone) setPhone(res.data.contactPhone);
+          if (res.data.contactEmail) setEmailVal(res.data.contactEmail);
+          if (res.data.address) setAddressVal(res.data.address);
+        }
+      } catch (err) {
+        console.error('Error loading footer settings:', err);
+      }
+    }
+    loadFooterSettings();
+  }, []);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +53,10 @@ export function Footer({ dict, locale }: FooterProps) {
           <div className="max-w-md">
             <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
               <Mail className="h-5 w-5 text-rubik-brand" />
-              <span>Yeniliklərdən xəbərdar olun</span>
+              <span>{dict.footer?.newsletter_title || "Yeniliklərdən xəbərdar olun"}</span>
             </h3>
             <p className="text-xs md:text-sm text-gray-400 mt-1.5">
-              Yeni gələn professional kublar, endirimlər və Azərbaycan speedcubing turnirləri haqqında ilk siz eşidin.
+              {dict.footer?.newsletter_desc || "Yeni gələn professional kublar, endirimlər və Azərbaycan speedcubing turnirləri haqqında ilk siz eşidin."}
             </p>
           </div>
 
@@ -49,7 +64,7 @@ export function Footer({ dict, locale }: FooterProps) {
             <input
               type="email"
               aria-label="E-poçt ünvanı"
-              placeholder="E-poçt ünvanınızı daxil edin"
+              placeholder={dict.footer?.newsletter_placeholder || "E-poçt ünvanınızı daxil edin"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -59,7 +74,7 @@ export function Footer({ dict, locale }: FooterProps) {
               type="submit"
               className="px-6 py-3 bg-rubik-brand text-white text-sm font-semibold rounded-lg hover:bg-rubik-brand-dark active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              <span>{subscribed ? 'Abunə olundu!' : 'Abunə ol'}</span>
+              <span>{subscribed ? (dict.footer?.newsletter_subscribed || 'Abunə olundu!') : (dict.footer?.newsletter_button || 'Abunə ol')}</span>
               <Send className="h-4 w-4" />
             </button>
           </form>
@@ -76,17 +91,17 @@ export function Footer({ dict, locale }: FooterProps) {
             </span>
           </Link>
           <p className="text-xs md:text-sm text-gray-400 leading-relaxed max-w-sm">
-            Azərbaycanın ilk və tək ixtisaslaşmış professional sürətli kub yarışı (speedcubing) platforması. Dünya səviyyəli brendlər və xidmət keyfiyyəti.
+            {dict.footer?.bio_desc || "Azərbaycanın ilk və tək ixtisaslaşmış professional sürətli kub yarışı (speedcubing) platforması. Dünya səviyyəli brendlər və xidmət keyfiyyəti."}
           </p>
           <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-3 bg-rubik-charcoal-light/40 p-2.5 rounded-lg border border-border/5">
             <AlertCircle className="h-4 w-4 text-rubik-yellow shrink-0 animate-pulse" />
-            <span>WCA rəsmi qaydaları ilə tam uyğun məhsullar.</span>
+            <span>{dict.footer?.wca_notice || "WCA rəsmi qaydaları ilə tam uyğun məhsullar."}</span>
           </div>
         </div>
 
         {/* Quick links */}
         <div className="space-y-4">
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider">Faydalı Keçidlər</h4>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider">{dict.footer?.useful_links || "Faydalı Keçidlər"}</h4>
           <ul className="space-y-2.5 text-xs md:text-sm">
             <li>
               <Link href={`/${locale}`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
@@ -100,7 +115,7 @@ export function Footer({ dict, locale }: FooterProps) {
             </li>
             <li>
               <Link href={`/${locale}?category=learning-content`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
-                <span>Alqoritmlər & Öyrənmə</span>
+                <span>{dict.header?.nav_learning || "Alqoritmlər & Öyrənmə"}</span>
               </Link>
             </li>
             <li>
@@ -113,24 +128,24 @@ export function Footer({ dict, locale }: FooterProps) {
 
         {/* Support & Policies column */}
         <div className="space-y-4">
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider">Dəstək və Şərtlər</h4>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider">{dict.footer?.support_policies || "Dəstək və Şərtlər"}</h4>
           <ul className="space-y-2.5 text-xs md:text-sm">
             <li>
               <Link href={`/${locale}/pages/terms-of-service`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-rubik-green" />
-                <span>İstifadə Şərtləri</span>
+                <span>{dict.footer?.terms_of_service || "İstifadə Şərtləri"}</span>
               </Link>
             </li>
             <li>
               <Link href={`/${locale}/pages/privacy-policy`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-rubik-yellow" />
-                <span>Məxfilik Siyasəti</span>
+                <span>{dict.footer?.privacy_policy || "Məxfilik Siyasəti"}</span>
               </Link>
             </li>
             <li>
               <Link href={`/${locale}/pages/return-policy`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
                 <ShieldCheck className="h-4 w-4 text-rubik-brand" />
-                <span>Geri Qaytarma Qaydaları</span>
+                <span>{dict.footer?.return_policy || "Geri Qaytarma Qaydaları"}</span>
               </Link>
             </li>
           </ul>
@@ -138,19 +153,19 @@ export function Footer({ dict, locale }: FooterProps) {
 
         {/* Contact column */}
         <div className="space-y-4">
-          <h4 className="text-sm font-bold text-white uppercase tracking-wider">Bizimlə Əlaqə</h4>
+          <h4 className="text-sm font-bold text-white uppercase tracking-wider">{dict.footer?.contact_us || "Bizimlə Əlaqə"}</h4>
           <ul className="space-y-3.5 text-xs md:text-sm text-gray-400">
             <li className="flex items-start gap-2.5">
               <MapPin className="h-5 w-5 text-rubik-brand shrink-0" />
-              <span>Bakı şəhəri, Azərbaycan</span>
+              <span>{addressVal}</span>
             </li>
             <li className="flex items-center gap-2.5">
               <Mail className="h-4 w-4 text-rubik-yellow shrink-0" />
-              <span>info@rubikshop.az</span>
+              <span>{emailVal}</span>
             </li>
             <li className="flex items-center gap-2.5">
               <Phone className="h-4 w-4 text-rubik-green shrink-0" />
-              <span>+994 50 000 00 00</span>
+              <a href={`tel:${phone}`} className="hover:text-white transition-colors">{phone}</a>
             </li>
           </ul>
         </div>
@@ -160,7 +175,7 @@ export function Footer({ dict, locale }: FooterProps) {
       <div className="border-t border-border/10 bg-rubik-charcoal-dark py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-xs text-gray-400 text-center md:text-left leading-relaxed">
-            © {currentYear} RubikShop.az. Bütün hüquqlar qorunur. <br className="hidden sm:block" />
+            © {currentYear} RubikShop.az. {dict.footer?.all_rights_reserved || "Bütün hüquqlar qorunur."} <br className="hidden sm:block" />
             Designed with <Heart className="h-3 w-3 text-rubik-brand inline" /> in Azerbaijan for speedcubers.
           </p>
 
