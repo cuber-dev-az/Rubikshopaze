@@ -33,22 +33,22 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = React.useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = React.useState(false);
 
-  // Note: We are relying on user interaction to set this. For real scale, 
-  // we would fetch it from the server in the parent and pass as prop `isWishlisted`.
-  // To keep it simple and fulfill the requirement:
-  const handleWishlistToggle = async () => {
+  const handleWishlistToggle = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsWishlistLoading(true);
     const res = await toggleWishlist(product.id);
     if (res.success) {
       setIsWishlisted(res.wishlisted || false);
     } else {
-      // If error (e.g. not logged in), could show a toast here.
       console.error(res.error);
     }
     setIsWishlistLoading(false);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (isOutOfStock) return;
     addItem({
       id: product.id,
@@ -59,23 +59,21 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     });
   };
 
+  const productTitle = (product as any).name || product.title;
+
   return (
     <div className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group">
       {product.discount_percent && product.discount_percent > 0 ? (
-        <div className="absolute top-3 left-3 z-20 bg-rubik-brand text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md">
+        <div className="absolute top-3 left-3 z-20 bg-rubik-brand text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none">
           -{product.discount_percent}%
         </div>
       ) : null}
 
       <div className="absolute top-3 right-3 z-20">
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleWishlistToggle();
-          }}
+          onClick={handleWishlistToggle}
           disabled={isWishlistLoading}
-          className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand cursor-pointer"
+          className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand cursor-pointer relative z-20"
           aria-label={isWishlisted ? "Seçilmişlərdən sil" : "Seçilmişlərə əlavə et"}
         >
           {isWishlistLoading ? (
@@ -90,13 +88,13 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       <Link
         href={`/${locale}/product/${product.slug || product.id}`}
         className="absolute inset-0 z-10 cursor-pointer"
-        aria-label={product.title}
+        aria-label={productTitle}
       />
 
       <div className="relative aspect-square w-full bg-gray-50">
         <Image
           src={product.image_url}
-          alt={product.title}
+          alt={productTitle}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
           className="object-cover p-4 transition-transform duration-300 group-hover:scale-[1.03]"
@@ -104,7 +102,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           referrerPolicy="no-referrer"
         />
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px] z-20">
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px] z-20 pointer-events-none">
             <span className="text-white font-bold tracking-wider px-3 py-1 bg-rubik-brand rounded-xl">
               {dict.product.out_of_stock}
             </span>
@@ -114,7 +112,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       
       <div className="p-4 flex flex-col flex-grow relative">
         <h2 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
-          {product.title}
+          {productTitle}
         </h2>
         
         {product.discount_percent && product.discount_percent > 0 ? (
@@ -133,11 +131,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         )}
         
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleAddToCart();
-          }}
+          onClick={handleAddToCart}
           disabled={isOutOfStock}
           className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200 relative z-20 cursor-pointer ${
             isOutOfStock

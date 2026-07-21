@@ -82,10 +82,18 @@ export function ProductDetailClientContent({
     return dbVariants.find(v => v.id === selectedVariantId) || dbVariants[0];
   }, [dbVariants, selectedVariantId]);
 
+  // Category-aware setup service detection
+  const isCubeCategory = React.useMemo(() => {
+    if ((product as any).has_setup === true) return true;
+    const cat = (product.category_slug || (product as any).category || '').toLowerCase();
+    if (!cat) return true;
+    const nonCubeKeywords = ['lube', 'yag', 'mat', 'bag', 'canta', 'timer', 'accessory', 'accessories', 'stand', 'parts'];
+    if (nonCubeKeywords.some(k => cat.includes(k))) return false;
+    return true;
+  }, [product]);
+
   // Core configuration selections
   const [activeImage, setActiveImage] = React.useState(product.image_url);
-  const [selectedCoating, setSelectedCoating] = React.useState('UV Coated');
-  const [selectedCore, setSelectedCore] = React.useState('MagLev');
   const [addonSetup, setAddonSetup] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'description' | 'specs' | 'compatibility' | 'shipping' | 'return' | 'faq'>('description');
 
@@ -109,21 +117,19 @@ export function ProductDetailClientContent({
   const [newReviewComment, setNewReviewComment] = React.useState('');
   const [reviewSubmitted, setReviewSubmitted] = React.useState(false);
 
-  // Setup dynamic SKU and pricing
-  const basePrice = Number(product.price_azn || 0);
-  const coatingCost = selectedCoating === 'UV Coated' ? 10 : 0;
-  const coreCost = selectedCore === 'MagLev' ? 15 : selectedCore === 'Ball-Core' ? 25 : 0;
-  const addonCost = addonSetup ? 5 : 0;
+  // Dynamic pricing directly from product object
+  const basePrice = Number(product.price_azn || (product as any).price || 0);
+  const addonCost = (isCubeCategory && addonSetup) ? 5 : 0;
   
   const finalPrice = selectedVariant 
     ? Number(selectedVariant.price_azn || selectedVariant.price || basePrice)
-    : basePrice + coatingCost + coreCost + addonCost;
+    : basePrice + addonCost;
 
   const originalPrice = product.original_price || (product as any).discount_price || (product as any).compare_at_price_azn;
 
   const currentSku = selectedVariant 
     ? selectedVariant.sku 
-    : `${product.sku}-${selectedCoating.substring(0, 2).toUpperCase()}-${selectedCore.substring(0, 3).toUpperCase()}-${addonSetup ? 'SETUP' : 'STOCK'}`;
+    : product.sku || `RS-${product.id.substring(0, 4).toUpperCase()}`;
 
   // Calculated Ratings Summary
   const averageRating = React.useMemo(() => {
@@ -151,7 +157,7 @@ export function ProductDetailClientContent({
     }
     
     // Completely purge any placeholder picsum.photos URLs from the secondary images
-    const cleanExtraImages = extraImages.filter((img: string) => img && !img.includes('picsum.photos'));
+    const cleanExtraImages = extraImages.filter((img: string) => img && typeof img === 'string' && !img.includes('picsum.photos'));
     
     const list = [product.image_url, ...cleanExtraImages].filter(Boolean);
     // Dedup array
@@ -197,11 +203,11 @@ export function ProductDetailClientContent({
   const handleAddToCart = (redirect = false) => {
     const titleAddition = selectedVariant 
       ? ` (${selectedVariant.name || selectedVariant.sku})`
-      : ` (${selectedCoating}${addonSetup ? ' + Premium Setup' : ''})`;
+      : (isCubeCategory && addonSetup) ? ' (+ Premium Setup)' : '';
 
     const cartItemId = selectedVariant 
       ? `${product.id}__variant__${selectedVariant.id}`
-      : `${product.id}-${selectedCoating.replace(/\s+/g, '-').toLowerCase()}-${addonSetup ? 'setup' : 'standard'}`;
+      : `${product.id}${(isCubeCategory && addonSetup) ? '-setup' : ''}`;
 
     const cartItem = {
       id: cartItemId,
@@ -377,7 +383,7 @@ export function ProductDetailClientContent({
                   </span>
                   {originalPrice && (
                     <span className="text-lg text-muted-foreground line-through font-semibold">
-                      {(Number(originalPrice) + coatingCost + addonCost).toFixed(2)} AZN
+                      {(Number(originalPrice) + addonCost).toFixed(2)} AZN
                     </span>
                   )}
                 </div>
@@ -400,134 +406,79 @@ export function ProductDetailClientContent({
               </div>
             </div>
 
-             {/* Selection Engine - Interactive Variant selectors */}
-             <div className="space-y-4">
-               {dbVariants.length > 0 ? (
-                 <div className="space-y-2.5">
-                   <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
-                     Məhsul Variantı Seçin
-                   </span>
-                   <div className="grid grid-cols-2 gap-3">
-                     {dbVariants.map((v) => {
-                       const vStock = v.stock ?? 0;
-                       const isVSelected = selectedVariantId === v.id;
-                       const vPrice = Number(v.price_azn || v.price || product.price_azn);
-                       return (
-                         <button
-                           key={v.id}
-                           onClick={() => setSelectedVariantId(v.id)}
-                           className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.5rem] ${
-                             isVSelected
-                               ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm'
-                               : 'border-border bg-card text-foreground hover:border-foreground/20'
-                           }`}
-                         >
-                           <span className="font-bold text-sm flex items-center justify-between gap-2">
-                             <span className="truncate">{v.name || v.sku}</span>
-                             {isVSelected && <Check className="h-4 w-4 text-white shrink-0" />}
-                           </span>
-                           <span className="flex items-center justify-between text-[10px] mt-1">
-                             <span className={isVSelected ? 'text-white/80' : 'text-muted-foreground'}>
-                               {vStock > 0 ? `Stokda: ${vStock} ədəd` : 'Bitib (Sifarişlə)'}
-                             </span>
-                             <span className="font-bold">
-                               {vPrice.toFixed(2)} AZN
-                             </span>
-                           </span>
-                         </button>
-                       );
-                     })}
-                   </div>
-                 </div>
-               ) : (
-                 <>
-                   {/* Plastik Örtük Variant */}
-                   <div className="space-y-2.5">
-                     <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
-                       Xarici Örtük Tipi
-                     </span>
-                     <div className="grid grid-cols-2 gap-3">
-                       {[
-                         { name: 'UV Coated', desc: 'Parlaq, cızılmaya davamlı (+10 AZN)', premium: true },
-                         { name: 'Matte/Frosted', desc: 'Yumşaq toxunuş, klassik', premium: false }
-                       ].map((coat) => (
-                         <button
-                           key={coat.name}
-                           onClick={() => setSelectedCoating(coat.name)}
-                           className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.5rem] ${
-                             selectedCoating === coat.name
-                               ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm'
-                               : 'border-border bg-card text-foreground hover:border-foreground/20'
-                           }`}
-                         >
-                           <span className="font-bold text-sm flex items-center justify-between">
-                             <span>{coat.name}</span>
-                             {selectedCoating === coat.name && <Check className="h-4 w-4 text-white shrink-0" />}
-                           </span>
-                           <span className={`text-[10px] mt-1 block leading-tight ${selectedCoating === coat.name ? 'text-white/80' : 'text-muted-foreground'}`}>{coat.desc}</span>
-                         </button>
-                       ))}
-                     </div>
-                   </div>
-
-                   {/* Gərginlik / Yay Mexanika Tipi -> Daxili Core Mexanizmi */}
-                   <div className="space-y-2.5">
-                     <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
-                       Daxili Maqnit/Yay Mexanizmi
-                     </span>
-                     <div className="flex gap-2.5 flex-wrap">
-                       {[
-                         { name: 'Spring', label: 'Spring (Standard)', cost: 0 },
-                         { name: 'MagLev', label: 'MagLev (+15 AZN)', cost: 15 },
-                         { name: 'Ball-Core', label: 'Ball-Core (+25 AZN)', cost: 25 }
-                       ].map((core) => (
-                         <button
-                           key={core.name}
-                           onClick={() => setSelectedCore(core.name)}
-                           className={`px-4 py-2 text-xs font-bold border rounded-xl transition-all cursor-pointer ${
-                             selectedCore === core.name
-                               ? 'bg-rubik-brand text-white border-rubik-brand shadow-soft-sm'
-                               : 'bg-muted/40 text-muted-foreground border-border hover:border-foreground/20'
-                           }`}
-                         >
-                           {core.label}
-                         </button>
-                       ))}
-                     </div>
-                   </div>
-                 </>
-               )}
-             </div>
-
-            {/* Service Option Toggle Addon */}
-            <div className="border border-dashed border-rubik-brand rounded-2xl p-4 bg-rubik-brand/5 space-y-2.5">
-              <label className="flex items-start gap-3 cursor-pointer select-none">
-                <div className="pt-0.5">
-                  <div className={`h-5 w-5 rounded border flex items-center justify-center transition-all ${
-                    addonSetup
-                      ? 'bg-rubik-brand border-rubik-brand text-white'
-                      : 'border-rubik-brand/40 bg-white'
-                  }`}>
-                    {addonSetup && <Check className="h-4 w-4" />}
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={addonSetup}
-                    onChange={(e) => setAddonSetup(e.target.checked)}
-                    className="sr-only"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <span className="font-black text-sm text-foreground flex items-center gap-1.5">
-                    <Sparkles className="h-4 w-4 text-rubik-brand" />
-                    Rubikshop Premium Setup xidməti istəyirəm (+5.00 AZN)
+            {/* Selection Engine - Admin-driven Variant selectors (ONLY if dbVariants exists and has items) */}
+            {dbVariants.length > 0 && (
+              <div className="space-y-4">
+                <div className="space-y-2.5">
+                  <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
+                    Məhsul Variantı Seçin
                   </span>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Kubun hər tərəfli yağlanması, maqnit qüvvələrinin optimallaşdırılması və gərginliyin rəsmi WCA turnirləri standartlarına uyğunlaşdırılması xidməti.
-                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {dbVariants.map((v) => {
+                      const vStock = v.stock ?? 0;
+                      const isVSelected = selectedVariantId === v.id;
+                      const vPrice = Number(v.price_azn || v.price || product.price_azn);
+                      return (
+                        <button
+                          key={v.id}
+                          onClick={() => setSelectedVariantId(v.id)}
+                          className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.5rem] ${
+                            isVSelected
+                              ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm'
+                              : 'border-border bg-card text-foreground hover:border-foreground/20'
+                          }`}
+                        >
+                          <span className="font-bold text-sm flex items-center justify-between gap-2">
+                            <span className="truncate">{v.name || v.sku}</span>
+                            {isVSelected && <Check className="h-4 w-4 text-white shrink-0" />}
+                          </span>
+                          <span className="flex items-center justify-between text-[10px] mt-1">
+                            <span className={isVSelected ? 'text-white/80' : 'text-muted-foreground'}>
+                              {vStock > 0 ? `Stokda: ${vStock} ədəd` : 'Bitib (Sifarişlə)'}
+                            </span>
+                            <span className="font-bold">
+                              {vPrice.toFixed(2)} AZN
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </label>
-            </div>
+              </div>
+            )}
+
+            {/* Service Option Toggle Addon (ONLY for Cube/Puzzle categories or has_setup) */}
+            {isCubeCategory && (
+              <div className="border border-dashed border-rubik-brand rounded-2xl p-4 bg-rubik-brand/5 space-y-2.5">
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <div className="pt-0.5">
+                    <div className={`h-5 w-5 rounded border flex items-center justify-center transition-all ${
+                      addonSetup
+                        ? 'bg-rubik-brand border-rubik-brand text-white'
+                        : 'border-rubik-brand/40 bg-white'
+                    }`}>
+                      {addonSetup && <Check className="h-4 w-4" />}
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={addonSetup}
+                      onChange={(e) => setAddonSetup(e.target.checked)}
+                      className="sr-only"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <span className="font-black text-sm text-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-4 w-4 text-rubik-brand" />
+                      Rubikshop Premium Setup xidməti istəyirəm (+5.00 AZN)
+                    </span>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Kubun hər tərəfli yağlanması, maqnit qüvvələrinin optimallaşdırılması və gərginliyin rəsmi WCA turnirləri standartlarına uyğunlaşdırılması xidməti.
+                    </p>
+                  </div>
+                </label>
+              </div>
+            )}
 
             {/* Action Hub */}
             <div className="space-y-3 pt-2">

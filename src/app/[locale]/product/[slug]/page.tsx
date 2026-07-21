@@ -23,18 +23,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   try {
     const titleColumn = `title_${locale}`;
     const descColumn = `description_${locale}`;
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
-    const { data: dbProduct, error } = isUuid
-      ? await supabase
-          .from('products')
-          .select('*, variants(*)')
-          .or(`slug.eq.${slug},id.eq.${slug}`)
-          .single()
-      : await supabase
-          .from('products')
-          .select('*, variants(*)')
-          .eq('slug', slug)
-          .single();
+    const { data: dbProduct, error } = await supabase
+      .from('products')
+      .select('*, variants(*)')
+      .or(`slug.eq.${slug},id.eq.${slug}`)
+      .single();
 
     if (!error && dbProduct) {
       activeProduct = {
