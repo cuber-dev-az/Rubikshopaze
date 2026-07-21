@@ -13,7 +13,6 @@ import {
   X,
   Sparkles,
   Package,
-  LogOut,
   Heart,
 } from 'lucide-react';
 import { rubikTaxonomyGroups } from '@/lib/config/catalog';
@@ -190,17 +189,6 @@ export function Header({ dict, locale }: HeaderProps) {
                 Admin
               </Link>
             )}
-
-            {mounted && user && (
-              <button
-                onClick={handleSignOut}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-all duration-200 border border-red-600/30 cursor-pointer h-[38px]"
-                title={dict.header?.sign_out_long || "Çıxış Et"}
-              >
-                <LogOut className="h-4 w-4" />
-                <span>{dict.header?.sign_out || "Çıxış"}</span>
-              </button>
-            )}
           </div>
 
         </div>
@@ -358,27 +346,15 @@ export function Header({ dict, locale }: HeaderProps) {
                   {/* User Account & Action Panel */}
                   <div className="space-y-3 pt-6 border-t border-gray-800">
                     {mounted && user ? (
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <button
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            handleAccountClick();
-                          }}
-                          className="flex-1 inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
-                        >
-                          {dict.header?.my_account || "Şəxsi Kabinet"}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            handleSignOut();
-                          }}
-                          className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 text-sm font-black rounded-xl hover:bg-red-600 hover:text-white transition-all cursor-pointer min-h-[44px]"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          <span>{dict.header?.sign_out_long || "Çıxış Et"}</span>
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          handleAccountClick();
+                        }}
+                        className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
+                      >
+                        {dict.header?.my_account || "Şəxsi Kabinet"}
+                      </button>
                     ) : (
                       <button
                         onClick={() => {
