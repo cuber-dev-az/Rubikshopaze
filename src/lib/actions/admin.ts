@@ -2054,23 +2054,9 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
         const meta_title = item.meta_title || item.seo_title || `${nameAz || item.name_en || 'Məhsul'} | Rubikshop.az`;
         const meta_description = item.meta_description || item.seo_description || item.description_az || item.description_en || '';
 
-        // Calculate clean slug and check DB collisions
+        // Calculate clean slug for upserting
         const rawSlug = item.slug || item.slug_az || nameAz;
-        const baseSlug = toAzSlug(rawSlug) || 'product';
-
-        let finalSlug = baseSlug;
-        let counter = 1;
-        while (true) {
-          const { data: existing } = await supabase
-            .from('products')
-            .select('id')
-            .eq('slug', finalSlug)
-            .maybeSingle();
-
-          if (!existing) break;
-          finalSlug = `${baseSlug}-${counter}`;
-          counter++;
-        }
+        const targetSlug = toAzSlug(rawSlug) || 'product';
 
         // Automatic Brand resolution
         let brandId = item.brand_id || null;
@@ -2151,12 +2137,12 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
         const parsedStock = parseInt(String(rawStock).replace(/[^0-9]/g, ''), 10);
         const stock_quantity = isNaN(parsedStock) ? 0 : parsedStock;
 
-        // Construct primary insertion payload using exact specified column keys
+        // Construct primary upsert payload
         const primaryInsertObj: any = {
           name_az: nameAz,
           name_en: item.name_en || nameAz,
           name_ru: item.name_ru || nameAz,
-          slug: finalSlug,
+          slug: targetSlug,
           description_az: item.description_az || null,
           description_en: item.description_en || null,
           description_ru: item.description_ru || null,
@@ -2179,7 +2165,7 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
 
         let { data: newProd, error: prodError } = await supabase
           .from('products')
-          .insert(primaryInsertObj)
+          .upsert(primaryInsertObj, { onConflict: 'slug' })
           .select('id, slug')
           .single();
 
@@ -2189,7 +2175,7 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
             title_az: nameAz,
             title_en: item.name_en || nameAz,
             title_ru: item.name_ru || nameAz,
-            slug: finalSlug,
+            slug: targetSlug,
             description_az: item.description_az || null,
             description_en: item.description_en || null,
             description_ru: item.description_ru || null,
@@ -2211,7 +2197,7 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
 
           const fallbackRes = await supabase
             .from('products')
-            .insert(fallbackInsertObj)
+            .upsert(fallbackInsertObj, { onConflict: 'slug' })
             .select('id, slug')
             .single();
 
@@ -2226,7 +2212,8 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
         }
 
         // Map product to categories if resolved
-        if (categoryIds.length > 0) {
+        if (newProd && categoryIds.length > 0) {
+          await supabase.from('product_categories').delete().eq('product_id', newProd.id);
           const mappings = categoryIds.map((cId) => ({
             product_id: newProd.id,
             category_id: cId,
