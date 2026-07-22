@@ -53,7 +53,7 @@ interface AccountDashboardClientProps {
 }
 
 export function AccountDashboardClient({ locale, dict, initialProfile }: AccountDashboardClientProps) {
-  const { user, loading } = useAuthUser();
+  const { user, userRole, loading } = useAuthUser();
 
   // Navigation tabs state
   const [activeTab, setActiveTab] = React.useState<'overview' | 'profile' | 'orders' | 'wishlist' | 'loyalty' | 'settings'>('overview');
@@ -465,6 +465,18 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
 
         {/* Sidebar Links */}
         <div className="bg-card border border-border rounded-3xl p-3 shadow-soft-sm space-y-1.5 flex flex-row lg:flex-col overflow-x-auto lg:overflow-x-visible">
+          {(userRole === 'admin' || userRole === 'manager') && (
+            <Link
+              href={`/${locale}/admin`}
+              className="w-full text-left px-4 py-3 text-xs font-bold rounded-2xl flex items-center justify-between transition-all cursor-pointer bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 font-black shrink-0"
+            >
+              <span className="flex items-center gap-3">
+                <ShieldCheck className="h-4 w-4 shrink-0 text-red-500" />
+                <span>Admin İdarəetmə Paneli</span>
+              </span>
+              <ChevronRight className="h-4 w-4 opacity-60 hidden lg:block" />
+            </Link>
+          )}
           {[
             { id: 'overview', label: 'Ümumi Baxış', icon: Compass },
             { id: 'profile', label: 'Profil & Ünvanlar', icon: MapPin },

@@ -58,27 +58,38 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     setIsWishlistLoading(false);
   };
 
-  const currentPrice = Number(product.price ?? product.price_azn ?? 0);
-  const oldPrice = Number(
-    product.discount_price ??
+  const currentPrice = Number(product.price_azn ?? product.price ?? 0);
+  const compareAtPrice = Number(
+    product.compare_at_price_azn ??
     product.compare_at_price ??
     product.old_price ??
-    product.compare_at_price_azn ??
     product.original_price_azn ??
+    product.discount_price ??
     0
   );
 
-  const hasDiscount = oldPrice > currentPrice && currentPrice > 0;
+  const hasDiscount = compareAtPrice > currentPrice && compareAtPrice > 0 && currentPrice > 0;
   const discountPercent = hasDiscount
-    ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100)
-    : (product.discount_percent || 0);
+    ? Math.round(((compareAtPrice - currentPrice) / compareAtPrice) * 100)
+    : 0;
 
-  const rawBrand = product.brands?.name || product.brand_name || product.brand || '';
-  let brandName = (rawBrand && rawBrand.toUpperCase() !== 'OTHER') ? rawBrand : '';
+  // 1. Resolve Brand Name safely (Never show 'OTHER' or force fallback if none)
+  const rawBrand = (
+    product.brands?.name ||
+    product.brand_name ||
+    product.brand ||
+    ''
+  ).trim();
+
+  let brandName = '';
+  if (rawBrand && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(rawBrand.toUpperCase())) {
+    brandName = rawBrand;
+  }
 
   const productTitle = product.name || product.title || 'Məhsul';
   const titleLower = productTitle.toLowerCase();
 
+  // If brand was not provided in database, try matching known title patterns, but NEVER default to 'Z-Cube' unless title says so
   if (!brandName) {
     if (titleLower.includes('z-cube') || titleLower.includes('zcube')) brandName = 'Z-Cube';
     else if (titleLower.includes('moyu')) brandName = 'MoYu';
@@ -87,25 +98,29 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     else if (titleLower.includes('shengshou')) brandName = 'ShengShou';
     else if (titleLower.includes('yuxin')) brandName = 'YuXin';
     else if (titleLower.includes('diansheng')) brandName = 'DianSheng';
-    else brandName = 'Z-Cube';
   }
 
+  // 2. Resolve Type / Magnetic label
+  const rawType = (product.product_type || '').toLowerCase();
   let typeLabel = '';
-  if (titleLower.includes('açarlıq') || titleLower.includes('keychain')) {
+
+  if (titleLower.includes('açarlıq') || titleLower.includes('keychain') || rawType === 'keychain') {
     typeLabel = 'AÇARLIQ';
-  } else if (titleLower.includes('mat')) {
+  } else if (titleLower.includes('mat') || rawType === 'mat') {
     typeLabel = 'MAT';
-  } else if (titleLower.includes('yağ') || titleLower.includes('lube')) {
+  } else if (titleLower.includes('yağ') || titleLower.includes('lube') || rawType === 'lube') {
     typeLabel = 'YAĞ';
-  } else if (titleLower.includes('taymer') || titleLower.includes('timer')) {
+  } else if (titleLower.includes('taymer') || titleLower.includes('timer') || rawType === 'timer') {
     typeLabel = 'TAYMER';
-  } else if (product.product_type && !['speedcube', 'other', 'default', 'speedcube'].includes(product.product_type.toLowerCase())) {
-    typeLabel = product.product_type.toUpperCase();
+  } else if (rawType && !['speedcube', 'other', 'default', 'puzzle'].includes(rawType)) {
+    typeLabel = rawType.toUpperCase();
   } else {
-    typeLabel = product.is_magnetic ? 'MAGNETIC' : 'STANDART';
+    // For cubes / speedcubes
+    const isMagnetic = product.is_magnetic === true || String(product.is_magnetic) === 'true';
+    typeLabel = isMagnetic ? 'MAGNETIC' : 'STANDART';
   }
 
-  const badgeSubtitle = `${brandName} • ${typeLabel}`;
+  const badgeSubtitle = [brandName, typeLabel].filter(Boolean).join(' • ');
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -173,7 +188,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           {badgeSubtitle}
         </div>
 
-        <h2 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
+        <h2 className="text-xs sm:text-sm md:text-base font-semibold text-gray-900 line-clamp-3 min-h-[3rem] sm:min-h-[2.5rem] md:min-h-[3rem] group-hover:text-rubik-brand transition-colors leading-snug">
           {productTitle}
         </h2>
         
@@ -181,9 +196,9 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           <span className={`text-lg font-black font-mono ${hasDiscount ? 'text-red-600' : 'text-gray-900'}`}>
             {currentPrice.toFixed(2)} AZN
           </span>
-          {hasDiscount && oldPrice > 0 && (
+          {hasDiscount && (
             <span className="line-through text-gray-400 text-xs font-mono ml-2">
-              {oldPrice.toFixed(2)} AZN
+              {compareAtPrice.toFixed(2)} AZN
             </span>
           )}
         </div>

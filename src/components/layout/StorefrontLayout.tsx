@@ -30,14 +30,14 @@ export function StorefrontLayout({ children, dict, locale }: StorefrontLayoutPro
 
   if (!mounted) {
     return (
-      <div className="flex flex-col min-h-screen pb-[60px] md:pb-0">
+      <div className="flex flex-col min-h-screen pb-[96px] md:pb-0">
         <main id="main-content" className="flex-grow">{children}</main>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-[60px] md:pb-0">
+    <div className="flex flex-col min-h-screen pb-[96px] md:pb-0">
       <Header dict={dict} locale={locale} />
       <main id="main-content" className="flex-grow">{children}</main>
       <Footer dict={dict} locale={locale} />

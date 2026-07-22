@@ -14,6 +14,7 @@ import {
   Sparkles,
   Package,
   Heart,
+  ShieldCheck,
 } from 'lucide-react';
 import { rubikTaxonomyGroups } from '@/lib/config/catalog';
 import { useCartStore } from '@/store/useCartStore';
@@ -179,16 +180,6 @@ export function Header({ dict, locale }: HeaderProps) {
                 </span>
               )}
             </button>
-
-            {/* Admin shortcut if logged in */}
-            {mounted && (userRole === 'admin' || userRole === 'manager') && (
-              <Link
-                href={`/${locale}/admin`}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-black bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg border border-red-500/25 transition-all duration-200 uppercase tracking-wider h-[38px]"
-              >
-                Admin
-              </Link>
-            )}
           </div>
 
         </div>
@@ -346,15 +337,27 @@ export function Header({ dict, locale }: HeaderProps) {
                   {/* User Account & Action Panel */}
                   <div className="space-y-3 pt-6 border-t border-gray-800">
                     {mounted && user ? (
-                      <button
-                        onClick={() => {
-                          setIsMenuOpen(false);
-                          handleAccountClick();
-                        }}
-                        className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
-                      >
-                        {dict.header?.my_account || "Şəxsi Kabinet"}
-                      </button>
+                      <div className="space-y-2">
+                        {(userRole === 'admin' || userRole === 'manager') && (
+                          <Link
+                            href={`/${locale}/admin`}
+                            onClick={() => setIsMenuOpen(false)}
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-600/20 text-red-400 border border-red-500/30 text-xs font-black rounded-xl hover:bg-red-600/30 transition-colors cursor-pointer min-h-[44px] uppercase tracking-wider"
+                          >
+                            <ShieldCheck className="h-4 w-4" />
+                            Admin Panel
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            handleAccountClick();
+                          }}
+                          className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
+                        >
+                          {dict.header?.my_account || "Şəxsi Kabinet"}
+                        </button>
+                      </div>
                     ) : (
                       <button
                         onClick={() => {
