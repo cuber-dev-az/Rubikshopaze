@@ -98,11 +98,14 @@ export function Header({ dict, locale }: HeaderProps) {
   React.useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
     } else {
       document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     }
     return () => {
       document.body.style.overflow = '';
+      document.body.style.touchAction = '';
     };
   }, [isMenuOpen]);
 
@@ -233,63 +236,79 @@ export function Header({ dict, locale }: HeaderProps) {
         {/* FULL-SCREEN NAVIGATION OVERLAY DRAWER */}
         <AnimatePresence>
           {isMenuOpen && (
-            <motion.div
-              key="mobile-drawer-container"
-              initial={{ opacity: 0, y: '-100%' }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: '-100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed inset-0 h-dvh w-dvh bg-[#0d1117] z-[99999] p-6 flex flex-col overflow-y-auto text-white"
-            >
-              <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
-                
-                {/* Header Row */}
-                <div className="flex items-center justify-between border-b border-gray-800 pb-5">
-                  <Link 
-                    href={`/${locale}`} 
-                    className="flex items-center gap-2 group"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg tracking-tight">
-                      RubikShop<span className="text-rubik-yellow">.az</span>
-                    </span>
-                  </Link>
-                  <button
-                    onClick={() => setIsMenuOpen(false)}
-                    className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
-                  >
-                    <X className="h-5 w-5 text-white" />
-                  </button>
-                </div>
+            <>
+              {/* Dark Backdrop Overlay */}
+              <motion.div
+                key="mobile-drawer-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setIsMenuOpen(false)}
+                className="fixed inset-0 w-screen h-dvh bg-black/80 backdrop-blur-md z-[99998]"
+                aria-hidden="true"
+              />
 
-                {/* Body Content */}
-                <div className="flex flex-col gap-6 py-2 pb-12">
+              {/* Mobile Drawer Container */}
+              <motion.div
+                key="mobile-drawer-container"
+                initial={{ opacity: 0, y: '-100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                className="fixed inset-0 h-dvh w-full max-w-full bg-[#0d1117] z-[99999] p-6 flex flex-col overflow-y-auto text-white overscroll-contain"
+              >
+                <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
                   
-                  {/* Language Selection Bar - PLACED EXCLUSIVELY HERE */}
-                  <div className="space-y-3">
-                    <span className="text-xs font-black uppercase tracking-wider text-gray-400 block">
-                      {dict.header?.language_title || "Dil seçimi"}
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1.5 rounded-xl border border-gray-800">
-                      {(['az', 'en', 'ru'] as const).map((lang) => (
-                        <button
-                          key={lang}
-                          onClick={() => {
-                            changeLanguage(lang);
-                            setIsMenuOpen(false);
-                          }}
-                          className={`py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[44px] flex items-center justify-center cursor-pointer ${
-                            locale === lang
-                              ? 'bg-red-500 text-white shadow-soft-sm'
-                              : 'text-gray-300 hover:text-white hover:bg-white/5'
-                          }`}
-                        >
-                          {lang}
-                        </button>
-                      ))}
-                    </div>
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between border-b border-gray-800 pb-5">
+                    <Link 
+                      href={`/${locale}`} 
+                      className="flex items-center gap-2 group"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg tracking-tight">
+                        RubikShop<span className="text-rubik-yellow">.az</span>
+                      </span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
+                    >
+                      <X className="h-5 w-5 text-white" />
+                    </button>
                   </div>
+
+                  {/* Body Content */}
+                  <div className="flex flex-col gap-6 py-2 pb-12">
+                    
+                    {/* Language Selection Bar - PLACED EXCLUSIVELY HERE */}
+                    <div className="space-y-3 w-full">
+                      <span className="text-xs font-black uppercase tracking-wider text-gray-400 block">
+                        {dict.header?.language_title || "Dil seçimi"}
+                      </span>
+                      <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1.5 rounded-xl border border-gray-800 w-full overflow-hidden">
+                        {(['az', 'en', 'ru'] as const).map((lang) => (
+                          <button
+                            key={lang}
+                            type="button"
+                            onClick={() => {
+                              changeLanguage(lang);
+                              setIsMenuOpen(false);
+                            }}
+                            className={`w-full py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[44px] flex items-center justify-center cursor-pointer ${
+                              locale === lang
+                                ? 'bg-red-500 text-white shadow-soft-sm'
+                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            {lang}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
                   {/* Structural Navigation Links */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -385,7 +404,8 @@ export function Header({ dict, locale }: HeaderProps) {
                 </div>
               </div>
             </motion.div>
-          )}
+          </>
+        )}
         </AnimatePresence>
       </header>
 
