@@ -32,6 +32,7 @@ import {
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
 import { createClient } from '@/lib/supabase/client';
+import { ProductCard } from '@/components/ProductCard';
 
 interface Product {
   id: string;
@@ -85,13 +86,19 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
   
   const saleProducts = currentProducts
     .filter(p => {
-      const origPrice = p.original_price_azn || p.compare_at_price_azn;
-      return origPrice && origPrice > p.price_azn;
-    })
-    .map(p => ({
-      ...p,
-      original_price: p.original_price_azn || p.compare_at_price_azn
-    }));
+      const candidates = [
+        p.original_price_azn,
+        p.compare_at_price_azn,
+        (p as any).compare_at_price,
+        (p as any).discount_price,
+        (p as any).old_price,
+        (p as any).original_price
+      ]
+        .map(v => (v !== undefined && v !== null && v !== '') ? Number(v) : NaN)
+        .filter(v => !isNaN(v) && v > Number(p.price_azn || 0));
+
+      return candidates.length > 0 || ((p as any).discount_percent && Number((p as any).discount_percent) > 0);
+    });
 
   const activeSaleProducts = saleProducts.length > 0 ? saleProducts.slice(0, 4) : currentProducts.slice(0, 4);
 
@@ -809,73 +816,9 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {getActiveProducts().map((product) => {
-                const isOutOfStock = product.stock_quantity <= 0;
-                const originalPrice = product.original_price_azn || product.compare_at_price_azn;
-                const hasSale = originalPrice && originalPrice > product.price_azn;
-                const discountPercent = hasSale ? Math.round(((originalPrice - product.price_azn) / originalPrice) * 100) : 0;
-                return (
-                  <div
-                    key={product.id}
-                    className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group"
-                  >
-                    <div className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
-                      <Image
-                        src={product.image_url}
-                        alt={product.title}
-                        fill
-                        referrerPolicy="no-referrer"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                        className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
-                      />
-
-                      {isOutOfStock && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1px]">
-                          <span className="text-white text-xs font-black tracking-wider px-3 py-1 bg-red-600 rounded-lg">
-                            {dict.product.out_of_stock}
-                          </span>
-                        </div>
-                      )}
-
-                      {hasSale && (
-                        <div className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-soft-sm">
-                          -{discountPercent}% ENDİRİM
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="p-4 md:p-5 flex flex-col flex-grow space-y-2.5">
-                      <h2 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
-                        {product.title}
-                      </h2>
-
-                      <div className="flex items-baseline gap-2 mt-auto">
-                        <span className="text-base md:text-lg font-black text-foreground">
-                          {product.price_azn.toFixed(2)} AZN
-                        </span>
-                        {hasSale && (
-                          <span className="text-xs text-muted-foreground line-through">
-                            {originalPrice.toFixed(2)} AZN
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={isOutOfStock}
-                        className={`w-full py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                          isOutOfStock
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                            : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white active:scale-95'
-                        }`}
-                      >
-                        <ShoppingBag className="h-4 w-4" />
-                        <span>{isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {getActiveProducts().map((product) => (
+                <ProductCard key={product.id} product={product} dict={dict} />
+              ))}
             </div>
           )}
         </div>

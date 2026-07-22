@@ -167,14 +167,36 @@ export async function applyCampaignDiscounts(products: any[]) {
         );
 
         const discountPercent = Number(maxCampaign.discount_percent);
-        const originalPrice = Number(product.price_azn);
-        const discountedPrice = originalPrice * (1 - discountPercent / 100);
+        const currentPrice = Number(product.price_azn || product.price || 0);
+
+        // Find existing higher compare price if available
+        const existingCompareCandidates = [
+          product.original_price_azn,
+          product.compare_at_price_azn,
+          product.compare_at_price,
+          product.discount_price,
+          product.old_price,
+          product.original_price
+        ]
+          .map(v => (v !== undefined && v !== null && v !== '') ? Number(v) : NaN)
+          .filter(v => !isNaN(v) && v > currentPrice);
+
+        const baseOriginalPrice = existingCompareCandidates.length > 0 
+          ? existingCompareCandidates[0] 
+          : currentPrice;
+
+        const discountedPrice = currentPrice * (1 - discountPercent / 100);
+        const finalCalculatedPercent = Math.round(((baseOriginalPrice - discountedPrice) / baseOriginalPrice) * 100);
 
         return {
           ...product,
-          original_price_azn: originalPrice,
-          discount_percent: discountPercent,
-          price_azn: Number(discountedPrice.toFixed(2))
+          price_azn: Number(discountedPrice.toFixed(2)),
+          original_price_azn: baseOriginalPrice,
+          compare_at_price_azn: baseOriginalPrice,
+          discount_price: baseOriginalPrice,
+          old_price: baseOriginalPrice,
+          discount_percent: finalCalculatedPercent,
+          campaign_name: maxCampaign.name
         };
       }
 
