@@ -72,7 +72,7 @@ export function ProductDetailClientContent({
   const addItem = useCartStore((state) => state.addItem);
 
   // Database-driven variants selection setup
-  const dbVariants = React.useMemo(() => product.variants || [], [product.variants]);
+  const dbVariants = React.useMemo(() => product?.variants || [], [product?.variants]);
   const [selectedVariantId, setSelectedVariantId] = React.useState<string | null>(
     dbVariants.length > 0 ? dbVariants[0].id : null
   );
@@ -84,6 +84,7 @@ export function ProductDetailClientContent({
 
   // Category-aware setup service detection
   const isCubeCategory = React.useMemo(() => {
+    if (!product) return false;
     if ((product as any).has_setup === true) return true;
     const cat = (product.category_slug || (product as any).category || '').toLowerCase();
     if (!cat) return true;
@@ -93,14 +94,16 @@ export function ProductDetailClientContent({
   }, [product]);
 
   // Core configuration selections
-  const [activeImage, setActiveImage] = React.useState(product.image_url);
+  const [activeImage, setActiveImage] = React.useState(product?.image_url || '');
   const [addonSetup, setAddonSetup] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'description' | 'specs' | 'compatibility' | 'shipping' | 'return' | 'faq'>('description');
 
   // Sync activeImage if product.image_url changes
   React.useEffect(() => {
-    setActiveImage(product.image_url);
-  }, [product.image_url]);
+    if (product?.image_url) {
+      setActiveImage(product.image_url);
+    }
+  }, [product?.image_url]);
 
   // Interactive video modal
   const [showVideoModal, setShowVideoModal] = React.useState(false);
@@ -118,18 +121,18 @@ export function ProductDetailClientContent({
   const [reviewSubmitted, setReviewSubmitted] = React.useState(false);
 
   // Dynamic pricing directly from product object
-  const basePrice = Number(product.price_azn || (product as any).price || 0);
+  const basePrice = Number(product?.price_azn || (product as any)?.price || 0);
   const addonCost = (isCubeCategory && addonSetup) ? 5 : 0;
   
   const finalPrice = selectedVariant 
     ? Number(selectedVariant.price_azn || selectedVariant.price || basePrice)
     : basePrice + addonCost;
 
-  const originalPrice = product.original_price || (product as any).discount_price || (product as any).compare_at_price_azn;
+  const originalPrice = product?.original_price || (product as any)?.discount_price || (product as any)?.compare_at_price_azn;
 
   const currentSku = selectedVariant 
     ? selectedVariant.sku 
-    : product.sku || `RS-${product.id.substring(0, 4).toUpperCase()}`;
+    : (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000'));
 
   // Calculated Ratings Summary
   const averageRating = React.useMemo(() => {
@@ -139,6 +142,7 @@ export function ProductDetailClientContent({
 
   // Gallery images with dynamic variation
   const galleryImages = React.useMemo(() => {
+    if (!product) return [];
     const secondaryImages = product.gallery_images || product.images || [];
     let extraImages: string[] = [];
     if (Array.isArray(secondaryImages)) {
@@ -162,9 +166,10 @@ export function ProductDetailClientContent({
     const list = [product.image_url, ...cleanExtraImages].filter(Boolean);
     // Dedup array
     return Array.from(new Set(list)) as string[];
-  }, [product.image_url, product.gallery_images, product.images]);
+  }, [product]);
 
   const specsToDisplay = React.useMemo(() => {
+    if (!product) return {};
     const baseSpecs: Record<string, string> = {};
     if (product.brand) baseSpecs['Brend'] = product.brand;
     if (product.sku) baseSpecs['SKU'] = product.sku;
@@ -199,6 +204,21 @@ export function ProductDetailClientContent({
     
     return translatedSpecs;
   }, [product]);
+
+  if (!product || !product.id) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+        <h1 className="text-3xl font-black text-foreground mb-4">Məhsul tapılmadı</h1>
+        <p className="text-muted-foreground mb-8">Axtardığınız məhsul mövcud deyil, gizlədilib və ya silinib.</p>
+        <Link 
+          href={`/${locale}`} 
+          className="inline-flex items-center px-6 py-3 bg-rubik-brand text-white font-bold rounded-xl shadow-md hover:bg-rubik-brand-dark transition-colors"
+        >
+          Ana Səhifəyə Qayıt
+        </Link>
+      </div>
+    );
+  }
 
   const handleAddToCart = (redirect = false) => {
     const titleAddition = selectedVariant 

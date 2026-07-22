@@ -44,7 +44,8 @@ export async function getProducts(options?: {
 
     const { data, error, count } = await query;
     if (error) throw error;
-    return { success: true, data, count };
+    const uniqueProducts = data ? Array.from(new Map(data.map((p: any) => [p.id, p])).values()) : [];
+    return { success: true, data: uniqueProducts, count: count ?? uniqueProducts.length };
   } catch (error: any) {
     console.error('getProducts Error:', error.message);
     return { success: false, error: error.message };

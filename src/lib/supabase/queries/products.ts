@@ -39,7 +39,9 @@ export async function getActiveProducts() {
     return [];
   }
   
-  return data as RawProduct[];
+  if (!data || !Array.isArray(data)) return [];
+  const uniqueProducts = Array.from(new Map(data.map((p: any) => [p.id, p])).values());
+  return uniqueProducts as RawProduct[];
 }
 
 export function mapProductToLocale(raw: RawProduct, locale: string): Product {

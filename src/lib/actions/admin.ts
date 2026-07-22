@@ -1559,15 +1559,31 @@ function formatGalleryImages(gallery_images: any): string[] {
   return [];
 }
 
-function mapVariantsPayload(variants: any[], basePrice: number, productId?: string) {
+function mapVariantsPayload(variants: any[], basePrice: number, productId?: string, productSlug?: string) {
   if (!variants || !Array.isArray(variants) || variants.length === 0) {
     return [];
   }
-  return variants.map((v: any) => {
+  const seenSkus = new Set<string>();
+  const slugPrefix = productSlug || (productId ? productId.slice(0, 8) : 'var');
+
+  return variants.map((v: any, idx: number) => {
     const variantPrice = Number(v.price_azn || v.price || basePrice || 0);
+    let rawSku = v.sku ? String(v.sku).trim() : '';
+    if (!rawSku) {
+      rawSku = `${slugPrefix}-v${idx + 1}-${Date.now().toString().slice(-4)}`;
+    }
+
+    let uniqueSku = rawSku;
+    let counter = 1;
+    while (seenSkus.has(uniqueSku)) {
+      uniqueSku = `${rawSku}-${counter}-${Date.now().toString().slice(-3)}`;
+      counter++;
+    }
+    seenSkus.add(uniqueSku);
+
     const item: any = {
-      sku: v.sku || '',
-      name: v.name || '',
+      sku: uniqueSku,
+      name: v.name || `Variant ${idx + 1}`,
       price_azn: variantPrice,
       price: variantPrice,
       stock: Number(v.stock ?? v.stock_quantity ?? 0),
@@ -1633,7 +1649,7 @@ export async function createProduct(payload: any) {
       if (catError) throw catError;
     }
 
-    const variantsToInsert = mapVariantsPayload(payload.variants || [], basePrice, product.id);
+    const variantsToInsert = mapVariantsPayload(payload.variants || [], basePrice, product.id, product.slug);
     if (variantsToInsert.length > 0) {
       const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
       if (varError) throw varError;
@@ -1697,7 +1713,7 @@ export async function updateProduct(id: string, payload: any) {
       const { error: delVarError } = await supabase.from('variants').delete().eq('product_id', id);
       if (delVarError) throw delVarError;
 
-      const variantsToInsert = mapVariantsPayload(variants || [], basePrice, id);
+      const variantsToInsert = mapVariantsPayload(variants || [], basePrice, id, product.slug);
       if (variantsToInsert.length > 0) {
         const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
         if (varError) throw varError;
