@@ -59,28 +59,32 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   };
 
   const basePrice = Number(product.price_azn ?? product.price ?? 0);
-  const candidates = [
-    product.original_price_azn,
+  const rawCompareCandidates = [
     product.compare_at_price_azn,
     product.compare_at_price,
-    product.old_price,
+    product.original_price_azn,
+    product.original_price,
     product.discount_price,
-    product.original_price
-  ].map(v => (v !== undefined && v !== null && v !== '') ? Number(v) : NaN).filter(v => !isNaN(v) && v > 0);
+    product.old_price,
+  ]
+    .map(v => (v !== undefined && v !== null && v !== '') ? Number(v) : NaN)
+    .filter(v => !isNaN(v) && v > 0);
 
-  const maxCandidate = candidates.length > 0 ? Math.max(...candidates) : 0;
-  const minCandidate = candidates.length > 0 ? Math.min(...candidates) : 0;
+  const oldPriceCandidate = rawCompareCandidates.find(v => v !== basePrice);
 
   let currentPrice = basePrice;
   let oldPrice = 0;
 
-  if (maxCandidate > basePrice && basePrice > 0) {
-    currentPrice = basePrice;
-    oldPrice = maxCandidate;
-  } else if (minCandidate < basePrice && minCandidate > 0) {
-    currentPrice = minCandidate;
-    oldPrice = basePrice;
+  if (oldPriceCandidate) {
+    if (oldPriceCandidate > basePrice) {
+      currentPrice = basePrice;
+      oldPrice = oldPriceCandidate;
+    } else if (oldPriceCandidate < basePrice) {
+      currentPrice = oldPriceCandidate;
+      oldPrice = basePrice;
+    }
   } else if (product.discount_percent && Number(product.discount_percent) > 0 && basePrice > 0) {
+    currentPrice = basePrice;
     oldPrice = Math.round((basePrice / (1 - Number(product.discount_percent) / 100)) * 100) / 100;
   }
 
@@ -129,18 +133,18 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     typeLabel = 'Yağ';
   } else if (titleLower.includes('taymer') || titleLower.includes('timer')) {
     typeLabel = 'Taymer';
-  } else if (titleLower.includes('aksessuar') || titleLower.includes('accessory') || titleLower.includes('stend') || titleLower.includes('stand')) {
+  } else if (titleLower.includes('aksessuar') || titleLower.includes('accessory') || titleLower.includes('stend') || titleLower.includes('stand') || titleLower.includes('çanta') || titleLower.includes('canta')) {
     typeLabel = 'Aksessuar';
-  } else if (product.product_type && !['speedcube', 'other', 'default', 'puzzle', 'magnetic', 'maqnitli', 'standart'].includes(product.product_type.toLowerCase())) {
+  } else if (product.product_type && !['speedcube', 'other', 'default', 'puzzle', 'magnetic', 'maqnitli', 'standart', 'standard'].includes(product.product_type.toLowerCase())) {
     typeLabel = product.product_type;
   } else {
-    const isMagnetic = 
-      product.is_magnetic === true || 
-      String(product.is_magnetic) === 'true' ||
+    const hasMagneticText = 
       titleLower.includes('magnetic') ||
       titleLower.includes('maqnit') ||
       titleLower.includes('maglev') ||
-      /\b\d+x\d+\s*m\b/.test(titleLower);
+      /\b\d+x\d+\s*m\b/i.test(productTitle);
+
+    const isMagnetic = (product.is_magnetic === true || String(product.is_magnetic) === 'true') || hasMagneticText;
 
     typeLabel = isMagnetic ? 'Maqnitli' : 'Standart';
   }

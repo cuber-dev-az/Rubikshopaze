@@ -6,15 +6,25 @@ import { revalidatePath } from 'next/cache';
 export async function getProductReviews(productId: string) {
   try {
     const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('reviews')
       .select('*, profiles(full_name)')
       .eq('product_id', productId)
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('getProductReviews Error:', error.message);
-      return { success: false, data: [] };
+      // Fallback if profiles table relationship is missing
+      const fallback = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('product_id', productId)
+        .order('created_at', { ascending: false });
+
+      if (fallback.error) {
+        console.error('getProductReviews Error:', error.message);
+        return { success: false, data: [] };
+      }
+      data = fallback.data;
     }
 
     return { success: true, data };
