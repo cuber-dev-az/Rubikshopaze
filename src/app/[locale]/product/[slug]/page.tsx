@@ -2,7 +2,7 @@ import { getDictionary } from '@/i18n/dictionaries';
 import { ProductDetailClientContent } from '@/components/layout/ProductDetailClientContent';
 import { supabase } from '@/lib/supabase/client';
 import { getProductReviews } from '@/lib/actions/reviews';
-import { notFound } from 'next/navigation';
+import Link from 'next/link';
 
 export const revalidate = 60;
 
@@ -18,6 +18,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const dict = await getDictionary(locale);
 
   const rawSlug = decodeURIComponent(rawParamSlug || '').trim();
+  const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(rawSlug);
 
   // 1. Fetch matching product from Supabase if available
   let activeProduct = null;
@@ -26,13 +27,47 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     const descColumn = `description_${locale}`;
     const nameColumn = `name_${locale}`;
 
-    const { data: dbProduct, error } = await supabase
+    let dbProduct = null;
+
+    // Primary query with joins
+    const selectQuery = '*, variants(*), brands(name, slug), categories(name_az, slug)';
+    const filterCond = isUuid
+      ? `id.eq.${rawSlug},slug.eq.${rawSlug}`
+      : `slug.eq.${rawSlug},slug.ilike.${rawSlug}`;
+
+    const { data: primaryData, error: primaryErr } = await supabase
       .from('products')
-      .select('*, variants(*), brands(name, slug), categories(name_az, slug)')
-      .or(`slug.eq.${rawSlug},slug.ilike.${rawSlug},id.eq.${rawSlug}`)
+      .select(selectQuery)
+      .or(filterCond)
       .maybeSingle();
 
-    if (!error && dbProduct) {
+    if (!primaryErr && primaryData) {
+      dbProduct = primaryData;
+    } else {
+      // Fallback 1: Simple select without joins to prevent FK embed errors
+      const { data: fallbackData } = await supabase
+        .from('products')
+        .select('*')
+        .or(filterCond)
+        .maybeSingle();
+
+      if (fallbackData) {
+        dbProduct = fallbackData;
+      } else {
+        // Fallback 2: Fuzzy slug / title match
+        const cleanTerm = rawSlug.replace(/[^a-zA-Z0-9]/g, '%');
+        const { data: fuzzyData } = await supabase
+          .from('products')
+          .select('*')
+          .or(`slug.ilike.%${cleanTerm}%,name_az.ilike.%${cleanTerm}%,title_az.ilike.%${cleanTerm}%`)
+          .limit(1)
+          .maybeSingle();
+
+        dbProduct = fuzzyData;
+      }
+    }
+
+    if (dbProduct) {
       const brandName = dbProduct.brands?.name || dbProduct.brand_name || dbProduct.brand || 'Z-Cube';
       const cleanBrandName = (brandName && brandName.toUpperCase() !== 'OTHER') ? brandName : 'Z-Cube';
 
@@ -81,7 +116,18 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   if (!activeProduct) {
-    notFound();
+    return (
+      <div className="min-h-[70vh] bg-background flex flex-col items-center justify-center p-6 text-center">
+        <h1 className="text-3xl font-black text-foreground mb-3">Məhsul Tapılmadı</h1>
+        <p className="text-muted-foreground mb-6 max-w-md">Axtardığınız məhsul mövcud deyil, silinib və ya ünvan yanlışdır.</p>
+        <Link 
+          href={`/${locale}`}
+          className="px-6 py-3 bg-rubik-brand text-white font-bold rounded-xl shadow-md hover:bg-rubik-brand-dark transition-colors"
+        >
+          Ana Səhifəyə Qayıt
+        </Link>
+      </div>
+    );
   }
 
   const reviewsRes = await getProductReviews(activeProduct.id);
@@ -167,3 +213,4 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     </>
   );
 }
+

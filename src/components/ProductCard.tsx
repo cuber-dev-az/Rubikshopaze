@@ -73,10 +73,38 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100)
     : (product.discount_percent || 0);
 
-  const rawBrand = product.brands?.name || product.brand_name || product.brand || 'Z-Cube';
-  const brandName = (rawBrand && rawBrand.toUpperCase() !== 'OTHER') ? rawBrand : 'Z-Cube';
+  const rawBrand = product.brands?.name || product.brand_name || product.brand || '';
+  let brandName = (rawBrand && rawBrand.toUpperCase() !== 'OTHER') ? rawBrand : '';
 
-  const typeLabel = product.product_type || (product.is_magnetic ? 'MAGNETIC' : 'STANDART');
+  const productTitle = product.name || product.title || 'Məhsul';
+  const titleLower = productTitle.toLowerCase();
+
+  if (!brandName) {
+    if (titleLower.includes('z-cube') || titleLower.includes('zcube')) brandName = 'Z-Cube';
+    else if (titleLower.includes('moyu')) brandName = 'MoYu';
+    else if (titleLower.includes('qiyi')) brandName = 'QiYi';
+    else if (/\bgan\b/.test(titleLower)) brandName = 'GAN';
+    else if (titleLower.includes('shengshou')) brandName = 'ShengShou';
+    else if (titleLower.includes('yuxin')) brandName = 'YuXin';
+    else if (titleLower.includes('diansheng')) brandName = 'DianSheng';
+    else brandName = 'Z-Cube';
+  }
+
+  let typeLabel = '';
+  if (titleLower.includes('açarlıq') || titleLower.includes('keychain')) {
+    typeLabel = 'AÇARLIQ';
+  } else if (titleLower.includes('mat')) {
+    typeLabel = 'MAT';
+  } else if (titleLower.includes('yağ') || titleLower.includes('lube')) {
+    typeLabel = 'YAĞ';
+  } else if (titleLower.includes('taymer') || titleLower.includes('timer')) {
+    typeLabel = 'TAYMER';
+  } else if (product.product_type && !['speedcube', 'other', 'default', 'speedcube'].includes(product.product_type.toLowerCase())) {
+    typeLabel = product.product_type.toUpperCase();
+  } else {
+    typeLabel = product.is_magnetic ? 'MAGNETIC' : 'STANDART';
+  }
+
   const badgeSubtitle = `${brandName} • ${typeLabel}`;
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -92,7 +120,6 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     });
   };
 
-  const productTitle = product.name || product.title || 'Məhsul';
   const productSlug = product.slug ? encodeURIComponent(product.slug.trim()) : product.id;
   const productUrl = `/${locale}/product/${productSlug}`;
 
