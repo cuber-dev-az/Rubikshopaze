@@ -52,13 +52,23 @@ interface CategoryClientContentProps {
   dict: ApplicationDictionary;
 }
 
-const getProductBrandName = (p: any): string => {
+const getBrandName = (p: any): string => {
   if (!p) return '';
   if (typeof p.brand === 'string' && p.brand.trim()) return p.brand.trim();
   if (p.brands && typeof p.brands === 'object' && !Array.isArray(p.brands) && p.brands.name) return String(p.brands.name).trim();
   if (Array.isArray(p.brands) && p.brands[0]?.name) return String(p.brands[0].name).trim();
   if (typeof p.brand_name === 'string' && p.brand_name.trim()) return p.brand_name.trim();
-  if (typeof p.brand === 'object' && p.brand?.name) return String(p.brand.name).trim();
+  if (p.brand && typeof p.brand === 'object' && p.brand.name) return String(p.brand.name).trim();
+  
+  // Fallback check from product title
+  const title = (p.name_az || p.name || p.title_az || p.title || '').toLowerCase();
+  if (title.includes('z-cube') || title.includes('zcube')) return 'Z-Cube';
+  if (title.includes('moyu')) return 'MoYu';
+  if (title.includes('qiyi')) return 'QiYi';
+  if (/\bgan\b/.test(title)) return 'GAN';
+  if (title.includes('shengshou')) return 'ShengShou';
+  if (title.includes('yuxin')) return 'YuXin';
+  if (title.includes('diansheng')) return 'DianSheng';
   return '';
 };
 
@@ -134,7 +144,7 @@ export function CategoryClientContent({
   const availableBrands = React.useMemo(() => {
     const brandsSet = new Set<string>();
     baseProducts.forEach(p => {
-      const bName = getProductBrandName(p);
+      const bName = getBrandName(p);
       if (bName) {
         const upper = bName.toUpperCase();
         if (!['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(upper)) {
@@ -177,7 +187,7 @@ export function CategoryClientContent({
     // Filter by Brand
     if (selectedBrands.length > 0) {
       result = result.filter(p => {
-        const bName = getProductBrandName(p);
+        const bName = getBrandName(p);
         return Boolean(bName && selectedBrands.includes(bName));
       });
     }
