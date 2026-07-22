@@ -95,6 +95,17 @@ export function Header({ dict, locale }: HeaderProps) {
     return obj[locale as keyof typeof obj] || obj.az;
   };
 
+  React.useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
   return (
     <React.Fragment>
       {/* Top Banner Accent */}
@@ -103,7 +114,7 @@ export function Header({ dict, locale }: HeaderProps) {
         <span>{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
       </div>
 
-      <header className="sticky top-0 z-40 w-full bg-card border-b border-border shadow-soft-sm backdrop-blur-md bg-opacity-95 dark:bg-opacity-90">
+      <header className={`sticky top-0 w-full bg-card border-b border-border shadow-soft-sm backdrop-blur-md bg-opacity-95 dark:bg-opacity-90 ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>
         
         {/* DESKTOP LAYOUT ARCHITECTURE RULES (hidden md:flex structural layer) */}
         <div className="hidden md:flex items-center justify-between bg-[#0d1117] border-b border-gray-800 px-6 py-4 w-full gap-6">
@@ -228,9 +239,9 @@ export function Header({ dict, locale }: HeaderProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed inset-0 h-screen w-screen bg-[#0d1117] z-[99999] p-6 flex flex-col overflow-y-auto text-white"
+              className="fixed inset-0 h-dvh w-dvh bg-[#0d1117] z-[99999] p-6 flex flex-col overflow-y-auto text-white"
             >
-              <div className="w-full max-w-3xl mx-auto flex flex-col flex-1 gap-6">
+              <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
                 
                 {/* Header Row */}
                 <div className="flex items-center justify-between border-b border-gray-800 pb-5">
@@ -253,7 +264,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 </div>
 
                 {/* Body Content */}
-                <div className="flex-1 flex flex-col justify-between pb-6 gap-8">
+                <div className="flex flex-col gap-6 py-2 pb-12">
                   
                   {/* Language Selection Bar - PLACED EXCLUSIVELY HERE */}
                   <div className="space-y-3">
