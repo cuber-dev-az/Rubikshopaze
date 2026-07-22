@@ -30,6 +30,42 @@ import { useCartStore } from '@/store/useCartStore';
 import { addProductReview } from '@/lib/actions/reviews';
 import { toggleWishlist } from '@/lib/actions/wishlist';
 
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('ProductDetailClientContent ErrorBoundary caught error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <h1 className="text-3xl font-black text-foreground mb-4">Məhsul yoxlanarkən xəta baş verdi</h1>
+          <p className="text-muted-foreground mb-8">Məhsul məlumatları yüklənərkən xəta yarandı.</p>
+          <Link 
+            href="/" 
+            className="inline-flex items-center px-6 py-3 bg-rubik-brand text-white font-bold rounded-xl shadow-md hover:bg-rubik-brand-dark transition-colors"
+          >
+            Ana Səhifəyə Qayıt
+          </Link>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 interface ProductDetailClientContentProps {
   product: {
     id: string;
@@ -40,6 +76,10 @@ interface ProductDetailClientContentProps {
     brand: string;
     category_slug: string;
     sku: string;
+    brands?: { name?: string };
+    categories?: { name_az?: string; slug?: string };
+    brand_name?: string;
+    category_name?: string;
     original_price?: number;
     description: string;
     specs: Record<string, string>;
@@ -47,6 +87,7 @@ interface ProductDetailClientContentProps {
     variants?: any[];
     gallery_images?: any;
     images?: any;
+    [key: string]: any;
   };
   relatedProducts: Array<{
     id: string;
@@ -61,7 +102,15 @@ interface ProductDetailClientContentProps {
   initialReviews?: any[];
 }
 
-export function ProductDetailClientContent({
+export function ProductDetailClientContent(props: ProductDetailClientContentProps) {
+  return (
+    <ErrorBoundary>
+      <ProductDetailClientContentInner {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function ProductDetailClientContentInner({
   product,
   relatedProducts,
   locale,
@@ -299,8 +348,8 @@ export function ProductDetailClientContent({
             <span>{dict.navigation.home}</span>
           </Link>
           <ChevronRight className="h-3 w-3" />
-          <Link href={`/${locale}/category/${product.category_slug}`} className="hover:text-rubik-brand capitalize">
-            {product.category_slug}
+          <Link href={`/${locale}/category/${product?.category_slug || 'all'}`} className="hover:text-rubik-brand capitalize">
+            {product?.categories?.name_az || (product as any)?.category_name || product?.category_slug || 'Açarlıqlar'}
           </Link>
           <ChevronRight className="h-3 w-3" />
           <span className="text-foreground font-semibold line-clamp-1">{product.title}</span>
@@ -372,7 +421,7 @@ export function ProductDetailClientContent({
           <div className="lg:col-span-6 space-y-6">
             <div className="space-y-2.5">
               <span className="px-3 py-1 bg-rubik-brand/10 text-rubik-brand font-black text-[10px] tracking-wider rounded-full uppercase inline-block">
-                {product.brand} Flaqman
+                {product?.brands?.name || (product as any)?.brand_name || product?.brand || 'Z-Cube'} Flaqman
               </span>
               <h1 className="text-2xl md:text-4xl font-black tracking-tight text-foreground">
                 {product.title}

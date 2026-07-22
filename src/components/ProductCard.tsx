@@ -13,19 +13,31 @@ interface ProductCardProps {
   product: {
     id: string;
     slug?: string;
-    title: string;
-    price_azn: number;
+    title?: string;
+    name?: string;
+    price_azn?: number;
+    price?: number;
+    discount_price?: number;
+    compare_at_price?: number;
+    old_price?: number;
+    compare_at_price_azn?: number;
+    original_price_azn?: number;
+    discount_percent?: number;
     image_url: string;
     stock_quantity: number;
-    discount_percent?: number;
-    original_price_azn?: number;
+    brands?: { name?: string };
+    brand_name?: string;
+    brand?: string;
+    product_type?: string;
+    is_magnetic?: boolean;
+    [key: string]: any;
   };
   dict: ApplicationDictionary;
 }
 
 export function ProductCard({ product, dict }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
-  const isOutOfStock = product.stock_quantity <= 0;
+  const isOutOfStock = (product.stock_quantity ?? 0) <= 0;
   
   const params = useParams();
   const locale = params?.locale || 'az';
@@ -46,20 +58,41 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     setIsWishlistLoading(false);
   };
 
+  const currentPrice = Number(product.price ?? product.price_azn ?? 0);
+  const oldPrice = Number(
+    product.discount_price ??
+    product.compare_at_price ??
+    product.old_price ??
+    product.compare_at_price_azn ??
+    product.original_price_azn ??
+    0
+  );
+
+  const hasDiscount = oldPrice > currentPrice && currentPrice > 0;
+  const discountPercent = hasDiscount
+    ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100)
+    : (product.discount_percent || 0);
+
+  const rawBrand = product.brands?.name || product.brand_name || product.brand || 'Z-Cube';
+  const brandName = (rawBrand && rawBrand.toUpperCase() !== 'OTHER') ? rawBrand : 'Z-Cube';
+
+  const typeLabel = product.product_type || (product.is_magnetic ? 'MAGNETIC' : 'STANDART');
+  const badgeSubtitle = `${brandName} • ${typeLabel}`;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (isOutOfStock) return;
     addItem({
       id: product.id,
-      title: product.title,
-      price_azn: product.price_azn,
+      title: product.name || product.title || 'Məhsul',
+      price_azn: currentPrice,
       quantity: 1,
       image_url: product.image_url,
     });
   };
 
-  const productTitle = (product as any).name || product.title;
+  const productTitle = product.name || product.title || 'Məhsul';
   const productSlug = product.slug ? encodeURIComponent(product.slug.trim()) : product.id;
   const productUrl = `/${locale}/product/${productSlug}`;
 
@@ -68,9 +101,9 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       href={productUrl} 
       className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group cursor-pointer block"
     >
-      {product.discount_percent && product.discount_percent > 0 ? (
-        <div className="absolute top-3 left-3 z-20 bg-rubik-brand text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none">
-          -{product.discount_percent}%
+      {hasDiscount && discountPercent > 0 ? (
+        <div className="absolute top-3 left-3 z-20 bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none">
+          -{discountPercent}%
         </div>
       ) : null}
 
@@ -91,7 +124,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
 
       <div className="relative aspect-square w-full bg-gray-50">
         <Image
-          src={product.image_url}
+          src={product.image_url || 'https://picsum.photos/seed/default/600/600'}
           alt={productTitle}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
@@ -109,24 +142,24 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       </div>
       
       <div className="p-4 flex flex-col flex-grow relative">
+        <div className="text-[10px] uppercase font-bold text-rubik-brand tracking-wider mb-1 line-clamp-1">
+          {badgeSubtitle}
+        </div>
+
         <h2 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
           {productTitle}
         </h2>
         
-        {product.discount_percent && product.discount_percent > 0 ? (
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-lg font-black text-rubik-brand font-mono">
-              {product.price_azn.toFixed(2)} AZN
+        <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+          <span className={`text-lg font-black font-mono ${hasDiscount ? 'text-red-600' : 'text-gray-900'}`}>
+            {currentPrice.toFixed(2)} AZN
+          </span>
+          {hasDiscount && oldPrice > 0 && (
+            <span className="line-through text-gray-400 text-xs font-mono ml-2">
+              {oldPrice.toFixed(2)} AZN
             </span>
-            <span className="text-xs text-gray-500 line-through font-mono">
-              {product.original_price_azn?.toFixed(2)} AZN
-            </span>
-          </div>
-        ) : (
-          <p className="mt-2 text-lg font-bold text-gray-900">
-            {product.price_azn.toFixed(2)} AZN
-          </p>
-        )}
+          )}
+        </div>
         
         <button
           onClick={handleAddToCart}
@@ -143,3 +176,4 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     </Link>
   );
 }
+
