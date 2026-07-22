@@ -58,19 +58,37 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     setIsWishlistLoading(false);
   };
 
-  const currentPrice = Number(product.price_azn ?? product.price ?? 0);
-  const compareAtPrice = Number(
-    product.discount_price ??
-    product.compare_at_price ??
-    product.old_price ??
-    product.compare_at_price_azn ??
-    product.original_price_azn ??
-    0
-  );
+  const basePrice = Number(product.price_azn ?? product.price ?? 0);
+  const candidates = [
+    product.original_price_azn,
+    product.compare_at_price_azn,
+    product.compare_at_price,
+    product.old_price,
+    product.discount_price,
+    product.original_price
+  ].map(v => (v !== undefined && v !== null && v !== '') ? Number(v) : NaN).filter(v => !isNaN(v) && v > 0);
 
-  const hasDiscount = compareAtPrice > currentPrice && compareAtPrice > 0 && currentPrice > 0;
+  const maxCandidate = candidates.length > 0 ? Math.max(...candidates) : 0;
+  const minCandidate = candidates.length > 0 ? Math.min(...candidates) : 0;
+
+  let currentPrice = basePrice;
+  let oldPrice = 0;
+
+  if (maxCandidate > basePrice && basePrice > 0) {
+    currentPrice = basePrice;
+    oldPrice = maxCandidate;
+  } else if (minCandidate < basePrice && minCandidate > 0) {
+    currentPrice = minCandidate;
+    oldPrice = basePrice;
+  } else if (product.discount_percent && Number(product.discount_percent) > 0 && basePrice > 0) {
+    oldPrice = Math.round((basePrice / (1 - Number(product.discount_percent) / 100)) * 100) / 100;
+  }
+
+  const hasDiscount = oldPrice > currentPrice && currentPrice > 0;
   const discountPercent = hasDiscount
-    ? Math.round(((compareAtPrice - currentPrice) / compareAtPrice) * 100)
+    ? (product.discount_percent && Number(product.discount_percent) > 0 
+        ? Math.round(Number(product.discount_percent)) 
+        : Math.round(((oldPrice - currentPrice) / oldPrice) * 100))
     : 0;
 
   // 1. Resolve Brand Name safely (Never show 'OTHER')
@@ -100,23 +118,31 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     else brandName = 'Z-Cube';
   }
 
-  // 2. Resolve Type / Magnetic label
-  let typeLabel = product.product_type || '';
-  if (!typeLabel || ['speedcube', 'other', 'default', 'puzzle'].includes(typeLabel.toLowerCase())) {
-    if (titleLower.includes('açarlıq') || titleLower.includes('keychain')) {
-      typeLabel = 'Açarlıq';
-    } else if (titleLower.includes('mat')) {
-      typeLabel = 'Mat';
-    } else if (titleLower.includes('yağ') || titleLower.includes('lube')) {
-      typeLabel = 'Yağ';
-    } else if (titleLower.includes('taymer') || titleLower.includes('timer')) {
-      typeLabel = 'Taymer';
-    } else if (titleLower.includes('aksessuar')) {
-      typeLabel = 'Aksessuar';
-    } else {
-      const isMagnetic = product.is_magnetic === true || String(product.is_magnetic) === 'true';
-      typeLabel = isMagnetic ? 'Maqnitli' : 'Standart';
-    }
+  // 2. Resolve Type / Magnetic label accurately
+  let typeLabel = '';
+
+  if (titleLower.includes('açarlıq') || titleLower.includes('keychain') || titleLower.includes('key chain') || titleLower.includes('acarliq')) {
+    typeLabel = 'Açarlıq';
+  } else if (titleLower.includes('mat') || titleLower.includes('pad') || titleLower.includes('xalça') || titleLower.includes('xalca')) {
+    typeLabel = 'Mat';
+  } else if (titleLower.includes('yağ') || titleLower.includes('yag') || titleLower.includes('lube')) {
+    typeLabel = 'Yağ';
+  } else if (titleLower.includes('taymer') || titleLower.includes('timer')) {
+    typeLabel = 'Taymer';
+  } else if (titleLower.includes('aksessuar') || titleLower.includes('accessory') || titleLower.includes('stend') || titleLower.includes('stand')) {
+    typeLabel = 'Aksessuar';
+  } else if (product.product_type && !['speedcube', 'other', 'default', 'puzzle', 'magnetic', 'maqnitli', 'standart'].includes(product.product_type.toLowerCase())) {
+    typeLabel = product.product_type;
+  } else {
+    const isMagnetic = 
+      product.is_magnetic === true || 
+      String(product.is_magnetic) === 'true' ||
+      titleLower.includes('magnetic') ||
+      titleLower.includes('maqnit') ||
+      titleLower.includes('maglev') ||
+      /\b\d+x\d+\s*m\b/.test(titleLower);
+
+    typeLabel = isMagnetic ? 'Maqnitli' : 'Standart';
   }
 
   const badgeSubtitle = [brandName, typeLabel].filter(Boolean).join(' • ');
@@ -197,7 +223,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           </span>
           {hasDiscount && (
             <span className="line-through text-gray-400 text-xs font-mono ml-2">
-              {compareAtPrice.toFixed(2)} AZN
+              {oldPrice.toFixed(2)} AZN
             </span>
           )}
         </div>

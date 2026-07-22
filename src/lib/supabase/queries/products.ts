@@ -31,7 +31,7 @@ export interface Product {
 export async function getActiveProducts() {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
+    .select('*, brands (*)')
     .eq('is_active', true);
     
   if (error) {
@@ -44,20 +44,24 @@ export async function getActiveProducts() {
   return uniqueProducts as RawProduct[];
 }
 
-export function mapProductToLocale(raw: RawProduct, locale: string): Product {
+export function mapProductToLocale(raw: RawProduct, locale: string): Product & { [key: string]: any } {
   const titleKey = `title_${locale}` as keyof RawProduct;
   const descKey = `description_${locale}` as keyof RawProduct;
   
   return {
+    ...raw,
     id: raw.id,
-    title: (raw[titleKey] || raw.title_az || '') as string,
+    title: (raw[titleKey] || raw.title_az || raw.name || raw.name_az || '') as string,
     description: (raw[descKey] || raw.description_az || '') as string,
-    price_azn: Number(raw.price_azn || 0),
+    price_azn: Number(raw.price_azn || raw.price || 0),
     image_url: raw.image_url || 'https://picsum.photos/seed/default/600/600',
     stock_quantity: Number(raw.stock_quantity || 0),
-    compare_at_price_azn: raw.compare_at_price_azn ? Number(raw.compare_at_price_azn) : undefined,
+    compare_at_price_azn: raw.compare_at_price_azn ? Number(raw.compare_at_price_azn) : (raw.discount_price ? Number(raw.discount_price) : undefined),
     original_price_azn: raw.original_price_azn ? Number(raw.original_price_azn) : undefined,
     discount_percent: raw.discount_percent ? Number(raw.discount_percent) : undefined,
     slug: raw.slug || undefined,
+    brands: raw.brands || undefined,
+    brand: raw.brands?.name || raw.brand || raw.brand_name || undefined,
+    brand_id: raw.brand_id || undefined,
   };
 }

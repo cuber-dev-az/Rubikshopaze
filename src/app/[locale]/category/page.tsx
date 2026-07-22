@@ -21,7 +21,9 @@ export default async function CatalogPage({ params }: CategoryPageProps) {
     const mapped = products.map((p) => ({
       ...mapProductToLocale(p, locale),
       category_slug: p.category_slug || p.category_id || p.category || undefined,
-      brand: p.brand || undefined,
+      brand: p.brands?.name || p.brand || p.brand_name || undefined,
+      brands: p.brands,
+      brand_id: p.brand_id,
       mechanics: p.mechanics || undefined
     }));
     formattedProducts = await applyCampaignDiscounts(mapped);
