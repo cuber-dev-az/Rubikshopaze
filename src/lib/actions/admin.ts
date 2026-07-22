@@ -1762,3 +1762,396 @@ export async function deleteProduct(id: string) {
   }
 }
 
+// =========================================================================
+// BULK IMPORT INFRASTRUCTURE & SERVER ACTIONS
+// =========================================================================
+
+export interface BulkImportResult {
+  success: boolean;
+  count: number;
+  skipped: number;
+  errors: string[];
+}
+
+function toAzSlug(text: string): string {
+  if (!text) return '';
+
+  const charMap: Record<string, string> = {
+    'İ': 'i',
+    'I': 'i',
+    'ə': 'e',
+    'Ə': 'e',
+    'ö': 'o',
+    'Ö': 'o',
+    'ü': 'u',
+    'Ü': 'u',
+    'ç': 'c',
+    'Ç': 'c',
+    'ş': 's',
+    'Ş': 's',
+    'ğ': 'g',
+    'Ğ': 'g',
+    'ı': 'i',
+  };
+
+  let str = text.replace(/[İIəƏöÖüÜçÇşŞğĞı]/g, (match) => charMap[match] || match);
+  str = str.toLowerCase();
+  str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  str = str.replace(/[\(\)\[\]\{\}\/\\#\?!\.,;:'"<>@$%^&*+=~`]/g, ' ');
+  str = str.replace(/[^a-z0-9\s-]/g, '');
+  str = str.trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-');
+
+  return str;
+}
+
+export async function bulkImportCategoriesAction(categories: any[]): Promise<BulkImportResult> {
+  const result: BulkImportResult = {
+    success: false,
+    count: 0,
+    skipped: 0,
+    errors: [],
+  };
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      result.errors.push('İcazəsiz giriş (Unauthorized)');
+      return result;
+    }
+
+    if (!Array.isArray(categories) || categories.length === 0) {
+      result.errors.push('Daxil edilən məlumat massiv (array) deyil və ya boşdur.');
+      return result;
+    }
+
+    for (let i = 0; i < categories.length; i++) {
+      const item = categories[i];
+      const nameAz = (item.name_az || item.name || '').toString().trim();
+
+      if (!nameAz) {
+        result.skipped++;
+        result.errors.push(`№${i + 1}: Kateqoriya adı daxil edilməyib.`);
+        continue;
+      }
+
+      const rawSlug = item.slug_az || item.slug || nameAz;
+      const baseSlug = toAzSlug(rawSlug) || 'category';
+
+      let finalSlugAz = baseSlug;
+      let counter = 1;
+      while (true) {
+        const { data: existing } = await supabase
+          .from('categories')
+          .select('id')
+          .eq('slug_az', finalSlugAz)
+          .maybeSingle();
+
+        if (!existing) break;
+        finalSlugAz = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      const nameEn = (item.name_en || nameAz).trim();
+      const nameRu = (item.name_ru || nameAz).trim();
+      const slugEn = item.slug_en ? toAzSlug(item.slug_en) : finalSlugAz;
+      const slugRu = item.slug_ru ? toAzSlug(item.slug_ru) : finalSlugAz;
+
+      const insertPayload = {
+        name_az: nameAz,
+        name_en: nameEn,
+        name_ru: nameRu,
+        slug_az: finalSlugAz,
+        slug_en: slugEn,
+        slug_ru: slugRu,
+        parent_id: item.parent_id || null,
+        image_url: item.image_url || null,
+      };
+
+      const { error: insertError } = await supabase.from('categories').insert(insertPayload);
+      if (insertError) {
+        result.skipped++;
+        result.errors.push(`"${nameAz}" əlavə edilərkən xəta: ${insertError.message}`);
+      } else {
+        result.count++;
+      }
+    }
+
+    revalidatePath('/[locale]/admin/categories', 'layout');
+    revalidatePath('/[locale]', 'layout');
+
+    result.success = result.count > 0;
+    return result;
+  } catch (err: any) {
+    result.errors.push(`Server xətası: ${err.message || 'Gözlənilməz xəta'}`);
+    return result;
+  }
+}
+
+export async function bulkImportBrandsAction(brands: any[]): Promise<BulkImportResult> {
+  const result: BulkImportResult = {
+    success: false,
+    count: 0,
+    skipped: 0,
+    errors: [],
+  };
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      result.errors.push('İcazəsiz giriş (Unauthorized)');
+      return result;
+    }
+
+    if (!Array.isArray(brands) || brands.length === 0) {
+      result.errors.push('Daxil edilən məlumat massiv (array) deyil və ya boşdur.');
+      return result;
+    }
+
+    for (let i = 0; i < brands.length; i++) {
+      const item = brands[i];
+      const name = (item.name || item.title || '').toString().trim();
+
+      if (!name) {
+        result.skipped++;
+        result.errors.push(`№${i + 1}: Brend adı daxil edilməyib.`);
+        continue;
+      }
+
+      const rawSlug = item.slug || name;
+      const baseSlug = toAzSlug(rawSlug) || 'brand';
+
+      let finalSlug = baseSlug;
+      let counter = 1;
+      while (true) {
+        const { data: existing } = await supabase
+          .from('brands')
+          .select('id')
+          .eq('slug', finalSlug)
+          .maybeSingle();
+
+        if (!existing) break;
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      const insertPayload = {
+        name,
+        slug: finalSlug,
+        logo_url: item.logo_url || item.logo || null,
+        description: item.description || null,
+      };
+
+      const { error: insertError } = await supabase.from('brands').insert(insertPayload);
+      if (insertError) {
+        result.skipped++;
+        result.errors.push(`"${name}" əlavə edilərkən xəta: ${insertError.message}`);
+      } else {
+        result.count++;
+      }
+    }
+
+    revalidatePath('/[locale]/admin/brands', 'layout');
+    revalidatePath('/[locale]', 'layout');
+
+    result.success = result.count > 0;
+    return result;
+  } catch (err: any) {
+    result.errors.push(`Server xətası: ${err.message || 'Gözlənilməz xəta'}`);
+    return result;
+  }
+}
+
+export async function bulkImportProductsAction(products: any[]): Promise<BulkImportResult> {
+  const result: BulkImportResult = {
+    success: false,
+    count: 0,
+    skipped: 0,
+    errors: [],
+  };
+
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      result.errors.push('İcazəsiz giriş (Unauthorized)');
+      return result;
+    }
+
+    if (!Array.isArray(products) || products.length === 0) {
+      result.errors.push('Daxil edilən məlumat massiv (array) deyil və ya boşdur.');
+      return result;
+    }
+
+    // Pre-fetch all categories and brands for trimmed, case-insensitive resolution
+    const { data: allCategories } = await supabase
+      .from('categories')
+      .select('id, name_az, name_en, name_ru, slug_az, slug_en, slug_ru');
+
+    const { data: allBrands } = await supabase
+      .from('brands')
+      .select('id, name, slug');
+
+    const findCategoryId = (input: string): string | null => {
+      if (!input || !allCategories) return null;
+      const norm = input.toString().trim().toLowerCase();
+      const slugNorm = toAzSlug(input);
+
+      for (const cat of allCategories) {
+        if (cat.id === input) return cat.id;
+        if (cat.slug_az?.toLowerCase().trim() === norm || cat.slug_az === slugNorm) return cat.id;
+        if (cat.slug_en?.toLowerCase().trim() === norm || cat.slug_en === slugNorm) return cat.id;
+        if (cat.slug_ru?.toLowerCase().trim() === norm || cat.slug_ru === slugNorm) return cat.id;
+        if (cat.name_az?.toLowerCase().trim() === norm || toAzSlug(cat.name_az) === slugNorm) return cat.id;
+        if (cat.name_en?.toLowerCase().trim() === norm || toAzSlug(cat.name_en) === slugNorm) return cat.id;
+        if (cat.name_ru?.toLowerCase().trim() === norm || toAzSlug(cat.name_ru) === slugNorm) return cat.id;
+      }
+      return null;
+    };
+
+    const findBrandId = (input: string): string | null => {
+      if (!input || !allBrands) return null;
+      const norm = input.toString().trim().toLowerCase();
+      const slugNorm = toAzSlug(input);
+
+      for (const b of allBrands) {
+        if (b.id === input) return b.id;
+        if (b.slug?.toLowerCase().trim() === norm || b.slug === slugNorm) return b.id;
+        if (b.name?.toLowerCase().trim() === norm || toAzSlug(b.name) === slugNorm) return b.id;
+      }
+      return null;
+    };
+
+    for (let i = 0; i < products.length; i++) {
+      const item = products[i];
+      const nameAz = (item.name_az || item.title_az || item.name || item.title || '').toString().trim();
+      const rawPrice = item.price_azn ?? item.price;
+      const priceVal = Number(rawPrice);
+
+      // STRICT VALIDATION: name_az non-empty, price positive number
+      if (!nameAz || isNaN(priceVal) || priceVal <= 0) {
+        result.skipped++;
+        result.errors.push(`Məhsul adı və ya qiyməti yoxdur/yanlışdır: [${nameAz || `№${i + 1}`}]`);
+        continue;
+      }
+
+      // Calculate clean slug and check DB collisions
+      const rawSlug = item.slug || item.slug_az || nameAz;
+      const baseSlug = toAzSlug(rawSlug) || 'product';
+
+      let finalSlug = baseSlug;
+      let counter = 1;
+      while (true) {
+        const { data: existing } = await supabase
+          .from('products')
+          .select('id')
+          .eq('slug', finalSlug)
+          .maybeSingle();
+
+        if (!existing) break;
+        finalSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      // Brand resolution
+      let brandId = item.brand_id || null;
+      if (!brandId) {
+        const brandQuery = item.brand_slug || item.brand_name || item.brand;
+        if (brandQuery) {
+          brandId = findBrandId(String(brandQuery));
+        }
+      }
+
+      // Category resolution
+      let categoryIds: string[] = [];
+      if (Array.isArray(item.category_ids)) {
+        categoryIds = item.category_ids;
+      } else if (item.category_id) {
+        categoryIds = [item.category_id];
+      }
+      const catQuery = item.category_slug || item.category_name || item.category || item.categories || item.category_slugs;
+      if (catQuery) {
+        const catList = Array.isArray(catQuery) ? catQuery : String(catQuery).split(',');
+        for (const cVal of catList) {
+          const matchedId = findCategoryId(String(cVal));
+          if (matchedId && !categoryIds.includes(matchedId)) {
+            categoryIds.push(matchedId);
+          }
+        }
+      }
+
+      const insertObj: any = {
+        title_az: nameAz,
+        title_en: (item.title_en || item.name_en || nameAz).trim(),
+        title_ru: (item.title_ru || item.name_ru || nameAz).trim(),
+        description_az: (item.description_az || item.description || nameAz).trim(),
+        description_en: (item.description_en || item.description || nameAz).trim(),
+        description_ru: (item.description_ru || item.description || nameAz).trim(),
+        slug: finalSlug,
+        price_azn: priceVal,
+        compare_at_price_azn: item.compare_at_price_azn ? Number(item.compare_at_price_azn) : null,
+        brand_id: brandId || null,
+        is_active: item.is_active ?? true,
+        status: item.status || 'active',
+        image_url: item.image_url || item.image || 'https://picsum.photos/seed/rubikproduct/600/600',
+        video_url: item.video_url || null,
+        stock_quantity: item.stock_quantity ?? item.stock ?? 0,
+        is_featured: item.is_featured ?? false,
+        product_type: item.product_type || 'speedcube',
+        tags: Array.isArray(item.tags) ? item.tags : [],
+        gallery_images: formatGalleryImages(item.gallery_images || item.images),
+        seo_title: item.seo_title || null,
+        seo_description: item.seo_description || null,
+        weight_g: item.weight_g ? Number(item.weight_g) : null,
+        is_magnetic: item.is_magnetic ?? false,
+        size_mm: item.size_mm ? String(item.size_mm) : null,
+        difficulty_level: item.difficulty_level || 'başlanğıc',
+      };
+
+      const { data: newProd, error: prodError } = await supabase
+        .from('products')
+        .insert(insertObj)
+        .select('id, slug')
+        .single();
+
+      if (prodError) {
+        result.skipped++;
+        result.errors.push(`"${nameAz}" xətası: ${prodError.message}`);
+        continue;
+      }
+
+      // Map product to categories if resolved
+      if (categoryIds.length > 0) {
+        const mappings = categoryIds.map((cId) => ({
+          product_id: newProd.id,
+          category_id: cId,
+        }));
+        await supabase.from('product_categories').insert(mappings);
+      }
+
+      // Map variants if provided
+      if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
+        const variantsToInsert = mapVariantsPayload(item.variants, priceVal, newProd.id, newProd.slug);
+        if (variantsToInsert.length > 0) {
+          await supabase.from('variants').insert(variantsToInsert);
+        }
+      }
+
+      result.count++;
+    }
+
+    revalidatePath('/[locale]/admin/categories', 'layout');
+    revalidatePath('/[locale]/admin/brands', 'layout');
+    revalidatePath('/[locale]/admin/products', 'layout');
+    revalidatePath('/[locale]', 'layout');
+
+    result.success = result.count > 0;
+    return result;
+  } catch (err: any) {
+    result.errors.push(`Server xətası: ${err.message || 'Gözlənilməz xəta'}`);
+    return result;
+  }
+}
+
+

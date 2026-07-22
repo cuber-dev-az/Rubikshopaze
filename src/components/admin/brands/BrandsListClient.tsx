@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
-  Plus, Search, Edit3, Trash2, X, Package, Save, RefreshCw, Folder, ArrowRight, AlertTriangle
+  Plus, Search, Edit3, Trash2, X, Package, Save, RefreshCw, Folder, ArrowRight, AlertTriangle, Download
 } from 'lucide-react';
 import Image from 'next/image';
 import { 
@@ -12,6 +13,7 @@ import {
   deleteBrand,
   getProducts
 } from '@/lib/actions/catalog';
+import { bulkImportBrandsAction, BulkImportResult } from '@/lib/actions/admin';
 
 // Helper to convert AZ/RU characters and spaces into clean URL slugs
 const slugify = (text: string) => {
@@ -37,6 +39,7 @@ const slugify = (text: string) => {
 };
 
 export default function BrandsListClient() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [brands, setBrands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +50,13 @@ export default function BrandsListClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Bulk Import state
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [bulkJsonText, setBulkJsonText] = useState('');
+  const [bulkError, setBulkError] = useState('');
+  const [bulkResult, setBulkResult] = useState<BulkImportResult | null>(null);
+  const [isBulkImporting, setIsBulkImporting] = useState(false);
 
   // Form states for adding
   const [addForm, setAddForm] = useState({
@@ -101,6 +111,41 @@ export default function BrandsListClient() {
       setAddForm(prev => ({ ...prev, slug: slugify(prev.name) }));
     }
   }, [addForm.name, addSlugEdited]);
+
+  // Bulk import handler with try/catch JSON validation
+  const handleBulkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBulkError('');
+    setBulkResult(null);
+
+    let parsedData: any[];
+    try {
+      parsedData = JSON.parse(bulkJsonText.trim());
+      if (!Array.isArray(parsedData)) {
+        throw new Error('Massiv deyil');
+      }
+    } catch {
+      setBulkError('Düzgün JSON formatı daxil edin!');
+      return;
+    }
+
+    setIsBulkImporting(true);
+    try {
+      const res = await bulkImportBrandsAction(parsedData);
+      setBulkResult(res);
+      if (res.success || res.count > 0) {
+        setSuccessMsg(`${res.count} brend uğurla daxil edildi! (${res.skipped} buraxıldı)`);
+        fetchBrands();
+        router.refresh();
+      } else {
+        setBulkError(res.errors[0] || 'Toplu daxil etmədə xəta baş verdi.');
+      }
+    } catch (err: any) {
+      setBulkError('Gözlənilməz xəta: ' + err.message);
+    } finally {
+      setIsBulkImporting(false);
+    }
+  };
 
   // Open Edit modal and populate
   const handleEditClick = (brand: any) => {
@@ -250,6 +295,17 @@ export default function BrandsListClient() {
           <p className="text-sm text-slate-400 mt-1">Sistemdə olan bütün sürət kubu istehsalçıları və brendləri.</p>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => {
+              setBulkJsonText('');
+              setBulkError('');
+              setBulkResult(null);
+              setIsBulkModalOpen(true);
+            }} 
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 font-bold text-sm rounded-xl transition-all shadow-lg"
+          >
+            <Download className="w-4 h-4" /> 📥 Toplu Daxil Et
+          </button>
           <button 
             onClick={() => setIsAddModalOpen(true)} 
             className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-500/20"
@@ -635,6 +691,86 @@ export default function BrandsListClient() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {/* BULK IMPORT MODAL */}
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in">
+            <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-950/40">
+              <h3 className="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <Download className="w-5 h-5 text-amber-500" /> Brendləri Toplu Daxil Et (JSON)
+              </h3>
+              <button onClick={() => setIsBulkModalOpen(false)} className="text-slate-400 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleBulkSubmit} className="p-6 space-y-5">
+              {bulkError && (
+                <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm font-bold flex items-center gap-2">
+                  <X className="w-5 h-5 shrink-0" />
+                  <span>{bulkError}</span>
+                </div>
+              )}
+
+              {bulkResult && (
+                <div className={`p-4 rounded-xl text-sm font-bold space-y-2 border ${bulkResult.success ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'}`}>
+                  <p>
+                    Əlavə edildi: <strong>{bulkResult.count}</strong> | Buraxıldı: <strong>{bulkResult.skipped}</strong>
+                  </p>
+                  {bulkResult.errors.length > 0 && (
+                    <ul className="text-xs list-disc list-inside space-y-1 text-red-400 max-h-32 overflow-y-auto pt-2 border-t border-slate-800">
+                      {bulkResult.errors.map((err, idx) => (
+                        <li key={idx}>{err}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-black uppercase text-slate-400 mb-1 tracking-wider">
+                  JSON Massivi Daxil Edin
+                </label>
+                <textarea
+                  required
+                  rows={10}
+                  placeholder={`[\n  {\n    "name": "GAN Cube",\n    "slug": "gan-cube",\n    "description": "Speedcube manufacturer"\n  }\n]`}
+                  value={bulkJsonText}
+                  onChange={(e) => {
+                    setBulkJsonText(e.target.value);
+                    setBulkError('');
+                  }}
+                  className="w-full bg-slate-950 border border-slate-700 text-amber-400 font-mono rounded-xl p-4 text-xs focus:outline-none focus:border-amber-500 leading-relaxed"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsBulkModalOpen(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl hover:bg-slate-700 transition-colors text-sm font-bold"
+                >
+                  Bağla
+                </button>
+                <button
+                  type="submit"
+                  disabled={isBulkImporting || !bulkJsonText.trim()}
+                  className="px-5 py-2 bg-amber-500 text-slate-950 font-black rounded-xl hover:bg-amber-600 disabled:opacity-50 transition-colors text-sm uppercase flex items-center gap-2"
+                >
+                  {isBulkImporting ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-slate-950/20 border-t-slate-950 rounded-full animate-spin"></span>
+                      Daxil Edilir...
+                    </>
+                  ) : (
+                    '📥 Yüklə və Daxil Et'
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
