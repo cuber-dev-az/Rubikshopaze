@@ -2027,8 +2027,10 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
       const item = products[i];
       try {
         const nameAz = (item.name_az || item.title_az || item.name || item.title || '').toString().trim();
-        const rawPrice = item.price_azn ?? item.price;
-        const priceVal = rawPrice !== undefined && rawPrice !== null ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, '')) : NaN;
+        const rawPrice = item.price ?? item.price_azn;
+        const priceVal = rawPrice !== undefined && rawPrice !== null && rawPrice !== ''
+          ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, ''))
+          : NaN;
 
         // STRICT VALIDATION: name_az non-empty, price positive number
         if (!nameAz || isNaN(priceVal) || priceVal <= 0) {
@@ -2037,28 +2039,15 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           continue;
         }
 
-        // Parse compare-at price safely across potential key names
-        const comparePriceRaw = item.compare_at_price_azn ?? item.compare_at_price ?? item.old_price ?? item.discount_price;
-        const parsedComparePrice = comparePriceRaw !== undefined && comparePriceRaw !== null && comparePriceRaw !== ''
-          ? parseFloat(String(comparePriceRaw).replace(/[^0-9.]/g, ''))
+        // Map "Endirimdən əvvəlki qiymət" to discount_price
+        const rawCompare = item.discount_price ?? item.compare_at_price ?? item.old_price ?? item.compare_at_price_azn;
+        const discount_price = rawCompare !== undefined && rawCompare !== null && rawCompare !== ''
+          ? parseFloat(String(rawCompare).replace(/[^0-9.]/g, ''))
           : null;
-        const finalComparePrice = (parsedComparePrice !== null && !isNaN(parsedComparePrice)) ? parsedComparePrice : null;
 
-        // Parse numeric stock, weight, size
-        const rawStock = item.stock_quantity ?? item.stock;
-        const parsedStock = rawStock !== undefined && rawStock !== null ? parseInt(String(rawStock).replace(/[^0-9]/g, ''), 10) : 0;
-        const finalStock = !isNaN(parsedStock) ? parsedStock : 0;
-
-        const rawWeight = item.weight_g ?? item.weight;
-        const parsedWeight = rawWeight !== undefined && rawWeight !== null ? parseFloat(String(rawWeight).replace(/[^0-9.]/g, '')) : null;
-        const finalWeight = (parsedWeight !== null && !isNaN(parsedWeight)) ? parsedWeight : null;
-
-        const rawSize = item.size_mm ?? item.size;
-        const finalSize = rawSize !== undefined && rawSize !== null ? String(rawSize).trim() : null;
-
-        // Parse SEO and Meta fields with fallback strings
-        const finalTitle = item.meta_title || item.seo_title || `${nameAz || item.name_en || 'Məhsul'} | Rubikshop.az`;
-        const finalDesc = item.meta_description || item.seo_description || item.description_az || item.description_en || '';
+        // Map SEO fields to meta_title and meta_description
+        const meta_title = item.meta_title || item.seo_title || `${nameAz || item.name_en || 'Məhsul'} | Rubikshop.az`;
+        const meta_description = item.meta_description || item.seo_description || item.description_az || item.description_en || '';
 
         // Calculate clean slug and check DB collisions
         const rawSlug = item.slug || item.slug_az || nameAz;
@@ -2104,58 +2093,79 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
             }
           }
         }
+        const categoryId = categoryIds.length > 0 ? categoryIds[0] : (item.category_id || null);
 
-        // Normalize status strictly to match products_status_check constraint ('publish', 'draft', 'archive')
-        let normStatus = 'publish';
-        if (item.status) {
-          const s = String(item.status).trim().toLowerCase();
-          if (s === 'draft' || s === 'qaralama') {
-            normStatus = 'draft';
-          } else if (s === 'archive' || s === 'archived' || s === 'arxiv') {
-            normStatus = 'archive';
-          } else if (s === 'publish' || s === 'published' || s === 'active' || s === 'aktiv') {
-            normStatus = 'publish';
-          }
-        }
+        const rawStock = item.stock_quantity ?? item.stock ?? 0;
+        const parsedStock = parseInt(String(rawStock).replace(/[^0-9]/g, ''), 10);
+        const stock_quantity = isNaN(parsedStock) ? 0 : parsedStock;
 
-        const insertObj: any = {
-          title_az: nameAz,
-          title_en: (item.title_en || item.name_en || nameAz).trim(),
-          title_ru: (item.title_ru || item.name_ru || nameAz).trim(),
-          description_az: (item.description_az || item.description || nameAz).trim(),
-          description_en: (item.description_en || item.description || nameAz).trim(),
-          description_ru: (item.description_ru || item.description || nameAz).trim(),
+        // Construct primary insertion payload using exact specified column keys
+        const primaryInsertObj: any = {
+          name_az: nameAz,
+          name_en: item.name_en || nameAz,
+          name_ru: item.name_ru || nameAz,
           slug: finalSlug,
-          price_azn: priceVal,
-          compare_at_price_azn: finalComparePrice,
-          compare_at_price: finalComparePrice,
-          old_price: finalComparePrice,
-          discount_price: finalComparePrice,
-          brand_id: brandId || null,
-          is_active: item.is_active ?? (normStatus === 'publish'),
-          status: normStatus,
-          image_url: item.image_url || item.image || 'https://picsum.photos/seed/rubikproduct/600/600',
-          video_url: item.video_url || null,
-          stock_quantity: finalStock,
-          is_featured: item.is_featured ?? false,
-          product_type: item.product_type || 'speedcube',
+          description_az: item.description_az || null,
+          description_en: item.description_en || null,
+          description_ru: item.description_ru || null,
+          price: priceVal,
+          discount_price: discount_price,
+          stock_quantity: stock_quantity,
+          category_id: categoryId,
+          brand_id: brandId,
+          image_url: item.image_url || null,
           tags: Array.isArray(item.tags) ? item.tags : [],
-          gallery_images: formatGalleryImages(item.gallery_images || item.images),
-          meta_title: finalTitle,
-          seo_title: finalTitle,
-          meta_description: finalDesc,
-          seo_description: finalDesc,
-          weight_g: finalWeight,
-          is_magnetic: item.is_magnetic ?? false,
-          size_mm: finalSize,
-          difficulty_level: item.difficulty_level || 'başlanğıc',
+          product_type: item.product_type || null,
+          size_mm: item.size_mm ? parseFloat(String(item.size_mm).replace(/[^0-9.]/g, '')) : null,
+          weight_g: item.weight_g ? parseFloat(String(item.weight_g).replace(/[^0-9.]/g, '')) : null,
+          difficulty_level: item.difficulty_level || null,
+          is_magnetic: Boolean(item.is_magnetic),
+          status: item.status || 'published',
+          meta_title: meta_title,
+          meta_description: meta_description
         };
 
-        const { data: newProd, error: prodError } = await supabase
+        let { data: newProd, error: prodError } = await supabase
           .from('products')
-          .insert(insertObj)
+          .insert(primaryInsertObj)
           .select('id, slug')
           .single();
+
+        // Fallback for title_az/price_azn schema if primary column schema differs
+        if (prodError && (prodError.message?.includes('column') || prodError.code === 'PGRST204')) {
+          const fallbackInsertObj: any = {
+            title_az: nameAz,
+            title_en: item.name_en || nameAz,
+            title_ru: item.name_ru || nameAz,
+            slug: finalSlug,
+            description_az: item.description_az || null,
+            description_en: item.description_en || null,
+            description_ru: item.description_ru || null,
+            price_azn: priceVal,
+            compare_at_price_azn: discount_price,
+            stock_quantity: stock_quantity,
+            brand_id: brandId,
+            image_url: item.image_url || null,
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            product_type: item.product_type || null,
+            size_mm: item.size_mm ? parseFloat(String(item.size_mm).replace(/[^0-9.]/g, '')) : null,
+            weight_g: item.weight_g ? parseFloat(String(item.weight_g).replace(/[^0-9.]/g, '')) : null,
+            difficulty_level: item.difficulty_level || null,
+            is_magnetic: Boolean(item.is_magnetic),
+            status: item.status === 'published' ? 'publish' : (item.status || 'publish'),
+            seo_title: meta_title,
+            seo_description: meta_description
+          };
+
+          const fallbackRes = await supabase
+            .from('products')
+            .insert(fallbackInsertObj)
+            .select('id, slug')
+            .single();
+
+          newProd = fallbackRes.data;
+          prodError = fallbackRes.error;
+        }
 
         if (prodError) {
           result.skipped++;
