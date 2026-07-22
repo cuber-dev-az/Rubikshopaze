@@ -2028,7 +2028,7 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
       try {
         const nameAz = (item.name_az || item.title_az || item.name || item.title || '').toString().trim();
         const rawPrice = item.price_azn ?? item.price;
-        const priceVal = Number(rawPrice);
+        const priceVal = rawPrice !== undefined && rawPrice !== null ? parseFloat(String(rawPrice).replace(/[^0-9.]/g, '')) : NaN;
 
         // STRICT VALIDATION: name_az non-empty, price positive number
         if (!nameAz || isNaN(priceVal) || priceVal <= 0) {
@@ -2036,6 +2036,29 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           result.errors.push(`Məhsul adı və ya qiyməti yoxdur/yanlışdır: [${nameAz || `№${i + 1}`}]`);
           continue;
         }
+
+        // Parse compare-at price safely across potential key names
+        const comparePriceRaw = item.compare_at_price_azn ?? item.compare_at_price ?? item.old_price ?? item.discount_price;
+        const parsedComparePrice = comparePriceRaw !== undefined && comparePriceRaw !== null && comparePriceRaw !== ''
+          ? parseFloat(String(comparePriceRaw).replace(/[^0-9.]/g, ''))
+          : null;
+        const finalComparePrice = (parsedComparePrice !== null && !isNaN(parsedComparePrice)) ? parsedComparePrice : null;
+
+        // Parse numeric stock, weight, size
+        const rawStock = item.stock_quantity ?? item.stock;
+        const parsedStock = rawStock !== undefined && rawStock !== null ? parseInt(String(rawStock).replace(/[^0-9]/g, ''), 10) : 0;
+        const finalStock = !isNaN(parsedStock) ? parsedStock : 0;
+
+        const rawWeight = item.weight_g ?? item.weight;
+        const parsedWeight = rawWeight !== undefined && rawWeight !== null ? parseFloat(String(rawWeight).replace(/[^0-9.]/g, '')) : null;
+        const finalWeight = (parsedWeight !== null && !isNaN(parsedWeight)) ? parsedWeight : null;
+
+        const rawSize = item.size_mm ?? item.size;
+        const finalSize = rawSize !== undefined && rawSize !== null ? String(rawSize).trim() : null;
+
+        // Parse SEO and Meta fields with fallback strings
+        const finalTitle = item.meta_title || item.seo_title || `${nameAz || item.name_en || 'Məhsul'} | Rubikshop.az`;
+        const finalDesc = item.meta_description || item.seo_description || item.description_az || item.description_en || '';
 
         // Calculate clean slug and check DB collisions
         const rawSlug = item.slug || item.slug_az || nameAz;
@@ -2104,22 +2127,27 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           description_ru: (item.description_ru || item.description || nameAz).trim(),
           slug: finalSlug,
           price_azn: priceVal,
-          compare_at_price_azn: item.compare_at_price_azn ? Number(item.compare_at_price_azn) : null,
+          compare_at_price_azn: finalComparePrice,
+          compare_at_price: finalComparePrice,
+          old_price: finalComparePrice,
+          discount_price: finalComparePrice,
           brand_id: brandId || null,
           is_active: item.is_active ?? (normStatus === 'publish'),
           status: normStatus,
           image_url: item.image_url || item.image || 'https://picsum.photos/seed/rubikproduct/600/600',
           video_url: item.video_url || null,
-          stock_quantity: item.stock_quantity ?? item.stock ?? 0,
+          stock_quantity: finalStock,
           is_featured: item.is_featured ?? false,
           product_type: item.product_type || 'speedcube',
           tags: Array.isArray(item.tags) ? item.tags : [],
           gallery_images: formatGalleryImages(item.gallery_images || item.images),
-          seo_title: item.seo_title || null,
-          seo_description: item.seo_description || null,
-          weight_g: item.weight_g ? Number(item.weight_g) : null,
+          meta_title: finalTitle,
+          seo_title: finalTitle,
+          meta_description: finalDesc,
+          seo_description: finalDesc,
+          weight_g: finalWeight,
           is_magnetic: item.is_magnetic ?? false,
-          size_mm: item.size_mm ? String(item.size_mm) : null,
+          size_mm: finalSize,
           difficulty_level: item.difficulty_level || 'başlanğıc',
         };
 
