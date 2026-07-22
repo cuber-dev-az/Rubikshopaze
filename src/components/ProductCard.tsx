@@ -60,11 +60,11 @@ export function ProductCard({ product, dict }: ProductCardProps) {
 
   const currentPrice = Number(product.price_azn ?? product.price ?? 0);
   const compareAtPrice = Number(
-    product.compare_at_price_azn ??
+    product.discount_price ??
     product.compare_at_price ??
     product.old_price ??
+    product.compare_at_price_azn ??
     product.original_price_azn ??
-    product.discount_price ??
     0
   );
 
@@ -73,7 +73,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     ? Math.round(((compareAtPrice - currentPrice) / compareAtPrice) * 100)
     : 0;
 
-  // 1. Resolve Brand Name safely (Never show 'OTHER' or force fallback if none)
+  // 1. Resolve Brand Name safely (Never show 'OTHER')
   const rawBrand = (
     product.brands?.name ||
     product.brand_name ||
@@ -89,7 +89,6 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   const productTitle = product.name || product.title || 'Məhsul';
   const titleLower = productTitle.toLowerCase();
 
-  // If brand was not provided in database, try matching known title patterns, but NEVER default to 'Z-Cube' unless title says so
   if (!brandName) {
     if (titleLower.includes('z-cube') || titleLower.includes('zcube')) brandName = 'Z-Cube';
     else if (titleLower.includes('moyu')) brandName = 'MoYu';
@@ -98,26 +97,26 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     else if (titleLower.includes('shengshou')) brandName = 'ShengShou';
     else if (titleLower.includes('yuxin')) brandName = 'YuXin';
     else if (titleLower.includes('diansheng')) brandName = 'DianSheng';
+    else brandName = 'Z-Cube';
   }
 
   // 2. Resolve Type / Magnetic label
-  const rawType = (product.product_type || '').toLowerCase();
-  let typeLabel = '';
-
-  if (titleLower.includes('açarlıq') || titleLower.includes('keychain') || rawType === 'keychain') {
-    typeLabel = 'AÇARLIQ';
-  } else if (titleLower.includes('mat') || rawType === 'mat') {
-    typeLabel = 'MAT';
-  } else if (titleLower.includes('yağ') || titleLower.includes('lube') || rawType === 'lube') {
-    typeLabel = 'YAĞ';
-  } else if (titleLower.includes('taymer') || titleLower.includes('timer') || rawType === 'timer') {
-    typeLabel = 'TAYMER';
-  } else if (rawType && !['speedcube', 'other', 'default', 'puzzle'].includes(rawType)) {
-    typeLabel = rawType.toUpperCase();
-  } else {
-    // For cubes / speedcubes
-    const isMagnetic = product.is_magnetic === true || String(product.is_magnetic) === 'true';
-    typeLabel = isMagnetic ? 'MAGNETIC' : 'STANDART';
+  let typeLabel = product.product_type || '';
+  if (!typeLabel || ['speedcube', 'other', 'default', 'puzzle'].includes(typeLabel.toLowerCase())) {
+    if (titleLower.includes('açarlıq') || titleLower.includes('keychain')) {
+      typeLabel = 'Açarlıq';
+    } else if (titleLower.includes('mat')) {
+      typeLabel = 'Mat';
+    } else if (titleLower.includes('yağ') || titleLower.includes('lube')) {
+      typeLabel = 'Yağ';
+    } else if (titleLower.includes('taymer') || titleLower.includes('timer')) {
+      typeLabel = 'Taymer';
+    } else if (titleLower.includes('aksessuar')) {
+      typeLabel = 'Aksessuar';
+    } else {
+      const isMagnetic = product.is_magnetic === true || String(product.is_magnetic) === 'true';
+      typeLabel = isMagnetic ? 'Maqnitli' : 'Standart';
+    }
   }
 
   const badgeSubtitle = [brandName, typeLabel].filter(Boolean).join(' • ');

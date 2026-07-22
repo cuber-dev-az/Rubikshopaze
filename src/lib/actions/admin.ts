@@ -2012,13 +2012,18 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
 
     const findBrandId = (input: string): string | null => {
       if (!input || !allBrands) return null;
-      const norm = input.toString().trim().toLowerCase();
-      const slugNorm = toAzSlug(input);
+      const rawStr = input.toString().trim();
+      const norm = rawStr.toLowerCase();
+      const slugNorm = toAzSlug(rawStr);
 
       for (const b of allBrands) {
         if (b.id === input) return b.id;
-        if (b.slug?.toLowerCase().trim() === norm || b.slug === slugNorm) return b.id;
-        if (b.name?.toLowerCase().trim() === norm || toAzSlug(b.name) === slugNorm) return b.id;
+        const bSlug = b.slug?.toLowerCase().trim();
+        const bName = b.name?.toLowerCase().trim();
+        const bAzSlug = b.name ? toAzSlug(b.name) : '';
+
+        if (bSlug && (bSlug === norm || bSlug === slugNorm)) return b.id;
+        if (bName && (bName === norm || bAzSlug === slugNorm)) return b.id;
       }
       return null;
     };
@@ -2067,44 +2072,56 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           counter++;
         }
 
-        // Brand resolution
+        // Automatic Brand resolution
         let brandId = item.brand_id || null;
         if (!brandId) {
           const brandQuery = item.brand_slug || item.brand_name || item.brand;
           if (brandQuery) {
             brandId = findBrandId(String(brandQuery));
-            if (!brandId) {
-              const rawBrandStr = String(brandQuery).trim();
-              const brandSlug = toAzSlug(rawBrandStr) || rawBrandStr.toLowerCase();
-              const brandName = item.brand_name || (
-                rawBrandStr.includes('-')
-                  ? rawBrandStr.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('-')
-                  : (rawBrandStr.charAt(0).toUpperCase() + rawBrandStr.slice(1))
-              );
+          }
 
-              const { data: newBrand, error: brandErr } = await supabase
+          // If not matched by query, check if product title contains any known brand
+          if (!brandId && nameAz) {
+            for (const b of (allBrands || [])) {
+              if (b.name && nameAz.toLowerCase().includes(b.name.toLowerCase())) {
+                brandId = b.id;
+                break;
+              }
+            }
+          }
+
+          // If still no brandId and brandQuery string is provided, dynamically create new brand
+          const rawBrandStr = brandQuery ? String(brandQuery).trim() : '';
+          if (!brandId && rawBrandStr && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(rawBrandStr.toUpperCase())) {
+            const brandSlug = toAzSlug(rawBrandStr) || rawBrandStr.toLowerCase();
+            const brandName = item.brand_name || (
+              rawBrandStr.includes('-')
+                ? rawBrandStr.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('-')
+                : (rawBrandStr.charAt(0).toUpperCase() + rawBrandStr.slice(1))
+            );
+
+            const { data: newBrand, error: brandErr } = await supabase
+              .from('brands')
+              .insert({ name: brandName, slug: brandSlug })
+              .select('id, name, slug')
+              .single();
+
+            if (!brandErr && newBrand) {
+              brandId = newBrand.id;
+              if (allBrands) {
+                allBrands.push({ id: newBrand.id, name: newBrand.name, slug: newBrand.slug });
+              }
+            } else {
+              const { data: existingBrand } = await supabase
                 .from('brands')
-                .insert({ name: brandName, slug: brandSlug })
                 .select('id, name, slug')
-                .single();
+                .or(`slug.eq.${brandSlug},name.ilike.${brandName}`)
+                .maybeSingle();
 
-              if (!brandErr && newBrand) {
-                brandId = newBrand.id;
+              if (existingBrand) {
+                brandId = existingBrand.id;
                 if (allBrands) {
-                  allBrands.push({ id: newBrand.id, name: newBrand.name, slug: newBrand.slug });
-                }
-              } else {
-                const { data: existingBrand } = await supabase
-                  .from('brands')
-                  .select('id, name, slug')
-                  .or(`slug.eq.${brandSlug},name.ilike.${brandName}`)
-                  .maybeSingle();
-
-                if (existingBrand) {
-                  brandId = existingBrand.id;
-                  if (allBrands) {
-                    allBrands.push({ id: existingBrand.id, name: existingBrand.name, slug: existingBrand.slug });
-                  }
+                  allBrands.push({ id: existingBrand.id, name: existingBrand.name, slug: existingBrand.slug });
                 }
               }
             }

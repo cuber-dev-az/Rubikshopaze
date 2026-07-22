@@ -120,10 +120,18 @@ export function CategoryClientContent({
   const [isMobileFilterOpen, setIsMobileFilterOpen] = React.useState(false);
   const [isMobileSortOpen, setIsMobileSortOpen] = React.useState(false);
 
-  // Available brands and mechanics dynamically based on category products
+  // Available brands and mechanics dynamically based on category products (filtering empty/Other)
   const availableBrands = React.useMemo(() => {
     const brandsSet = new Set<string>();
-    baseProducts.forEach(p => p.brand && brandsSet.add(p.brand));
+    baseProducts.forEach(p => {
+      if (p.brand && typeof p.brand === 'string') {
+        const trimmed = p.brand.trim();
+        const upper = trimmed.toUpperCase();
+        if (trimmed && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(upper)) {
+          brandsSet.add(trimmed);
+        }
+      }
+    });
     return Array.from(brandsSet);
   }, [baseProducts]);
 
@@ -558,37 +566,37 @@ export function CategoryClientContent({
           <>
             <motion.div key="backdrop-filter"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
+              animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileFilterOpen(false)}
-              className="fixed inset-0 bg-black z-50 lg:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 lg:hidden"
             />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] bg-card rounded-t-3xl border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex flex-col p-6 lg:hidden"
+              className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] bg-[#111827] text-white rounded-t-3xl border-t border-gray-800 shadow-2xl flex flex-col p-6 lg:hidden"
             >
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-muted-foreground/20 rounded-full mt-3" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-700 rounded-full mt-3" />
               
-              <div className="flex items-center justify-between border-b border-border pb-4 mt-2">
+              <div className="flex items-center justify-between border-b border-gray-800 pb-4 mt-2">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-5 w-5 text-rubik-brand" />
-                  <h3 className="font-bold text-lg text-foreground">Filtrlər</h3>
+                  <SlidersHorizontal className="h-5 w-5 text-[#ef4444]" />
+                  <h3 className="font-bold text-lg text-white">Filtrlər</h3>
                 </div>
                 <div className="flex items-center gap-3">
                   {(selectedBrands.length > 0 || selectedMechanics.length > 0 || minPrice > 0 || maxPrice < 250) && (
                     <button
                       onClick={clearAllFilters}
-                      className="text-xs text-red-500 font-bold hover:underline cursor-pointer"
+                      className="text-xs text-[#ef4444] font-bold hover:underline cursor-pointer"
                     >
                       Təmizlə
                     </button>
                   )}
                   <button
                     onClick={() => setIsMobileFilterOpen(false)}
-                    className="p-1.5 bg-muted hover:bg-muted-dark rounded-full text-foreground transition-colors cursor-pointer"
+                    className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-full text-gray-300 hover:text-white transition-colors cursor-pointer"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -599,14 +607,14 @@ export function CategoryClientContent({
                 {/* Brand Filter (Mobile) */}
                 {availableBrands.length > 0 && (
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Brend</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Brend</h4>
                     <div className="space-y-2.5">
                       {availableBrands.map(brand => (
-                        <label key={brand} className="flex items-center gap-2.5 text-sm font-medium text-foreground cursor-pointer group">
+                        <label key={brand} className="flex items-center gap-2.5 text-sm font-medium text-gray-200 cursor-pointer group">
                           <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center transition-all ${
                             selectedBrands.includes(brand)
-                              ? 'bg-rubik-brand border-rubik-brand text-white'
-                              : 'border-border group-hover:border-foreground/30 bg-muted/40'
+                              ? 'bg-[#ef4444] border-[#ef4444] text-white'
+                              : 'border-gray-700 group-hover:border-gray-500 bg-gray-800/60'
                           }`}>
                             {selectedBrands.includes(brand) && <Check className="h-3.5 w-3.5" />}
                           </div>
@@ -625,15 +633,15 @@ export function CategoryClientContent({
 
                 {/* Mechanics Filter (Mobile) */}
                 {availableMechanics.length > 0 && (
-                  <div className="space-y-3 pt-4 border-t border-border">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Mexanika</h4>
+                  <div className="space-y-3 pt-4 border-t border-gray-800">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Mexanika</h4>
                     <div className="space-y-2.5">
                       {availableMechanics.map(mech => (
-                        <label key={mech} className="flex items-center gap-2.5 text-sm font-medium text-foreground cursor-pointer group">
+                        <label key={mech} className="flex items-center gap-2.5 text-sm font-medium text-gray-200 cursor-pointer group">
                           <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center transition-all ${
                             selectedMechanics.includes(mech)
-                              ? 'bg-rubik-brand border-rubik-brand text-white'
-                              : 'border-border group-hover:border-foreground/30 bg-muted/40'
+                              ? 'bg-[#ef4444] border-[#ef4444] text-white'
+                              : 'border-gray-700 group-hover:border-gray-500 bg-gray-800/60'
                           }`}>
                             {selectedMechanics.includes(mech) && <Check className="h-3.5 w-3.5" />}
                           </div>
@@ -651,10 +659,10 @@ export function CategoryClientContent({
                 )}
 
                 {/* Price Filter (Mobile) */}
-                <div className="space-y-4 pt-4 border-t border-border">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Qiymət</h4>
+                <div className="space-y-4 pt-4 border-t border-gray-800">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Qiymət</h4>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between text-xs text-gray-400 font-mono">
                       <span>{minPrice} AZN</span>
                       <span>{maxPrice} AZN</span>
                     </div>
@@ -664,16 +672,16 @@ export function CategoryClientContent({
                       max="250"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(parseInt(e.target.value))}
-                      className="w-full accent-rubik-brand cursor-pointer"
+                      className="w-full accent-[#ef4444] cursor-pointer"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-border space-y-2">
+              <div className="pt-4 border-t border-gray-800 space-y-2">
                 <button
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="w-full py-3 bg-rubik-brand text-white font-bold rounded-xl text-sm hover:bg-rubik-brand-dark transition-colors cursor-pointer"
+                  className="w-full py-3 bg-[#ef4444] text-white font-bold rounded-xl text-sm hover:bg-[#dc2626] transition-colors cursor-pointer"
                 >
                   Təsdiqlə
                 </button>
@@ -688,10 +696,10 @@ export function CategoryClientContent({
             <motion.div
               key="sort-backdrop"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
+              animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileSortOpen(false)}
-              className="fixed inset-0 bg-black z-50 lg:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 lg:hidden"
             />
             <motion.div
               key="sort-sheet"
@@ -699,12 +707,15 @@ export function CategoryClientContent({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl overflow-hidden lg:hidden flex flex-col max-h-[85vh] shadow-[0_-10px_40px_rgba(0,0,0,0.1)] border-t border-border"
+              className="fixed inset-x-0 bottom-0 z-50 bg-[#111827] text-white rounded-t-3xl overflow-hidden lg:hidden flex flex-col max-h-[85vh] shadow-2xl border-t border-gray-800"
             >
-              <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
-                <h3 className="font-bold text-lg text-foreground">Sıralama</h3>
-                <button onClick={() => setIsMobileSortOpen(false)} className="p-2 -mr-2 bg-background border border-border rounded-full text-muted-foreground hover:text-foreground">
-                  X
+              <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900/50">
+                <h3 className="font-bold text-lg text-white">Sıralama</h3>
+                <button 
+                  onClick={() => setIsMobileSortOpen(false)} 
+                  className="p-1.5 bg-gray-800 border border-gray-700 rounded-full text-gray-300 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
                 </button>
               </div>
               <div className="p-4 overflow-y-auto space-y-2 pb-[100px]">
@@ -720,7 +731,11 @@ export function CategoryClientContent({
                       setSortOption(opt.id);
                       setIsMobileSortOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between p-4 rounded-xl border ${sortOption === opt.id ? 'border-rubik-brand bg-rubik-brand/5 text-rubik-brand font-bold' : 'border-border bg-card hover:bg-muted/50 text-foreground'} transition-colors`}
+                    className={`w-full flex items-center justify-between p-4 rounded-xl border ${
+                      sortOption === opt.id 
+                        ? 'border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444] font-bold' 
+                        : 'border-gray-800 bg-gray-900/60 hover:bg-gray-800 text-gray-300'
+                    } transition-colors cursor-pointer`}
                   >
                     <span>{opt.label}</span>
                   </button>
