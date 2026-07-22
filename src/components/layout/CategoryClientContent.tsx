@@ -82,8 +82,21 @@ export function CategoryClientContent({
 
     if (dbMapped.length > 0) {
       if (categoryItem) {
-        // Fallback: If product doesn't have a direct category property, don't filter it out
-        return dbMapped.filter(p => !p.category_slug || p.category_slug === categoryItem.slug);
+        const targetSlug = categoryItem.slug.toLowerCase();
+        const targetId = categoryItem.id.toLowerCase();
+
+        return dbMapped.filter(p => {
+          if (!p.category_slug) return false;
+          const pCat = p.category_slug.toLowerCase();
+          return (
+            pCat === targetSlug ||
+            pCat === targetId ||
+            (targetSlug === '3x3' && (pCat === '3x3-kub' || pCat === '3x3-kublar')) ||
+            (targetSlug === '2x2' && (pCat === '2x2-kub' || pCat === '2x2-kublar')) ||
+            (targetSlug === '4x4' && (pCat === '4x4-kub' || pCat === '4x4-kublar')) ||
+            (targetSlug === '5x5' && (pCat === '5x5-kub' || pCat === '5x5-kublar'))
+          );
+        });
       }
       return dbMapped;
     }

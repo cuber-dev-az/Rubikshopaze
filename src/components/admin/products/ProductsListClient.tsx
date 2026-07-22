@@ -52,7 +52,8 @@ export default function ProductsListClient() {
     title_ru: '',
     price_azn: 0,
     stock_quantity: 0,
-    image_url: ''
+    image_url: '',
+    category_id: '3x3'
   });
 
   // Bulk Import state
@@ -172,6 +173,8 @@ export default function ProductsListClient() {
         price_azn: newProduct.price_azn,
         stock_quantity: newProduct.stock_quantity,
         image_url: newProduct.image_url || 'https://picsum.photos/seed/newprod/600/600',
+        category_id: newProduct.category_id,
+        category_slug: newProduct.category_id,
         is_active: true
       }
     ]);
@@ -180,7 +183,7 @@ export default function ProductsListClient() {
     if (!error) {
       setIsModalOpen(false);
       setNewProduct({
-        title_az: '', title_en: '', title_ru: '', price_azn: 0, stock_quantity: 0, image_url: ''
+        title_az: '', title_en: '', title_ru: '', price_azn: 0, stock_quantity: 0, image_url: '', category_id: '3x3'
       });
       fetchProducts();
     } else {
@@ -410,9 +413,37 @@ export default function ProductsListClient() {
                     <input required type="number" value={newProduct.stock_quantity} onChange={e => setNewProduct({...newProduct, stock_quantity: parseInt(e.target.value)})} className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2" />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">Şəkil URL</label>
-                  <input required type="url" value={newProduct.image_url} onChange={e => setNewProduct({...newProduct, image_url: e.target.value})} className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2" placeholder="https://picsum.photos/seed/..." />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">Kateqoriya</label>
+                    <select
+                      value={newProduct.category_id}
+                      onChange={e => setNewProduct({...newProduct, category_id: e.target.value})}
+                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="3x3">3x3 Kub</option>
+                      <option value="2x2">2x2 Kub</option>
+                      <option value="4x4">4x4 Kub</option>
+                      <option value="5x5">5x5 Kub</option>
+                      <option value="6x6">6x6 Kub</option>
+                      <option value="7x7">7x7 Kub</option>
+                      <option value="pyraminx">Pyraminx</option>
+                      <option value="skewb">Skewb</option>
+                      <option value="megaminx">Megaminx</option>
+                      <option value="square-1">Square-1</option>
+                      <option value="clock">Clock</option>
+                      <option value="lubes">Yağlar (Lubes)</option>
+                      <option value="timers">Taymerlər (Timers)</option>
+                      <option value="mats">Xalçalar (Mats)</option>
+                      <option value="bags">Çantalar (Bags)</option>
+                      <option value="cases">Qutular / Keyçeyn</option>
+                      <option value="accessories">Aksesuarlar</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 mb-1">Şəkil URL</label>
+                    <input required type="url" value={newProduct.image_url} onChange={e => setNewProduct({...newProduct, image_url: e.target.value})} className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm" placeholder="https://picsum.photos/seed/..." />
+                  </div>
                 </div>
               </div>
               

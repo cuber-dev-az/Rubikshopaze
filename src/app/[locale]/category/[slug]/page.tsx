@@ -20,7 +20,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   // Find matching taxonomy category item across all groups
   let categoryItem = null;
   for (const group of rubikTaxonomyGroups) {
-    const found = group.items.find((item) => item.slug === slug);
+    const found = group.items.find((item) => item.slug === slug || item.id === slug);
     if (found) {
       categoryItem = {
         id: found.id,
@@ -38,7 +38,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     // Add additional fields used by CategoryClientContent
     const mapped = products.map((p) => ({
       ...mapProductToLocale(p, locale),
-      category_slug: p.category_slug || p.category || undefined,
+      category_slug: p.category_slug || p.category_id || p.category || undefined,
       brand: p.brand || undefined,
       mechanics: p.mechanics || undefined
     }));

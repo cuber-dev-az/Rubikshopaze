@@ -1,20 +1,42 @@
-'use client';
+import { getDictionary } from '@/i18n/dictionaries';
+import { CategoryClientContent } from '@/components/layout/CategoryClientContent';
+import { getActiveProducts, mapProductToLocale, Product } from '@/lib/supabase/queries/products';
+import { applyCampaignDiscounts } from '@/lib/actions/campaigns';
 
-import { useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+export const revalidate = 60;
 
-export default function CategoryPage() {
-  const router = useRouter();
-  const params = useParams();
-  const locale = params?.locale || 'az';
+interface CategoryPageProps {
+  params: Promise<{
+    locale: string;
+  }>;
+}
 
-  useEffect(() => {
-    router.replace(`/${locale}/category/3x3`);
-  }, [router, locale]);
+export default async function CatalogPage({ params }: CategoryPageProps) {
+  const { locale } = await params;
+  const dict = await getDictionary(locale);
+
+  let formattedProducts: Product[] = [];
+  try {
+    const products = await getActiveProducts();
+    const mapped = products.map((p) => ({
+      ...mapProductToLocale(p, locale),
+      category_slug: p.category_slug || p.category_id || p.category || undefined,
+      brand: p.brand || undefined,
+      mechanics: p.mechanics || undefined
+    }));
+    formattedProducts = await applyCampaignDiscounts(mapped);
+  } catch (err) {
+    console.error('Failed to load products:', err);
+  }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rubik-brand"></div>
+    <div className="min-h-screen bg-background">
+      <CategoryClientContent
+        initialProducts={formattedProducts}
+        categoryItem={null}
+        locale={locale}
+        dict={dict}
+      />
     </div>
   );
 }
