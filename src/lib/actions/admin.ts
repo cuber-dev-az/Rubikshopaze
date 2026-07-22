@@ -1616,7 +1616,7 @@ export async function createProduct(payload: any) {
       compare_at_price_azn: payload.compare_at_price_azn,
       brand_id: payload.brand_id,
       is_active: payload.is_active ?? true,
-      status: payload.status || 'active',
+      status: payload.status === 'active' ? 'publish' : (payload.status || 'publish'),
       image_url: payload.image_url,
       video_url: payload.video_url,
       stock_quantity: payload.stock_quantity ?? 0,
@@ -1682,8 +1682,8 @@ export async function updateProduct(id: string, payload: any) {
     if (directFields.is_active === undefined) {
       directFields.is_active = true;
     }
-    if (!directFields.status) {
-      directFields.status = 'active';
+    if (!directFields.status || directFields.status === 'active') {
+      directFields.status = 'publish';
     }
 
     const basePrice = Number(directFields.price_azn || directFields.price || 0);
@@ -2025,120 +2025,138 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
 
     for (let i = 0; i < products.length; i++) {
       const item = products[i];
-      const nameAz = (item.name_az || item.title_az || item.name || item.title || '').toString().trim();
-      const rawPrice = item.price_azn ?? item.price;
-      const priceVal = Number(rawPrice);
+      try {
+        const nameAz = (item.name_az || item.title_az || item.name || item.title || '').toString().trim();
+        const rawPrice = item.price_azn ?? item.price;
+        const priceVal = Number(rawPrice);
 
-      // STRICT VALIDATION: name_az non-empty, price positive number
-      if (!nameAz || isNaN(priceVal) || priceVal <= 0) {
-        result.skipped++;
-        result.errors.push(`Məhsul adı və ya qiyməti yoxdur/yanlışdır: [${nameAz || `№${i + 1}`}]`);
-        continue;
-      }
-
-      // Calculate clean slug and check DB collisions
-      const rawSlug = item.slug || item.slug_az || nameAz;
-      const baseSlug = toAzSlug(rawSlug) || 'product';
-
-      let finalSlug = baseSlug;
-      let counter = 1;
-      while (true) {
-        const { data: existing } = await supabase
-          .from('products')
-          .select('id')
-          .eq('slug', finalSlug)
-          .maybeSingle();
-
-        if (!existing) break;
-        finalSlug = `${baseSlug}-${counter}`;
-        counter++;
-      }
-
-      // Brand resolution
-      let brandId = item.brand_id || null;
-      if (!brandId) {
-        const brandQuery = item.brand_slug || item.brand_name || item.brand;
-        if (brandQuery) {
-          brandId = findBrandId(String(brandQuery));
+        // STRICT VALIDATION: name_az non-empty, price positive number
+        if (!nameAz || isNaN(priceVal) || priceVal <= 0) {
+          result.skipped++;
+          result.errors.push(`Məhsul adı və ya qiyməti yoxdur/yanlışdır: [${nameAz || `№${i + 1}`}]`);
+          continue;
         }
-      }
 
-      // Category resolution
-      let categoryIds: string[] = [];
-      if (Array.isArray(item.category_ids)) {
-        categoryIds = item.category_ids;
-      } else if (item.category_id) {
-        categoryIds = [item.category_id];
-      }
-      const catQuery = item.category_slug || item.category_name || item.category || item.categories || item.category_slugs;
-      if (catQuery) {
-        const catList = Array.isArray(catQuery) ? catQuery : String(catQuery).split(',');
-        for (const cVal of catList) {
-          const matchedId = findCategoryId(String(cVal));
-          if (matchedId && !categoryIds.includes(matchedId)) {
-            categoryIds.push(matchedId);
+        // Calculate clean slug and check DB collisions
+        const rawSlug = item.slug || item.slug_az || nameAz;
+        const baseSlug = toAzSlug(rawSlug) || 'product';
+
+        let finalSlug = baseSlug;
+        let counter = 1;
+        while (true) {
+          const { data: existing } = await supabase
+            .from('products')
+            .select('id')
+            .eq('slug', finalSlug)
+            .maybeSingle();
+
+          if (!existing) break;
+          finalSlug = `${baseSlug}-${counter}`;
+          counter++;
+        }
+
+        // Brand resolution
+        let brandId = item.brand_id || null;
+        if (!brandId) {
+          const brandQuery = item.brand_slug || item.brand_name || item.brand;
+          if (brandQuery) {
+            brandId = findBrandId(String(brandQuery));
           }
         }
-      }
 
-      const insertObj: any = {
-        title_az: nameAz,
-        title_en: (item.title_en || item.name_en || nameAz).trim(),
-        title_ru: (item.title_ru || item.name_ru || nameAz).trim(),
-        description_az: (item.description_az || item.description || nameAz).trim(),
-        description_en: (item.description_en || item.description || nameAz).trim(),
-        description_ru: (item.description_ru || item.description || nameAz).trim(),
-        slug: finalSlug,
-        price_azn: priceVal,
-        compare_at_price_azn: item.compare_at_price_azn ? Number(item.compare_at_price_azn) : null,
-        brand_id: brandId || null,
-        is_active: item.is_active ?? true,
-        status: item.status || 'active',
-        image_url: item.image_url || item.image || 'https://picsum.photos/seed/rubikproduct/600/600',
-        video_url: item.video_url || null,
-        stock_quantity: item.stock_quantity ?? item.stock ?? 0,
-        is_featured: item.is_featured ?? false,
-        product_type: item.product_type || 'speedcube',
-        tags: Array.isArray(item.tags) ? item.tags : [],
-        gallery_images: formatGalleryImages(item.gallery_images || item.images),
-        seo_title: item.seo_title || null,
-        seo_description: item.seo_description || null,
-        weight_g: item.weight_g ? Number(item.weight_g) : null,
-        is_magnetic: item.is_magnetic ?? false,
-        size_mm: item.size_mm ? String(item.size_mm) : null,
-        difficulty_level: item.difficulty_level || 'başlanğıc',
-      };
-
-      const { data: newProd, error: prodError } = await supabase
-        .from('products')
-        .insert(insertObj)
-        .select('id, slug')
-        .single();
-
-      if (prodError) {
-        result.skipped++;
-        result.errors.push(`"${nameAz}" xətası: ${prodError.message}`);
-        continue;
-      }
-
-      // Map product to categories if resolved
-      if (categoryIds.length > 0) {
-        const mappings = categoryIds.map((cId) => ({
-          product_id: newProd.id,
-          category_id: cId,
-        }));
-        await supabase.from('product_categories').insert(mappings);
-      }
-
-      // Map variants if provided
-      if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
-        const variantsToInsert = mapVariantsPayload(item.variants, priceVal, newProd.id, newProd.slug);
-        if (variantsToInsert.length > 0) {
-          await supabase.from('variants').insert(variantsToInsert);
+        // Category resolution
+        let categoryIds: string[] = [];
+        if (Array.isArray(item.category_ids)) {
+          categoryIds = item.category_ids;
+        } else if (item.category_id) {
+          categoryIds = [item.category_id];
         }
-      }
+        const catQuery = item.category_slug || item.category_name || item.category || item.categories || item.category_slugs;
+        if (catQuery) {
+          const catList = Array.isArray(catQuery) ? catQuery : String(catQuery).split(',');
+          for (const cVal of catList) {
+            const matchedId = findCategoryId(String(cVal));
+            if (matchedId && !categoryIds.includes(matchedId)) {
+              categoryIds.push(matchedId);
+            }
+          }
+        }
 
-      result.count++;
+        // Normalize status strictly to match products_status_check constraint ('publish', 'draft', 'archive')
+        let normStatus = 'publish';
+        if (item.status) {
+          const s = String(item.status).trim().toLowerCase();
+          if (s === 'draft' || s === 'qaralama') {
+            normStatus = 'draft';
+          } else if (s === 'archive' || s === 'archived' || s === 'arxiv') {
+            normStatus = 'archive';
+          } else if (s === 'publish' || s === 'published' || s === 'active' || s === 'aktiv') {
+            normStatus = 'publish';
+          }
+        }
+
+        const insertObj: any = {
+          title_az: nameAz,
+          title_en: (item.title_en || item.name_en || nameAz).trim(),
+          title_ru: (item.title_ru || item.name_ru || nameAz).trim(),
+          description_az: (item.description_az || item.description || nameAz).trim(),
+          description_en: (item.description_en || item.description || nameAz).trim(),
+          description_ru: (item.description_ru || item.description || nameAz).trim(),
+          slug: finalSlug,
+          price_azn: priceVal,
+          compare_at_price_azn: item.compare_at_price_azn ? Number(item.compare_at_price_azn) : null,
+          brand_id: brandId || null,
+          is_active: item.is_active ?? (normStatus === 'publish'),
+          status: normStatus,
+          image_url: item.image_url || item.image || 'https://picsum.photos/seed/rubikproduct/600/600',
+          video_url: item.video_url || null,
+          stock_quantity: item.stock_quantity ?? item.stock ?? 0,
+          is_featured: item.is_featured ?? false,
+          product_type: item.product_type || 'speedcube',
+          tags: Array.isArray(item.tags) ? item.tags : [],
+          gallery_images: formatGalleryImages(item.gallery_images || item.images),
+          seo_title: item.seo_title || null,
+          seo_description: item.seo_description || null,
+          weight_g: item.weight_g ? Number(item.weight_g) : null,
+          is_magnetic: item.is_magnetic ?? false,
+          size_mm: item.size_mm ? String(item.size_mm) : null,
+          difficulty_level: item.difficulty_level || 'başlanğıc',
+        };
+
+        const { data: newProd, error: prodError } = await supabase
+          .from('products')
+          .insert(insertObj)
+          .select('id, slug')
+          .single();
+
+        if (prodError) {
+          result.skipped++;
+          result.errors.push(`"${nameAz}" xətası: ${prodError.message}`);
+          continue;
+        }
+
+        // Map product to categories if resolved
+        if (categoryIds.length > 0) {
+          const mappings = categoryIds.map((cId) => ({
+            product_id: newProd.id,
+            category_id: cId,
+          }));
+          await supabase.from('product_categories').insert(mappings);
+        }
+
+        // Map variants if provided
+        if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
+          const variantsToInsert = mapVariantsPayload(item.variants, priceVal, newProd.id, newProd.slug);
+          if (variantsToInsert.length > 0) {
+            await supabase.from('variants').insert(variantsToInsert);
+          }
+        }
+
+        result.count++;
+      } catch (itemErr: any) {
+        result.skipped++;
+        result.errors.push(`Xəta [№${i + 1}]: ${itemErr?.message || 'Bilinməyən xəta'}`);
+      }
     }
 
     revalidatePath('/[locale]/admin/categories', 'layout');
