@@ -80,8 +80,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
     }
 
     if (dbProduct) {
-      const brandName = dbProduct.brands?.name || dbProduct.brand_name || dbProduct.brand || 'Z-Cube';
-      const cleanBrandName = (brandName && brandName.toUpperCase() !== 'OTHER') ? brandName : 'Z-Cube';
+      const brandName = dbProduct.brands?.name || dbProduct.brand_name || dbProduct.brand || '';
+      const cleanBrandName = (brandName && brandName.toUpperCase() !== 'OTHER') ? brandName : '';
 
       const smartCat = getSmartCategory(dbProduct);
       const categoryName = smartCat.name;
@@ -92,6 +92,10 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
       const priceVal = Number(dbProduct.price ?? dbProduct.price_azn ?? 0);
       const origPriceVal = dbProduct.discount_price ?? dbProduct.compare_at_price ?? dbProduct.compare_at_price_azn ?? dbProduct.old_price;
+
+      const activeVariants = (Array.isArray(dbProduct.variants) && dbProduct.variants.length > 0)
+        ? dbProduct.variants
+        : ((Array.isArray(dbProduct.product_variants) && dbProduct.product_variants.length > 0) ? dbProduct.product_variants : []);
 
       activeProduct = {
         id: dbProduct.id,
@@ -119,8 +123,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           surface_finish: 'Frosted / UV Option'
         },
         compatibility: 'Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və turnirlərdə istifadə edilə bilər.',
-        variants: dbProduct.variants || [],
+        variants: activeVariants,
         gallery_images: dbProduct.gallery_images || dbProduct.images || null,
+        add_ons: dbProduct.add_ons,
         has_setup: dbProduct.has_setup
       };
     }
@@ -192,8 +197,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   }
 
   const relatedList = dbRelatedItems.map(p => {
-    const relBrand = p.brands?.name || p.brand_name || p.brand || 'Z-Cube';
-    const cleanRelBrand = (relBrand && relBrand.toUpperCase() !== 'OTHER') ? relBrand : 'Z-Cube';
+    const relBrand = p.brands?.name || p.brand_name || p.brand || '';
+    const cleanRelBrand = (relBrand && relBrand.toUpperCase() !== 'OTHER') ? relBrand : '';
     return {
       id: p.id,
       title: (p[`title_${locale}`] || p[`name_${locale}`] || p.title_az || p.name_az || p.title || p.name || '') as string,
