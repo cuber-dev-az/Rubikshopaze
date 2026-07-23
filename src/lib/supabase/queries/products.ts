@@ -34,6 +34,56 @@ export interface Product {
   [key: string]: any;
 }
 
+export async function getProductBySlug(slug: string) {
+  if (!slug || typeof slug !== 'string') return null;
+  const cleanSlug = decodeURIComponent(slug).trim();
+  const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanSlug);
+
+  try {
+    const selectQuery = '*, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
+    
+    // Primary query with maybeSingle to prevent PGRST116 / 406 single-row errors
+    let { data, error } = await supabase
+      .from('products')
+      .select(selectQuery)
+      .eq('slug', cleanSlug)
+      .maybeSingle();
+
+    if (!data && isUuid) {
+      const idRes = await supabase
+        .from('products')
+        .select(selectQuery)
+        .eq('id', cleanSlug)
+        .maybeSingle();
+      data = idRes.data;
+    }
+
+    if (!data) {
+      // Fallback query without joins
+      const simpleSlugRes = await supabase
+        .from('products')
+        .select('*')
+        .eq('slug', cleanSlug)
+        .maybeSingle();
+      data = simpleSlugRes.data;
+
+      if (!data && isUuid) {
+        const simpleIdRes = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', cleanSlug)
+          .maybeSingle();
+        data = simpleIdRes.data;
+      }
+    }
+
+    return data || null;
+  } catch (err) {
+    console.error('getProductBySlug exception:', err);
+    return null;
+  }
+}
+
 export async function getActiveProducts() {
   try {
     // Primary query using 'variants (*)' table relationship

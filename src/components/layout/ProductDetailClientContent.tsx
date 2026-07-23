@@ -184,6 +184,21 @@ function ProductDetailClientContentInner({
   dict,
   initialReviews = []
 }: ProductDetailClientContentProps) {
+  if (!product) {
+    return (
+      <div className="min-h-[70vh] bg-background flex flex-col items-center justify-center p-6 text-center">
+        <h1 className="text-3xl font-black text-foreground mb-3">Məhsul Tapılmadı</h1>
+        <p className="text-muted-foreground mb-6 max-w-md">Axtardığınız məhsul mövcud deyil, silinib və ya ünvan yanlışdır.</p>
+        <Link 
+          href={`/${locale || 'az'}`}
+          className="px-6 py-3 bg-rubik-brand text-white font-bold rounded-xl shadow-md hover:bg-rubik-brand-dark transition-colors"
+        >
+          Ana Səhifəyə Qayıt
+        </Link>
+      </div>
+    );
+  }
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();

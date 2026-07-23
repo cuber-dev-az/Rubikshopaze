@@ -56,26 +56,27 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [stock_quantity, setStock_quantity] = useState<number>(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [tags, setTags] = useState('gan, flagship, maglev');
-  const [selectedMediaTarget, setSelectedMediaTarget] = useState<string>('product');
-  const [addOns, setAddOns] = useState<any[]>([]);
-  
-  const [seoTitle, setSeoTitle] = useState('');
-  const [seoDesc, setSeoDesc] = useState('');
+  const initialVariants = isNew 
+    ? [
+        { id: 1, sku: 'GAN14-ML-UV', name: 'UV Coated', price: '145.00', stock: 10 },
+        { id: 2, sku: 'GAN14-ML-FROSTED', name: 'Frosted', price: '135.00', stock: 24 }
+      ]
+    : [];
 
-  // Speedcubing-specific specifications
-  const [weight_g, setWeight_g] = useState(isNew ? '' : '71');
-  const [isMagnetic, setIsMagnetic] = useState(isNew ? false : true);
-  const [size_mm, setSize_mm] = useState(isNew ? '' : '56');
-  const [difficultyLevel, setDifficultyLevel] = useState(isNew ? 'başlanğıc' : 'peşəkar');
-
-  const [variants, setVariants] = useState<any[]>(
-    isNew 
-      ? [
-          { id: 1, sku: 'GAN14-ML-UV', name: 'UV Coated', price: '145.00', stock: 10 },
-          { id: 2, sku: 'GAN14-ML-FROSTED', name: 'Frosted', price: '135.00', stock: 24 }
-        ]
-      : []
+  const [variants, setVariants] = useState<any[]>(initialVariants);
+  const [selectedMediaTarget, setSelectedMediaTarget] = useState<string>(
+    initialVariants.length > 0 ? String(initialVariants[0].id) : ''
   );
+
+  // Sync selectedMediaTarget strictly with first available variant
+  React.useEffect(() => {
+    if (variants && variants.length > 0) {
+      const targetExists = variants.some(v => String(v.id) === String(selectedMediaTarget) || (v.sku && String(v.sku) === String(selectedMediaTarget)));
+      if (!targetExists || selectedMediaTarget === 'product' || selectedMediaTarget === 'general' || !selectedMediaTarget) {
+        setSelectedMediaTarget(String(variants[0].sku || variants[0].id));
+      }
+    }
+  }, [variants, selectedMediaTarget]);
 
   const [loading, setLoading] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
@@ -649,32 +650,29 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
           {/* Tab Content: Media */}
           {activeTab === 'media' && (() => {
-            const isProductTarget = selectedMediaTarget === 'product';
-            const selectedVariantObj = !isProductTarget
-              ? variants.find(v => String(v.id) === String(selectedMediaTarget))
-              : null;
+            const selectedVariantObj = variants.find(v => String(v.id) === String(selectedMediaTarget) || (v.sku && String(v.sku) === String(selectedMediaTarget))) || variants[0] || null;
 
-            const activeTargetImageUrl = isProductTarget
-              ? imageUrl
-              : (selectedVariantObj?.image_url || '');
+            const activeTargetImageUrl = selectedVariantObj?.image_url || '';
 
             const setActiveTargetImageUrl = (newVal: string) => {
-              if (isProductTarget) {
-                setImageUrl(newVal);
-              } else if (selectedVariantObj) {
+              if (selectedVariantObj) {
                 handleUpdateVariant(selectedVariantObj.id, 'image_url', newVal);
+                if (variants.indexOf(selectedVariantObj) === 0 || !imageUrl) {
+                  setImageUrl(newVal);
+                }
               }
             };
 
-            const activeTargetGalleryImages: string[] = isProductTarget
-              ? galleryImages
-              : (Array.isArray(selectedVariantObj?.gallery_images) ? selectedVariantObj.gallery_images : []);
+            const activeTargetGalleryImages: string[] = Array.isArray(selectedVariantObj?.gallery_images)
+              ? selectedVariantObj.gallery_images
+              : [];
 
             const setActiveTargetGalleryImages = (newArr: string[]) => {
-              if (isProductTarget) {
-                setGalleryImages(newArr);
-              } else if (selectedVariantObj) {
+              if (selectedVariantObj) {
                 handleUpdateVariant(selectedVariantObj.id, 'gallery_images', newArr);
+                if (variants.indexOf(selectedVariantObj) === 0 || galleryImages.length === 0) {
+                  setGalleryImages(newArr);
+                }
               }
             };
 
@@ -687,7 +685,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       Şəkil İdarəetmə Hədəfi (Scope)
                     </label>
                     <p className="text-xs text-slate-400">
-                      Ümumi məhsul şəkli və ya konkret variant üçün xüsusi şəkillər seçin
+                      Konkret variant üçün xüsusi şəkillər seçin
                     </p>
                   </div>
                   <select
@@ -695,10 +693,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                     onChange={(e) => setSelectedMediaTarget(e.target.value)}
                     className="w-full sm:w-auto bg-slate-950 border border-slate-700 text-amber-400 font-extrabold text-xs sm:text-sm rounded-2xl px-4 py-2.5 outline-none focus:border-amber-500 cursor-pointer shadow-inner"
                   >
-                    <option value="product">📦 Ümumi Məhsul (Əsas Fallback Şəkil)</option>
                     {variants.map((v, i) => (
                       <option key={v.id || i} value={String(v.id)}>
-                        🎨 Variant: {v.name || `Variant ${i + 1}`} ({v.sku || 'SKU yoxdur'})
+                        Variant: {v.name || `Variant ${i + 1}`} ({v.sku || 'SKU yoxdur'})
                       </option>
                     ))}
                   </select>
@@ -706,36 +703,19 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-5">
                   {/* Context Banner */}
-                  {isProductTarget ? (
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <span className="text-[10px] font-black uppercase text-amber-500 tracking-wider">Hədəf: Ümumi Məhsul</span>
-                        <h4 className="text-sm font-bold text-white">Məhsulun Əsas və Qalereya Şəkilləri</h4>
-                        <p className="text-xs text-slate-400">
-                          Bu şəkillər variantların xüsusi şəkli olmadıqda fallback olaraq istifadə edilir.
-                        </p>
-                      </div>
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Hədəf: Konkret Variant</span>
+                      <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black uppercase">Variant Şəkli</span>
                     </div>
-                  ) : (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Hədəf: Konkret Variant</span>
-                        <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black uppercase">Variant Şəkli</span>
-                      </div>
-                      <h4 className="text-sm font-extrabold text-white">
-                        {selectedVariantObj?.name || 'Variant'} <span className="font-mono text-slate-400 text-xs">({selectedVariantObj?.sku || 'SKU yoxdur'})</span>
-                      </h4>
-                      {!activeTargetImageUrl && (
-                        <p className="text-xs text-amber-300/80 pt-1">
-                          ℹ️ Qeyd: Bu variant üçün xüsusi şəkil təyin edilməyib. Saytda məhsulun əsas şəkli <span className="underline font-mono">{imageUrl || 'seçilməyib'}</span> göstəriləcək.
-                        </p>
-                      )}
-                    </div>
-                  )}
+                    <h4 className="text-sm font-extrabold text-white">
+                      Variant: {selectedVariantObj?.name || 'Variant'} <span className="font-mono text-slate-400 text-xs">({selectedVariantObj?.sku || 'SKU yoxdur'})</span>
+                    </h4>
+                  </div>
 
                   <h3 className="text-base font-black text-white flex items-center gap-2 pt-2">
                     <ImageIcon className="w-5 h-5 text-amber-500" /> 
-                    {isProductTarget ? 'Əsas Şəkil URL-i' : `${selectedVariantObj?.name || 'Variant'} Əsas Şəkli`}
+                    {selectedVariantObj?.name ? `Variant (${selectedVariantObj.name}) Əsas Şəkli` : 'Variant Əsas Şəkli'}
                   </h3>
 
                   <div className="space-y-4">
@@ -762,7 +742,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                             referrerPolicy="no-referrer"
                           />
                           <div className="absolute top-2 left-2 px-2 py-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded uppercase tracking-wider shadow-md">
-                            {isProductTarget ? 'Məhsul Əsas' : 'Variant Əsas'}
+                            Variant Əsas
                           </div>
                           <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <button 
@@ -782,7 +762,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                         </div>
                         <p className="text-xs font-bold text-white mb-1">Şəkil URL-i daxil edilməyib</p>
                         <p className="text-[11px] text-slate-500">
-                          {isProductTarget ? 'Məhsulun əsas şəkli olaraq istifadə olunacaq.' : 'Bu variant üçün xüsusi şəkil daxil edilmədikdə əsas məhsul şəkli istifadə ediləcək.'}
+                          Bu variant üçün şəkil daxil edin.
                         </p>
                       </div>
                     )}
@@ -793,7 +773,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                       <div>
                         <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider">
-                          {isProductTarget ? 'Ümumi Qalereya Şəkilləri' : `${selectedVariantObj?.name || 'Variant'} Qalereya Şəkilləri`}
+                          {selectedVariantObj?.name ? `Variant (${selectedVariantObj.name}) Qalereya Şəkilləri` : 'Variant Qalereya Şəkilləri'}
                         </h4>
                         <p className="text-xs text-slate-500 mt-0.5">Məhsul detalları səhifəsində mini karusel şəkilləri</p>
                       </div>

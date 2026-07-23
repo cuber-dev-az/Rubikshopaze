@@ -3,6 +3,7 @@ import { ProductDetailClientContent } from '@/components/layout/ProductDetailCli
 import { supabase } from '@/lib/supabase/client';
 import { getProductReviews } from '@/lib/actions/reviews';
 import { sanitizeImageUrl } from '@/lib/image';
+import { getProductBySlug } from '@/lib/supabase/queries/products';
 import Link from 'next/link';
 
 export const revalidate = 60;
@@ -50,65 +51,22 @@ function getSmartCategory(dbProduct: any) {
 }
 
 export default async function ProductDetailPage({ params }: ProductPageProps) {
-  const { locale, slug: rawParamSlug } = await params;
+  const { locale, slug } = await params;
   const dict = await getDictionary(locale);
 
-  const rawSlug = decodeURIComponent(rawParamSlug || '').trim();
-  const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(rawSlug);
+  const rawSlug = decodeURIComponent(slug || '').trim();
 
-  // 1. Fetch matching product from Supabase if available
+  // 1. Fetch matching product safely using getProductBySlug
   let activeProduct = null;
   try {
     const titleColumn = `title_${locale}`;
     const descColumn = `description_${locale}`;
     const nameColumn = `name_${locale}`;
 
-    let dbProduct = null;
-
-    // Primary query by slug or ID directly without complex unquoted .or strings
-    const selectQuery = '*, variants(*), brands(name, slug), categories(name_az, slug)';
-
-    // 1. Try exact slug match
-    const { data: slugMatch } = await supabase
-      .from('products')
-      .select(selectQuery)
-      .eq('slug', rawSlug)
-      .maybeSingle();
-
-    if (slugMatch) {
-      dbProduct = slugMatch;
-    } else if (isUuid) {
-      // 2. Try ID match if UUID
-      const { data: idMatch } = await supabase
-        .from('products')
-        .select(selectQuery)
-        .eq('id', rawSlug)
-        .maybeSingle();
-      if (idMatch) dbProduct = idMatch;
-    }
+    let dbProduct = await getProductBySlug(rawSlug);
 
     if (!dbProduct) {
-      // 3. Fallback: try simple query without joins
-      const { data: simpleSlugMatch } = await supabase
-        .from('products')
-        .select('*')
-        .eq('slug', rawSlug)
-        .maybeSingle();
-
-      if (simpleSlugMatch) {
-        dbProduct = simpleSlugMatch;
-      } else if (isUuid) {
-        const { data: simpleIdMatch } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', rawSlug)
-          .maybeSingle();
-        if (simpleIdMatch) dbProduct = simpleIdMatch;
-      }
-    }
-
-    if (!dbProduct) {
-      // 4. Fallback: fuzzy match on title or name
+      // Fallback: fuzzy match on title or name using maybeSingle
       const cleanTerm = rawSlug.replace(/[^a-zA-Z0-9]/g, '%');
       if (cleanTerm.length > 2) {
         const { data: fuzzyData } = await supabase
