@@ -21,9 +21,16 @@ import {
   AlertCircle,
   Sparkles,
   Award,
+  ChevronLeft,
   ChevronRight,
   Home,
-  MessageSquare
+  MessageSquare,
+  Minus,
+  Plus,
+  Search,
+  Filter,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
@@ -157,6 +164,188 @@ function ProductDetailClientContentInner({
   // Interactive video modal
   const [showVideoModal, setShowVideoModal] = React.useState(false);
 
+  // Selected purchase quantity
+  const [quantity, setQuantity] = React.useState<number>(1);
+
+  // Sticky bottom mini-bar observer ref and state
+  const mainAddToCartRef = React.useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = React.useState(false);
+
+  // Review search, sort, and helpful voting states
+  const [reviewSearch, setReviewSearch] = React.useState('');
+  const [reviewSort, setReviewSort] = React.useState<'newest' | 'oldest' | 'highest' | 'lowest' | 'helpful'>('newest');
+  const [helpfulState, setHelpfulState] = React.useState<Record<string, { up: number; down: number; userVote: 'up' | 'down' | null }>>({});
+
+  // Dynamic estimated shipping date
+  const estimatedShipDate = React.useMemo(() => {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const months = ['İyul', 'Avqust', 'Sentyabr', 'Oktyabr', 'Noyabr', 'Dekabr', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'İyun'];
+    const monthName = months[tomorrow.getMonth()];
+    const dateNum = tomorrow.getDate();
+    return `sabah (${dateNum} ${monthName})`;
+  }, []);
+
+  // Intersection Observer for sticky bottom bar
+  React.useEffect(() => {
+    const target = mainAddToCartRef.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting && entry.boundingClientRect.top < 0) {
+          setShowStickyBar(true);
+        } else {
+          setShowStickyBar(false);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+
+  // Auto-scrolling Trust Banner state & slides
+  const trustSlides = React.useMemo(() => [
+    {
+      icon: Truck,
+      color: 'text-rubik-brand',
+      bg: 'bg-rubik-brand/10',
+      title: 'Bakı daxili Sürətli Çatdırılma',
+      desc: '1-3 saat ərzində sürətli kuryer vasitəsilə birbaşa ünvanınıza təhvil verilir.'
+    },
+    {
+      icon: Award,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-500/10',
+      title: '100% Orijinal & Rəsmi Zəmanət',
+      desc: 'Rəsmi istehsalçı zəmanəti ilə sertifikatlaşdırılmış orijinal Z-Cube və GAN məhsulları.'
+    },
+    {
+      icon: RotateCcw,
+      color: 'text-blue-500',
+      bg: 'bg-blue-500/10',
+      title: '14 Gün Geri Qaytarma Zəmanəti',
+      desc: 'İstifadə olunmamış və qutusu zədələnməmiş məhsulların heç bir sual verilmədən dəyişdirilməsi.'
+    },
+    {
+      icon: Zap,
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
+      title: 'Metrolara Ödənişsiz Çatdırılma',
+      desc: 'Sifarişlərinizi Bakı metro stansiyalarına tam pulsuz təhvil ala bilərsiniz.'
+    }
+  ], []);
+
+  const [trustSlideIndex, setTrustSlideIndex] = React.useState(0);
+  const [isTrustBannerPaused, setIsTrustBannerPaused] = React.useState(false);
+
+  React.useEffect(() => {
+    if (isTrustBannerPaused) return;
+    const interval = setInterval(() => {
+      setTrustSlideIndex((prev) => (prev + 1) % trustSlides.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isTrustBannerPaused, trustSlides.length]);
+
+  // Frequently Bought Together (Tez-tez Birlikdə Alınır) Bundle State
+  const [bundleChecked2, setBundleChecked2] = React.useState(true);
+  const [bundleChecked3, setBundleChecked3] = React.useState(true);
+
+  const bundleItem1 = React.useMemo(() => ({
+    id: product.id,
+    title: product.title,
+    price: finalPrice,
+    image: activeImage || product.image_url,
+    required: true
+  }), [product.id, product.title, finalPrice, activeImage, product.image_url]);
+
+  const bundleItem2 = React.useMemo(() => {
+    if (relatedProducts && relatedProducts.length > 0) {
+      const rel = relatedProducts[0];
+      return {
+        id: rel.id,
+        title: rel.title,
+        price: rel.price_azn,
+        image: rel.image_url,
+        required: false
+      };
+    }
+    return {
+      id: 'bundle-acc-lube',
+      title: 'QiYi M-Lube Professional Speedcube Yağı (10ml)',
+      price: 6.00,
+      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80',
+      required: false
+    };
+  }, [relatedProducts]);
+
+  const bundleItem3 = React.useMemo(() => {
+    if (relatedProducts && relatedProducts.length > 1) {
+      const rel = relatedProducts[1];
+      return {
+        id: rel.id,
+        title: rel.title,
+        price: rel.price_azn,
+        image: rel.image_url,
+        required: false
+      };
+    }
+    return {
+      id: 'bundle-acc-mat',
+      title: 'Rubikshop Pro Speedcube Rezin Mat Altlıq',
+      price: 12.00,
+      image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=300&auto=format&fit=crop&q=80',
+      required: false
+    };
+  }, [relatedProducts]);
+
+  const bundleTotalPrice = React.useMemo(() => {
+    let total = bundleItem1.price;
+    if (bundleChecked2) total += bundleItem2.price;
+    if (bundleChecked3) total += bundleItem3.price;
+    return total;
+  }, [bundleItem1.price, bundleItem2.price, bundleItem3.price, bundleChecked2, bundleChecked3]);
+
+  const bundleSavings = React.useMemo(() => {
+    let savings = 0;
+    if (bundleChecked2) savings += 1.50;
+    if (bundleChecked3) savings += 2.50;
+    return savings;
+  }, [bundleChecked2, bundleChecked3]);
+
+  const handleAddBundleToCart = () => {
+    addItem({
+      id: bundleItem1.id,
+      title: bundleItem1.title,
+      price_azn: bundleItem1.price,
+      quantity: 1,
+      image_url: bundleItem1.image
+    });
+    if (bundleChecked2) {
+      addItem({
+        id: bundleItem2.id,
+        title: bundleItem2.title,
+        price_azn: Math.max(1, bundleItem2.price - 1.50),
+        quantity: 1,
+        image_url: bundleItem2.image
+      });
+    }
+    if (bundleChecked3) {
+      addItem({
+        id: bundleItem3.id,
+        title: bundleItem3.title,
+        price_azn: Math.max(1, bundleItem3.price - 2.50),
+        quantity: 1,
+        image_url: bundleItem3.image
+      });
+    }
+    setShowAddedToCartToast(true);
+    setTimeout(() => setShowAddedToCartToast(false), 3000);
+  };
+
   // Social action toggles
   const [isWishlisted, setIsWishlisted] = React.useState(false);
   const [isCompared, setIsCompared] = React.useState(false);
@@ -169,6 +358,87 @@ function ProductDetailClientContentInner({
   const [newReviewComment, setNewReviewComment] = React.useState('');
   const [reviewSubmitted, setReviewSubmitted] = React.useState(false);
 
+  // Helpful / Unhelpful voting handler
+  const handleVoteHelpful = (reviewId: string | number, type: 'up' | 'down') => {
+    const idStr = String(reviewId);
+    setHelpfulState((prev) => {
+      const current = prev[idStr] || { up: 0, down: 0, userVote: null };
+      if (current.userVote === type) {
+        return {
+          ...prev,
+          [idStr]: {
+            ...current,
+            [type]: Math.max(0, current[type] - 1),
+            userVote: null
+          }
+        };
+      }
+      const prevVote = current.userVote;
+      let newUp = current.up;
+      let newDown = current.down;
+      if (prevVote === 'up') newUp = Math.max(0, newUp - 1);
+      if (prevVote === 'down') newDown = Math.max(0, newDown - 1);
+      if (type === 'up') newUp += 1;
+      if (type === 'down') newDown += 1;
+      return {
+        ...prev,
+        [idStr]: { up: newUp, down: newDown, userVote: type }
+      };
+    });
+  };
+
+  // Calculate Star Counts and Percentages
+  const starCounts = React.useMemo(() => {
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    if (!reviews) return counts;
+    reviews.forEach((r) => {
+      const val = Math.round(r.rating || 5);
+      if (val >= 1 && val <= 5) {
+        counts[val as keyof typeof counts] += 1;
+      }
+    });
+    return counts;
+  }, [reviews]);
+
+  // Filtered and Sorted Reviews
+  const filteredAndSortedReviews = React.useMemo(() => {
+    if (!reviews) return [];
+    let list = [...reviews];
+    if (reviewSearch.trim()) {
+      const q = reviewSearch.toLowerCase();
+      list = list.filter((r) => {
+        const name = (r.profiles?.full_name || r.name || '').toLowerCase();
+        const comment = (r.comment || '').toLowerCase();
+        return name.includes(q) || comment.includes(q);
+      });
+    }
+
+    list.sort((a, b) => {
+      if (reviewSort === 'newest') {
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      }
+      if (reviewSort === 'oldest') {
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      }
+      if (reviewSort === 'highest') {
+        return (b.rating || 0) - (a.rating || 0);
+      }
+      if (reviewSort === 'lowest') {
+        return (a.rating || 0) - (b.rating || 0);
+      }
+      if (reviewSort === 'helpful') {
+        const aId = String(a.id);
+        const bId = String(b.id);
+        const aVotes = (helpfulState[aId]?.up || 0) - (helpfulState[aId]?.down || 0);
+        const bVotes = (helpfulState[bId]?.up || 0) - (helpfulState[bId]?.down || 0);
+        return bVotes - aVotes;
+      }
+      return 0;
+    });
+
+    return list;
+  }, [reviews, reviewSearch, reviewSort, helpfulState]);
+
   // Dynamic pricing directly from product object
   const basePrice = Number(product?.price_azn || (product as any)?.price || 0);
   const addonCost = (isCubeCategory && addonSetup) ? 5 : 0;
@@ -179,15 +449,124 @@ function ProductDetailClientContentInner({
 
   const originalPrice = product?.original_price || (product as any)?.discount_price || (product as any)?.compare_at_price_azn;
 
+  // Dynamic Discount calculation
+  const numOriginalPrice = Number(originalPrice || 0);
+  const numBasePrice = Number(basePrice || 0);
+  const hasDiscount = numOriginalPrice > numBasePrice && numBasePrice > 0;
+  const discountPercent = hasDiscount
+    ? Math.round(((numOriginalPrice - numBasePrice) / numOriginalPrice) * 100)
+    : 0;
+
+  // Resolve Brand and Product Type for Badges
+  const rawBrand = (
+    product?.brands?.name ||
+    (product as any)?.brand_name ||
+    product?.brand ||
+    ''
+  ).trim();
+
+  let resolvedBrand = '';
+  if (rawBrand && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(rawBrand.toUpperCase())) {
+    resolvedBrand = rawBrand;
+  }
+
+  const pTitleLower = (product?.title || '').toLowerCase();
+  if (!resolvedBrand) {
+    if (pTitleLower.includes('moyu')) resolvedBrand = 'MoYu';
+    else if (pTitleLower.includes('qiyi')) resolvedBrand = 'QiYi';
+    else if (/\bgan\b/.test(pTitleLower)) resolvedBrand = 'GAN';
+    else if (pTitleLower.includes('z-cube') || pTitleLower.includes('zcube')) resolvedBrand = 'Z-Cube';
+    else if (pTitleLower.includes('shengshou')) resolvedBrand = 'ShengShou';
+    else if (pTitleLower.includes('yuxin')) resolvedBrand = 'YuXin';
+    else if (pTitleLower.includes('diansheng')) resolvedBrand = 'DianSheng';
+    else if (pTitleLower.includes('dayan')) resolvedBrand = 'DaYan';
+    else if (pTitleLower.includes('monster go') || pTitleLower.includes('monstergo')) resolvedBrand = 'Monster Go';
+    else resolvedBrand = 'Orijinal Brend';
+  }
+
+  let typeBadge = '';
+  if (pTitleLower.includes('açarlıq') || pTitleLower.includes('keychain') || pTitleLower.includes('brelok')) {
+    typeBadge = 'Açarlıq';
+  } else if (pTitleLower.includes('mat') || pTitleLower.includes('pad') || pTitleLower.includes('xalça') || pTitleLower.includes('kovrik')) {
+    typeBadge = 'Aksessuar Matı';
+  } else if (pTitleLower.includes('yağ') || pTitleLower.includes('lube')) {
+    typeBadge = 'Baxım Yağı';
+  } else if (pTitleLower.includes('taymer') || pTitleLower.includes('timer')) {
+    typeBadge = 'Yarış Taymeri';
+  } else if (product?.product_type) {
+    typeBadge = product.product_type;
+  }
+
   const currentSku = selectedVariant 
     ? selectedVariant.sku 
     : (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000'));
 
   // Calculated Ratings Summary
   const averageRating = React.useMemo(() => {
-    const total = reviews.reduce((sum, r) => sum + r.rating, 0);
-    return reviews.length > 0 ? (total / reviews.length).toFixed(1) : '5.0';
+    if (!reviews || reviews.length === 0) return null;
+    const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
+    return (total / reviews.length).toFixed(1);
   }, [reviews]);
+
+  // Smart Category Information for Breadcrumbs
+  const categoryInfo = React.useMemo(() => {
+    let name = product?.category_name || product?.categories?.name_az;
+    let slug = product?.category_slug || product?.categories?.slug || product?.category;
+
+    if (name && slug && name !== 'Açarlıqlar') {
+      return { name, slug };
+    }
+
+    const titleLower = (product?.title || '').toLowerCase();
+    if (titleLower.includes('mat') || titleLower.includes('pad') || titleLower.includes('xalça') || titleLower.includes('kovrik')) {
+      return { name: 'Matlar və Aksesuarlar', slug: 'mats' };
+    }
+    if (titleLower.includes('açarlıq') || titleLower.includes('brelok') || titleLower.includes('keychain')) {
+      return { name: 'Açarlıqlar', slug: 'keychains' };
+    }
+    if (titleLower.includes('yağ') || titleLower.includes('lube') || titleLower.includes('смазка')) {
+      return { name: 'Yağlar və Baxım', slug: 'lubes' };
+    }
+    if (titleLower.includes('taymer') || titleLower.includes('timer')) {
+      return { name: 'Taymerlər', slug: 'timers' };
+    }
+    
+    if (name && slug) return { name, slug };
+    return { name: 'Sürət Kubları', slug: '3x3' };
+  }, [product]);
+
+  // Dynamic Related Products with Client-side Fallback
+  const [displayRelated, setDisplayRelated] = React.useState(relatedProducts || []);
+
+  React.useEffect(() => {
+    if (relatedProducts && relatedProducts.length > 0) {
+      setDisplayRelated(relatedProducts);
+    } else {
+      async function loadFallbackRelated() {
+        try {
+          const { getActiveProducts } = await import('@/lib/supabase/queries/products');
+          const allProds = await getActiveProducts();
+          if (allProds && allProds.length > 0) {
+            const filtered = allProds
+              .filter(p => p.id !== product?.id)
+              .slice(0, 4)
+              .map(p => ({
+                id: p.id,
+                title: p.title_az || p.name_az || p.title || p.name || 'Məhsul',
+                price_azn: Number(p.price || p.price_azn || 0),
+                image_url: p.image_url || 'https://picsum.photos/seed/default/600/600',
+                stock_quantity: Number(p.stock_quantity || 0),
+                brand: p.brands?.name || p.brand || 'Z-Cube'
+              }));
+            setDisplayRelated(filtered);
+          }
+        } catch (err) {
+          console.error("Error loading fallback related products:", err);
+        }
+      }
+      loadFallbackRelated();
+    }
+  }, [relatedProducts, product?.id]);
 
   // Gallery images with dynamic variation
   const galleryImages = React.useMemo(() => {
@@ -269,7 +648,31 @@ function ProductDetailClientContentInner({
     );
   }
 
+  const effectiveStock = React.useMemo(() => {
+    if (selectedVariant) {
+      const vStock = selectedVariant.stock ?? selectedVariant.stock_quantity;
+      return typeof vStock === 'number' ? vStock : (parseInt(String(vStock), 10) || 0);
+    }
+    const pStock = product?.stock_quantity ?? product?.stock;
+    return typeof pStock === 'number' ? pStock : (parseInt(String(pStock), 10) || 0);
+  }, [selectedVariant, product?.stock_quantity, product?.stock]);
+
+  const isOutOfStock = effectiveStock <= 0;
+
+  // Sync quantity if selected variant or stock changes
+  React.useEffect(() => {
+    if (effectiveStock > 0 && quantity > effectiveStock) {
+      setQuantity(effectiveStock);
+    } else if (effectiveStock <= 0) {
+      setQuantity(1);
+    }
+  }, [effectiveStock]);
+
   const handleAddToCart = (redirect = false) => {
+    const currentQty = isOutOfStock 
+      ? 1 
+      : Math.max(1, Math.min(quantity, effectiveStock > 0 ? effectiveStock : 1));
+
     const titleAddition = selectedVariant 
       ? ` (${selectedVariant.name || selectedVariant.sku})`
       : (isCubeCategory && addonSetup) ? ' (+ Premium Setup)' : '';
@@ -282,7 +685,7 @@ function ProductDetailClientContentInner({
       id: cartItemId,
       title: `${product.title}${titleAddition}`,
       price_azn: finalPrice,
-      quantity: 1,
+      quantity: currentQty,
       image_url: product.image_url
     };
 
@@ -320,9 +723,7 @@ function ProductDetailClientContentInner({
     }
   };
 
-  const isOutOfStock = selectedVariant 
-    ? (selectedVariant.stock <= 0) 
-    : (product.stock_quantity <= 0);
+
 
   // Render Stars helper
   const renderStars = (rating: number) => {
@@ -348,8 +749,8 @@ function ProductDetailClientContentInner({
             <span>{dict.navigation.home}</span>
           </Link>
           <ChevronRight className="h-3 w-3" />
-          <Link href={`/${locale}/category/${product?.category_slug || 'all'}`} className="hover:text-rubik-brand capitalize">
-            {product?.categories?.name_az || (product as any)?.category_name || product?.category_slug || 'Açarlıqlar'}
+          <Link href={`/${locale}/category/${categoryInfo.slug}`} className="hover:text-rubik-brand capitalize">
+            {categoryInfo.name}
           </Link>
           <ChevronRight className="h-3 w-3" />
           <span className="text-foreground font-semibold line-clamp-1">{product.title}</span>
@@ -388,7 +789,7 @@ function ProductDetailClientContentInner({
                   className="bg-background/90 hover:bg-background backdrop-blur-sm border border-border px-3.5 py-2 rounded-xl text-xs font-bold text-foreground flex items-center gap-1.5 shadow-soft-sm cursor-pointer"
                 >
                   <Play className="h-3.5 w-3.5 text-rubik-brand fill-rubik-brand" />
-                  <span>İnceleme Videosu</span>
+                  <span>Baxış Videosu</span>
                 </button>
               </div>
             </div>
@@ -420,20 +821,50 @@ function ProductDetailClientContentInner({
           {/* 2. Core Details & Operations (Right Column) */}
           <div className="lg:col-span-6 space-y-6">
             <div className="space-y-2.5">
-              <span className="px-3 py-1 bg-rubik-brand/10 text-rubik-brand font-black text-[10px] tracking-wider rounded-full uppercase inline-block">
-                {product?.brands?.name || (product as any)?.brand_name || product?.brand || 'Z-Cube'} Flaqman
-              </span>
+              {/* Dynamic Product Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 bg-rubik-brand/10 text-rubik-brand font-black text-xs tracking-wider rounded-full uppercase">
+                  {resolvedBrand} {typeBadge ? `• ${typeBadge}` : ''}
+                </span>
+
+                {hasDiscount && (
+                  <span className="px-2.5 py-1 bg-red-600 text-white font-black text-xs rounded-full uppercase tracking-wider shadow-sm">
+                    -{discountPercent}% ENDİRİM
+                  </span>
+                )}
+
+                {product?.is_featured && (
+                  <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 font-bold text-xs rounded-full uppercase">
+                    ⭐ FLAQMAN
+                  </span>
+                )}
+
+                {!isOutOfStock && (
+                  <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-bold text-xs rounded-full uppercase">
+                    ⚡ STOKDA VAR
+                  </span>
+                )}
+              </div>
+
               <h1 className="text-2xl md:text-4xl font-black tracking-tight text-foreground">
                 {product.title}
               </h1>
 
               {/* Review Aggregate */}
               <div className="flex items-center gap-3">
-                <div className="flex items-center">
-                  {renderStars(Number(averageRating))}
-                </div>
-                <span className="text-sm font-black text-foreground">{averageRating}</span>
-                <span className="text-muted-foreground text-xs">• ({reviews.length} müştəri rəyi)</span>
+                {reviews.length > 0 && averageRating ? (
+                  <>
+                    <div className="flex items-center">
+                      {renderStars(Number(averageRating))}
+                    </div>
+                    <span className="text-sm font-black text-foreground">{averageRating}</span>
+                    <span className="text-muted-foreground text-xs">• ({reviews.length} müştəri rəyi)</span>
+                  </>
+                ) : (
+                  <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md">
+                    Hələ rəy yoxdur
+                  </span>
+                )}
                 <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded border border-border">
                   SKU: {currentSku}
                 </span>
@@ -549,32 +980,113 @@ function ProductDetailClientContentInner({
               </div>
             )}
 
-            {/* Action Hub */}
-            <div className="space-y-3 pt-2">
-              <div className="flex gap-3">
+            {/* Dynamic Stock & Delivery Urgency Notice */}
+            <div className="pt-1">
+              {isOutOfStock ? (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-3.5 rounded-2xl flex items-center gap-3 text-xs md:text-sm font-semibold">
+                  <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
+                  <span>Stokda müvəqqəti yoxdur — Məhsul gələndə xəbərdar olmaq üçün bizimlə əlaqə saxlayın.</span>
+                </div>
+              ) : effectiveStock <= 5 ? (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 p-3.5 rounded-2xl flex items-center justify-between gap-3 text-xs md:text-sm font-extrabold animate-pulse">
+                  <div className="flex items-center gap-2.5">
+                    <Zap className="h-5 w-5 text-red-500 shrink-0 fill-red-500" />
+                    <span>Yalnız <u className="underline decoration-2">{effectiveStock} ədəd</u> qaldı — {estimatedShipDate} tarixində göndəriləcək</span>
+                  </div>
+                  <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded font-black tracking-wider uppercase shrink-0">TƏCİLİ</span>
+                </div>
+              ) : (
+                <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 p-3.5 rounded-2xl flex items-center gap-3 text-xs md:text-sm font-semibold">
+                  <Check className="h-5 w-5 text-emerald-600 shrink-0" />
+                  <span>Anbarda: <strong className="font-extrabold">{effectiveStock} ədəd</strong> var — {estimatedShipDate} tarixində göndəriləcək</span>
+                </div>
+              )}
+            </div>
+
+            {/* Action Hub with Quantity Selector */}
+            <div ref={mainAddToCartRef} className="space-y-4 pt-2">
+              {/* Quantity Selector Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-muted/30 border border-border/80 p-3.5 rounded-2xl">
+                <div className="space-y-0.5">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-foreground block">
+                    Miqdar
+                  </span>
+                  <span className="text-[11px] text-muted-foreground font-medium block">
+                    {isOutOfStock ? (
+                      <span className="text-red-500 font-bold">Stokda yoxdur</span>
+                    ) : (
+                      <>Anbarda: <strong className="text-foreground font-bold">{effectiveStock} ədəd</strong> var</>
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex items-center border border-border bg-card rounded-xl p-1 shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity <= 1 || isOutOfStock}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus className="h-4 w-4" />
+                  </button>
+
+                  <input
+                    type="number"
+                    min={1}
+                    max={effectiveStock > 0 ? effectiveStock : 1}
+                    value={quantity}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (isNaN(val) || val < 1) {
+                        setQuantity(1);
+                      } else if (effectiveStock > 0 && val > effectiveStock) {
+                        setQuantity(effectiveStock);
+                      } else {
+                        setQuantity(val);
+                      }
+                    }}
+                    disabled={isOutOfStock}
+                    className="w-12 text-center font-black text-sm bg-transparent text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.min(effectiveStock > 0 ? effectiveStock : 1, q + 1))}
+                    disabled={quantity >= effectiveStock || isOutOfStock}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => handleAddToCart(false)}
                   disabled={isOutOfStock}
-                  className={`flex-1 py-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     isOutOfStock
                       ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
                       : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white hover:shadow-soft-lg active:scale-98'
                   }`}
                 >
-                  <ShoppingBag className="h-5 w-5" />
-                  <span>Səbətə Əlavə Et</span>
+                  <ShoppingBag className="h-5 w-5 shrink-0" />
+                  <span>Səbətə Əlavə Et {quantity > 1 ? `(${quantity})` : ''}</span>
                 </button>
 
                 <button
                   onClick={() => handleAddToCart(true)}
                   disabled={isOutOfStock}
-                  className={`flex-1 py-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
                     isOutOfStock
                       ? 'bg-muted/50 text-muted-foreground cursor-not-allowed border border-border'
                       : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark hover:shadow-soft-lg active:scale-98'
                   }`}
                 >
-                  <Zap className="h-5 w-5" />
+                  <Zap className="h-5 w-5 shrink-0" />
                   <span>İndi Al (Sifariş et)</span>
                 </button>
               </div>
@@ -626,8 +1138,74 @@ function ProductDetailClientContentInner({
               )}
             </AnimatePresence>
 
-            {/* Quick trust metrics */}
-            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-border">
+            {/* Auto-scroll Trust Banner with dot slide indicators */}
+            <div
+              onMouseEnter={() => setIsTrustBannerPaused(true)}
+              onMouseLeave={() => setIsTrustBannerPaused(false)}
+              className="bg-card border border-border/80 rounded-2xl p-4 shadow-soft-sm overflow-hidden space-y-3"
+            >
+              <div className="flex items-center justify-between gap-3 min-h-[50px]">
+                <button
+                  type="button"
+                  onClick={() => setTrustSlideIndex((prev) => (prev - 1 + trustSlides.length) % trustSlides.length)}
+                  className="p-1.5 rounded-lg bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer shrink-0"
+                  aria-label="Əvvəlki slayd"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                <div className="flex-1 flex items-center gap-3 overflow-hidden px-1">
+                  {(() => {
+                    const slide = trustSlides[trustSlideIndex];
+                    const SlideIcon = slide.icon;
+                    return (
+                      <div className="flex items-center gap-3 w-full transition-all duration-300">
+                        <div className={`p-2.5 rounded-xl ${slide.bg} shrink-0`}>
+                          <SlideIcon className={`h-5 w-5 ${slide.color}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block font-black text-xs md:text-sm text-foreground truncate">
+                            {slide.title}
+                          </span>
+                          <span className="block text-[11px] text-muted-foreground line-clamp-1 leading-snug">
+                            {slide.desc}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setTrustSlideIndex((prev) => (prev + 1) % trustSlides.length)}
+                  className="p-1.5 rounded-lg bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-all cursor-pointer shrink-0"
+                  aria-label="Növbəti slayd"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Dot slide indicators */}
+              <div className="flex items-center justify-center gap-1.5 pt-1">
+                {trustSlides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setTrustSlideIndex(idx)}
+                    className={`h-2 rounded-full transition-all cursor-pointer ${
+                      trustSlideIndex === idx
+                        ? 'w-6 bg-rubik-brand'
+                        : 'w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                    aria-label={`Slayd ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Quick trust metrics grid */}
+            <div className="grid grid-cols-3 gap-3 pt-1 border-t border-border">
               <div className="text-center p-3 bg-muted/30 rounded-xl space-y-1">
                 <Truck className="h-5 w-5 text-rubik-brand mx-auto" />
                 <span className="block font-black text-[10px] text-foreground">Sürətli Çatdırılma</span>
@@ -643,6 +1221,157 @@ function ProductDetailClientContentInner({
                 <span className="block font-black text-[10px] text-foreground">Asan Geri Qaytarma</span>
                 <span className="block text-[8px] text-muted-foreground">14 gün daxilində dəyişmə</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Tez-tez Birlikdə Alınır (Frequently Bought Together Bundle) Section */}
+        <div className="bg-card border border-border/90 rounded-3xl p-5 md:p-6 shadow-soft-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-rubik-brand/10 text-rubik-brand rounded-xl">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-base md:text-lg text-foreground tracking-tight">
+                  Tez-tez Birlikdə Alınır
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Bu məhsulla birlikdə ən çox seçilən peşəkar aksesuarlar və xüsusi endirimli paket
+                </p>
+              </div>
+            </div>
+            {bundleSavings > 0 && (
+              <span className="text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full w-fit">
+                🔥 {bundleSavings.toFixed(2)} AZN Qənaət
+              </span>
+            )}
+          </div>
+
+          {/* Bundle Items Visual Row with Real Thumbnails */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            <div className="lg:col-span-8 flex flex-col md:flex-row items-center gap-3">
+              {/* Item 1 (Main product) */}
+              <div className="flex items-center gap-3 bg-muted/30 border border-border/80 rounded-2xl p-3 w-full md:w-1/3 min-h-[95px]">
+                <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
+                  <Image
+                    src={bundleItem1.image}
+                    alt={bundleItem1.title}
+                    fill
+                    referrerPolicy="no-referrer"
+                    className="object-contain"
+                  />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-rubik-brand block">Əsas Məhsul</span>
+                  <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
+                    {bundleItem1.title}
+                  </span>
+                  <span className="text-xs font-black text-foreground block">
+                    {bundleItem1.price.toFixed(2)} AZN
+                  </span>
+                </div>
+              </div>
+
+              <span className="text-muted-foreground font-black text-lg hidden md:inline shrink-0">+</span>
+
+              {/* Item 2 */}
+              <label className={`flex items-center gap-3 border rounded-2xl p-3 w-full md:w-1/3 min-h-[95px] cursor-pointer transition-all select-none ${
+                bundleChecked2 ? 'bg-muted/30 border-rubik-brand/60' : 'bg-background border-border/50 opacity-60'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={bundleChecked2}
+                  onChange={(e) => setBundleChecked2(e.target.checked)}
+                  className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
+                />
+                <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
+                  <Image
+                    src={bundleItem2.image}
+                    alt={bundleItem2.title}
+                    fill
+                    referrerPolicy="no-referrer"
+                    className="object-contain"
+                  />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 block">Tövsiyə Olunan</span>
+                  <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
+                    {bundleItem2.title}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="font-black text-rubik-brand">
+                      {Math.max(1, bundleItem2.price - 1.50).toFixed(2)} AZN
+                    </span>
+                    <span className="text-[10px] text-muted-foreground line-through">
+                      {bundleItem2.price.toFixed(2)} AZN
+                    </span>
+                  </div>
+                </div>
+              </label>
+
+              <span className="text-muted-foreground font-black text-lg hidden md:inline shrink-0">+</span>
+
+              {/* Item 3 */}
+              <label className={`flex items-center gap-3 border rounded-2xl p-3 w-full md:w-1/3 min-h-[95px] cursor-pointer transition-all select-none ${
+                bundleChecked3 ? 'bg-muted/30 border-rubik-brand/60' : 'bg-background border-border/50 opacity-60'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={bundleChecked3}
+                  onChange={(e) => setBundleChecked3(e.target.checked)}
+                  className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
+                />
+                <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
+                  <Image
+                    src={bundleItem3.image}
+                    alt={bundleItem3.title}
+                    fill
+                    referrerPolicy="no-referrer"
+                    className="object-contain"
+                  />
+                </div>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-blue-500 block">Aksesuar</span>
+                  <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
+                    {bundleItem3.title}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="font-black text-rubik-brand">
+                      {Math.max(1, bundleItem3.price - 2.50).toFixed(2)} AZN
+                    </span>
+                    <span className="text-[10px] text-muted-foreground line-through">
+                      {bundleItem3.price.toFixed(2)} AZN
+                    </span>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Bundle CTA Box */}
+            <div className="lg:col-span-4 bg-muted/40 border border-border/80 rounded-2xl p-4 flex flex-col justify-between gap-3 h-full">
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground font-semibold block">Paket Cəmi Məbləğ:</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl md:text-2xl font-black text-foreground">
+                    {(bundleTotalPrice - bundleSavings).toFixed(2)} AZN
+                  </span>
+                  {bundleSavings > 0 && (
+                    <span className="text-xs text-muted-foreground line-through font-bold">
+                      {bundleTotalPrice.toFixed(2)} AZN
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleAddBundleToCart}
+                className="w-full py-3 px-4 bg-rubik-brand text-white font-black text-xs md:text-sm rounded-xl hover:bg-rubik-brand-dark transition-all flex items-center justify-center gap-2 shadow-soft-sm cursor-pointer active:scale-98"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span>Seçilənləri Birlikdə Səbətə Əlavə Et</span>
+              </button>
             </div>
           </div>
         </div>
@@ -790,40 +1519,151 @@ function ProductDetailClientContentInner({
         </div>
 
         {/* 4. Interactive Review/Rating Module (Interactive read & write) */}
-        <section className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-6">
+        <section className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-8">
           <div className="flex flex-col md:flex-row gap-6 items-start justify-between border-b border-border pb-6">
             <div className="space-y-1">
               <h3 className="text-xl md:text-2xl font-black text-foreground">Müştəri Rəyləri</h3>
-              <p className="text-xs text-muted-foreground">Müştərilərimizin bu məhsul haqqında qeyd etdiyi rəsmi fikirlər</p>
+              <p className="text-xs text-muted-foreground">Müştərilərimizin bu məhsul haqqında qeyd etdiyi rəsmi fikirlər və reytinqlər</p>
             </div>
             
-            {/* Rating distribution info */}
+            {/* Rating summary badge */}
             <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-2xl border border-border/60 shrink-0">
-              <span className="text-4xl font-black text-foreground">{averageRating}</span>
-              <div>
-                <div className="flex items-center mb-0.5">{renderStars(Number(averageRating))}</div>
-                <span className="text-xs text-muted-foreground">{reviews.length} həqiqi alıcı rəyi</span>
-              </div>
+              {reviews.length > 0 && averageRating ? (
+                <>
+                  <span className="text-4xl font-black text-foreground">{averageRating}</span>
+                  <div>
+                    <div className="flex items-center mb-0.5">{renderStars(Number(averageRating))}</div>
+                    <span className="text-xs text-muted-foreground">{reviews.length} həqiqi alıcı rəyi</span>
+                  </div>
+                </>
+              ) : (
+                <div className="text-left">
+                  <span className="text-sm font-bold text-amber-500 block">Hələ rəy yoxdur</span>
+                  <span className="text-xs text-muted-foreground">İlk rəyi siz yazın!</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Star Distribution Bar Chart */}
+          <div className="bg-muted/20 border border-border/60 p-5 rounded-2xl space-y-3">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground">Reytinq Paylanması</h4>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              {[5, 4, 3, 2, 1].map((star) => {
+                const count = starCounts[star as keyof typeof starCounts] || 0;
+                const total = reviews.length;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={star} className="flex items-center gap-2 text-xs bg-card/60 p-2.5 rounded-xl border border-border/40">
+                    <span className="font-bold shrink-0 flex items-center gap-1 text-foreground min-w-[2.5rem]">
+                      {star} <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    </span>
+                    <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden border border-border/40">
+                      <div
+                        className="bg-amber-400 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-mono font-bold shrink-0">
+                      {count} ({pct}%)
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Search & Sort Controls */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Rəylərdə axtarış et..."
+                value={reviewSearch}
+                onChange={(e) => setReviewSearch(e.target.value)}
+                className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Sıralama:</span>
+              <select
+                value={reviewSort}
+                onChange={(e) => setReviewSort(e.target.value as any)}
+                className="bg-background border border-border rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand cursor-pointer"
+              >
+                <option value="newest">Ən Yeni</option>
+                <option value="oldest">Ən Qədim</option>
+                <option value="highest">Ən Yüksək Reytinq</option>
+                <option value="lowest">Ən Aşağı Reytinq</option>
+                <option value="helpful">Ən Faydalı</option>
+              </select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            {/* Reviews display */}
-            <div className="lg:col-span-7 space-y-4 max-h-[400px] overflow-y-auto pr-2">
-              {reviews.map((rev) => (
-                <div key={rev.id} className="bg-muted/30 border border-border/40 p-4 rounded-2xl space-y-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-foreground flex items-center gap-1">
-                      <MessageSquare className="h-3.5 w-3.5 text-rubik-brand" />
-                      {rev.profiles?.full_name || rev.name || 'Anonim'}
-                    </span>
-                    <span className="text-muted-foreground">{rev.date || new Date(rev.created_at).toLocaleDateString('az-AZ')}</span>
-                  </div>
-                  <div className="flex items-center">{renderStars(rev.rating)}</div>
-                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">{rev.comment}</p>
+            {/* Reviews display list */}
+            <div className="lg:col-span-7 space-y-4 max-h-[460px] overflow-y-auto pr-2">
+              {filteredAndSortedReviews.length === 0 ? (
+                <div className="p-6 bg-muted/20 border border-border/40 rounded-2xl text-center text-xs md:text-sm text-muted-foreground">
+                  {reviewSearch ? 'Axtarışa uyğun rəy tapılmadı.' : 'Bu məhsul üçün hələ ki heç bir rəy yazılmayıb. İlk rəyi siz göndərə bilərsiniz!'}
                 </div>
-              ))}
+              ) : (
+                filteredAndSortedReviews.map((rev) => {
+                  const rId = String(rev.id);
+                  const vote = helpfulState[rId];
+                  return (
+                    <div key={rev.id} className="bg-muted/30 border border-border/40 p-4 rounded-2xl space-y-2.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-bold text-foreground flex items-center gap-1.5">
+                          <MessageSquare className="h-3.5 w-3.5 text-rubik-brand" />
+                          {rev.profiles?.full_name || rev.name || 'Anonim Müştəri'}
+                        </span>
+                        <span className="text-muted-foreground text-[11px] font-mono">
+                          {rev.date || new Date(rev.created_at).toLocaleDateString('az-AZ')}
+                        </span>
+                      </div>
+                      <div className="flex items-center">{renderStars(rev.rating)}</div>
+                      <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">{rev.comment}</p>
+                      
+                      {/* Helpful / Unhelpful voting bar */}
+                      <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[11px] text-muted-foreground">
+                        <span className="font-medium text-[10px]">Bu rəy sizin üçün faydalı oldu?</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleVoteHelpful(rev.id, 'up')}
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                              vote?.userVote === 'up'
+                                ? 'bg-green-500/10 border-green-500/40 text-green-600 dark:text-green-400 shadow-sm'
+                                : 'bg-background border-border hover:bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            <ThumbsUp className="h-3.5 w-3.5 text-green-600" />
+                            <span>Faydalıdır ({vote?.up || 0})</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleVoteHelpful(rev.id, 'down')}
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                              vote?.userVote === 'down'
+                                ? 'bg-red-500/10 border-red-500/40 text-red-600 dark:text-red-400 shadow-sm'
+                                : 'bg-background border-border hover:bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            <ThumbsDown className="h-3.5 w-3.5 text-red-500" />
+                            <span>({vote?.down || 0})</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
 
             {/* Write a review form */}
@@ -898,76 +1738,88 @@ function ProductDetailClientContentInner({
             Oxşar və Tövsiyə Edilən Məhsullar
           </h3>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {relatedProducts.slice(0, 4).map((rel) => {
-              const outOfStock = rel.stock_quantity <= 0;
-              return (
-                <div
-                  key={rel.id}
-                  className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group"
-                >
-                  <Link href={`/${locale}/product/${rel.id}`} className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
-                    <Image
-                      src={rel.image_url}
-                      alt={rel.title}
-                      fill
-                      referrerPolicy="no-referrer"
-                      sizes="(max-width: 768px) 50vw, 25vw"
-                      className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {outOfStock && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <span className="text-white text-[10px] font-black tracking-wider px-2 py-0.5 bg-red-600 rounded-md">
-                          {dict.product.out_of_stock}
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-
-                  <div className="p-4 flex flex-col flex-grow space-y-2">
-                    <span className="text-[9px] uppercase font-bold text-rubik-brand tracking-wider">
-                      {rel.brand}
-                    </span>
-                    <Link
-                      href={`/${locale}/product/${rel.id}`}
-                      className="text-xs md:text-sm font-bold text-foreground line-clamp-2 min-h-[2.5rem] hover:text-rubik-brand transition-colors"
-                    >
-                      {rel.title}
+          {displayRelated.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+              {displayRelated.slice(0, 4).map((rel) => {
+                const outOfStock = rel.stock_quantity <= 0;
+                return (
+                  <div
+                    key={rel.id}
+                    className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group"
+                  >
+                    <Link href={`/${locale}/product/${rel.id}`} className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
+                      <Image
+                        src={rel.image_url}
+                        alt={rel.title}
+                        fill
+                        referrerPolicy="no-referrer"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                        className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {outOfStock && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <span className="text-white text-[10px] font-black tracking-wider px-2 py-0.5 bg-red-600 rounded-md">
+                            {dict.product.out_of_stock}
+                          </span>
+                        </div>
+                      )}
                     </Link>
 
-                    <div className="flex items-baseline gap-2 mt-auto">
-                      <span className="text-sm md:text-base font-black text-foreground">
-                        {rel.price_azn.toFixed(2)} AZN
+                    <div className="p-4 flex flex-col flex-grow space-y-2">
+                      <span className="text-[9px] uppercase font-bold text-rubik-brand tracking-wider">
+                        {rel.brand}
                       </span>
-                    </div>
+                      <Link
+                        href={`/${locale}/product/${rel.id}`}
+                        className="text-xs md:text-sm font-bold text-foreground line-clamp-2 min-h-[2.5rem] hover:text-rubik-brand transition-colors"
+                      >
+                        {rel.title}
+                      </Link>
 
-                    <button
-                      onClick={() => {
-                        if (!outOfStock) {
-                          addItem({
-                            id: rel.id,
-                            title: rel.title,
-                            price_azn: rel.price_azn,
-                            quantity: 1,
-                            image_url: rel.image_url
-                          });
-                        }
-                      }}
-                      disabled={outOfStock}
-                      className={`w-full py-2 rounded-xl text-[10px] md:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                        outOfStock
-                          ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                          : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white'
-                      }`}
-                    >
-                      <ShoppingBag className="h-3.5 w-3.5" />
-                      <span>{outOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
-                    </button>
+                      <div className="flex items-baseline gap-2 mt-auto">
+                        <span className="text-sm md:text-base font-black text-foreground">
+                          {rel.price_azn.toFixed(2)} AZN
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          if (!outOfStock) {
+                            addItem({
+                              id: rel.id,
+                              title: rel.title,
+                              price_azn: rel.price_azn,
+                              quantity: 1,
+                              image_url: rel.image_url
+                            });
+                          }
+                        }}
+                        disabled={outOfStock}
+                        className={`w-full py-2 rounded-xl text-[10px] md:text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                          outOfStock
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                            : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white'
+                        }`}
+                      >
+                        <ShoppingBag className="h-3.5 w-3.5" />
+                        <span>{outOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-card border border-border/80 rounded-2xl p-8 text-center space-y-3">
+              <p className="text-xs font-bold text-muted-foreground">Tövsiyə olunan digər populyar sürət kubları yüklənir...</p>
+              <Link
+                href={`/${locale}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-rubik-brand text-white text-xs font-black rounded-xl hover:bg-rubik-brand-dark transition-colors"
+              >
+                Kataloqa Keçin
+              </Link>
+            </div>
+          )}
         </section>
 
       </div>
@@ -990,7 +1842,7 @@ function ProductDetailClientContentInner({
               className="fixed inset-0 m-auto z-50 max-w-xl h-fit max-h-[90vh] bg-card border border-border p-6 rounded-3xl shadow-soft-2xl space-y-4"
             >
               <div className="flex justify-between items-center border-b border-border pb-3">
-                <h3 className="font-bold text-foreground text-sm md:text-base">Məhsul İnceleme Videosu</h3>
+                <h3 className="font-bold text-foreground text-sm md:text-base">Məhsulun Baxış Videosu</h3>
                 <button onClick={() => setShowVideoModal(false)} className="p-1 hover:bg-muted rounded-lg text-foreground cursor-pointer">X</button>
               </div>
               <div className="relative aspect-video w-full bg-slate-950 rounded-2xl flex flex-col items-center justify-center gap-3 overflow-hidden text-center p-4 border border-border/80">
@@ -999,7 +1851,7 @@ function ProductDetailClientContentInner({
                   <Play className="h-8 w-8 fill-white" />
                 </div>
                 <span className="text-white text-xs font-black relative z-10 uppercase tracking-widest">
-                  Rubikshop Official Review Channel
+                  Rubikshop Rəsmi Baxış Kanalı
                 </span>
                 <p className="text-[10px] text-gray-300 max-w-xs relative z-10">
                   Bu video Azərbaycanın ən məşhur sürətli kub idmançısı tərəfindən test edilərək hazırlanmışdır.
@@ -1007,6 +1859,57 @@ function ProductDetailClientContentInner({
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+      {/* Sticky Bottom Mini-Bar for Mobile/Desktop on Scroll */}
+      <AnimatePresence>
+        {showStickyBar && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="fixed bottom-[58px] md:bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border shadow-2xl p-3 sm:px-6"
+          >
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative h-10 w-10 shrink-0 bg-muted rounded-xl overflow-hidden border border-border p-1">
+                  <Image
+                    src={activeImage || product.image_url}
+                    alt={product.title}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs sm:text-sm font-black text-foreground truncate max-w-[140px] sm:max-w-[300px]">
+                    {product.title}
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-rubik-brand">
+                      {finalPrice.toFixed(2)} AZN
+                    </span>
+                    {selectedVariant && (
+                      <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">
+                        • {selectedVariant.name || selectedVariant.sku}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleAddToCart(false)}
+                disabled={isOutOfStock}
+                className="py-2.5 px-4 bg-rubik-brand text-white font-extrabold text-xs sm:text-sm rounded-xl hover:bg-rubik-brand-dark active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 shadow-soft-sm cursor-pointer shrink-0"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                <span className="hidden xs:inline">Səbətə Əlavə Et</span>
+                <span className="xs:hidden">Əlavə et</span>
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

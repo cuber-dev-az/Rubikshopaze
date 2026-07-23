@@ -13,6 +13,41 @@ interface ProductPageProps {
   }>;
 }
 
+function getSmartCategory(dbProduct: any) {
+  let name = dbProduct?.categories?.name_az || dbProduct?.category_name;
+  let slug = dbProduct?.categories?.slug || dbProduct?.category_slug || dbProduct?.category;
+
+  if (name && slug && name !== 'Açarlıqlar') {
+    return { name, slug };
+  }
+
+  const titleLower = (dbProduct?.title_az || dbProduct?.name_az || dbProduct?.title || dbProduct?.name || '').toLowerCase();
+  
+  if (titleLower.includes('mat') || titleLower.includes('pad') || titleLower.includes('xalça') || titleLower.includes('kovrik')) {
+    return { name: 'Matlar və Aksesuarlar', slug: 'mats' };
+  }
+  if (titleLower.includes('açarlıq') || titleLower.includes('brelok') || titleLower.includes('keychain')) {
+    return { name: 'Açarlıqlar', slug: 'keychains' };
+  }
+  if (titleLower.includes('yağ') || titleLower.includes('lube') || titleLower.includes('смазка')) {
+    return { name: 'Yağlar və Baxım', slug: 'lubes' };
+  }
+  if (titleLower.includes('taymer') || titleLower.includes('timer')) {
+    return { name: 'Taymerlər', slug: 'timers' };
+  }
+  if (titleLower.includes('2x2')) return { name: '2x2 Kublar', slug: '2x2' };
+  if (titleLower.includes('3x3')) return { name: '3x3 Kublar', slug: '3x3' };
+  if (titleLower.includes('4x4')) return { name: '4x4 Kublar', slug: '4x4' };
+  if (titleLower.includes('5x5')) return { name: '5x5 Kublar', slug: '5x5' };
+  if (titleLower.includes('pyraminx') || titleLower.includes('piramida')) return { name: 'Pyraminx', slug: 'pyraminx' };
+  if (titleLower.includes('megaminx')) return { name: 'Megaminx', slug: 'megaminx' };
+  if (titleLower.includes('skewb')) return { name: 'Skewb', slug: 'skewb' };
+  if (titleLower.includes('square-1') || titleLower.includes('sq-1')) return { name: 'Square-1', slug: 'sq-1' };
+
+  if (name && slug) return { name, slug };
+  return { name: 'Sürət Kubları', slug: '3x3' };
+}
+
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { locale, slug: rawParamSlug } = await params;
   const dict = await getDictionary(locale);
@@ -71,8 +106,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       const brandName = dbProduct.brands?.name || dbProduct.brand_name || dbProduct.brand || 'Z-Cube';
       const cleanBrandName = (brandName && brandName.toUpperCase() !== 'OTHER') ? brandName : 'Z-Cube';
 
-      const categoryName = dbProduct.categories?.name_az || dbProduct.category_name || 'Açarlıqlar';
-      const categorySlug = dbProduct.categories?.slug || dbProduct.category_slug || dbProduct.category || '3x3';
+      const smartCat = getSmartCategory(dbProduct);
+      const categoryName = smartCat.name;
+      const categorySlug = smartCat.slug;
 
       const titleVal = dbProduct[titleColumn] || dbProduct[nameColumn] || dbProduct.name_az || dbProduct.title_az || dbProduct.title_en || dbProduct.name || dbProduct.title || 'Məhsul';
       const descVal = dbProduct[descColumn] || dbProduct.description_az || dbProduct.description_en || dbProduct.description_ru || dbProduct.description || 'Professional sürətli həll (speedcubing) üçün rəsmi zəmanətli flaqman model.';
@@ -137,14 +173,48 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const ratingSum = realReviews.reduce((acc, r: any) => acc + (r.rating || 0), 0);
   const ratingValue = reviewsCount > 0 ? (ratingSum / reviewsCount).toFixed(1) : null;
 
-  const { data: dbRelated } = await supabase
-    .from('products')
-    .select('*, brands(name), categories(name_az, slug)')
-    .eq('is_active', true)
-    .neq('id', activeProduct.id)
-    .limit(4);
+  let dbRelatedItems: any[] = [];
+  try {
+    let relQuery = supabase
+      .from('products')
+      .select('*, brands(name), categories(name_az, slug)')
+      .eq('is_active', true)
+      .neq('id', activeProduct.id);
 
-  const relatedList = (dbRelated || []).map(p => {
+    if (activeProduct.categories?.id || activeProduct.category_id) {
+      relQuery = relQuery.eq('category_id', activeProduct.categories?.id || activeProduct.category_id);
+    } else if (activeProduct.brand_id) {
+      relQuery = relQuery.eq('brand_id', activeProduct.brand_id);
+    }
+
+    const { data: matchedRel } = await relQuery.limit(4);
+    if (matchedRel && matchedRel.length > 0) {
+      dbRelatedItems = matchedRel;
+    }
+
+    if (dbRelatedItems.length < 4) {
+      const { data: generalRel } = await supabase
+        .from('products')
+        .select('*, brands(name), categories(name_az, slug)')
+        .eq('is_active', true)
+        .neq('id', activeProduct.id)
+        .limit(8);
+
+      if (generalRel && generalRel.length > 0) {
+        const existingIds = new Set(dbRelatedItems.map(p => p.id));
+        for (const item of generalRel) {
+          if (!existingIds.has(item.id)) {
+            dbRelatedItems.push(item);
+            if (dbRelatedItems.length >= 4) break;
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Related products fetch fallback error:', err);
+  }
+
+  const relatedList = dbRelatedItems.map(p => {
     const relBrand = p.brands?.name || p.brand_name || p.brand || 'Z-Cube';
     const cleanRelBrand = (relBrand && relBrand.toUpperCase() !== 'OTHER') ? relBrand : 'Z-Cube';
     return {

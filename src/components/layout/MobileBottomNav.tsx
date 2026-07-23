@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, LayoutGrid, Heart, ShoppingCart, User } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
@@ -67,12 +68,14 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
     }
   ];
 
-  return (
+  if (!mounted) return null;
+
+  const navContent = (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-50 flex md:hidden bg-[#0d1117] border-t border-gray-800 shadow-[0_-4px_24px_rgba(0,0,0,0.3)]"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed bottom-0 left-0 right-0 z-[9999] flex md:hidden bg-[#0d1117] border-t border-gray-800 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] pointer-events-auto"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
-      <div className="flex items-center justify-around h-[64px] px-1 w-full">
+      <div className="flex items-center justify-around h-[64px] px-1 w-full max-w-7xl mx-auto">
         {navItems.map((item) => {
           // Stable, key-based route matching
           const isActive = item.id === 'home'
@@ -96,7 +99,6 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
               className={`relative flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] py-1 px-1 transition-all cursor-pointer ${
                 isActive ? 'text-red-500 font-semibold' : 'text-gray-300 hover:text-white'
               }`}
-              style={{ contentVisibility: 'auto' }}
               aria-label={item.name}
             >
               <div className="relative flex items-center justify-center p-1 rounded-full group-active:scale-95 transition-transform duration-100">
@@ -116,4 +118,7 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
       </div>
     </div>
   );
+
+  return createPortal(navContent, document.body);
 }
+

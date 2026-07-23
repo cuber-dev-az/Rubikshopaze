@@ -235,6 +235,11 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
     setErrorMsg('');
     setSuccessMsg('');
     try {
+      if (!selectedCategoryId) {
+        setErrorMsg('Kateqoriya seçimi məcburidir! Zəhmət olmasa sağ menyudan düzgün kateqoriyanı seçin.');
+        setLoading(false);
+        return;
+      }
       // Normalize decimal (accepts "8,90" or "8.90"), keep two decimals
       const parsedPrice = parseFloat(String(price_azn).replace(',', '.'));
       const priceNumber = !isNaN(parsedPrice) && isFinite(parsedPrice) ? Math.round(parsedPrice * 100) / 100 : 0;
@@ -979,7 +984,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             </label>
 
             <div>
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Kateqoriya</label>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">
+                Kateqoriya <span className="text-amber-500 font-bold">* (Məcburi)</span>
+              </label>
               <select 
                 value={selectedCategoryId}
                 onChange={(e) => setSelectedCategoryId(e.target.value)}

@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Send, Mail, MapPin, Phone, ShieldCheck, Heart, AlertCircle } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
+import { useAuthUser } from '@/hooks/useAuthUser';
 
 interface FooterProps {
   dict: ApplicationDictionary;
@@ -11,10 +12,11 @@ interface FooterProps {
 }
 
 export function Footer({ dict, locale }: FooterProps) {
+  const { userRole } = useAuthUser();
   const [email, setEmail] = React.useState('');
   const [subscribed, setSubscribed] = React.useState(false);
   
-  const [phone, setPhone] = React.useState('');
+  const [phone, setPhone] = React.useState('+994 50 668 49 25');
   const [emailVal, setEmailVal] = React.useState('info@rubikshop.az');
   const [addressVal, setAddressVal] = React.useState('Bakı şəhəri, Azərbaycan');
 
@@ -112,11 +114,13 @@ export function Footer({ dict, locale }: FooterProps) {
                 <span>{dict.navigation.home}</span>
               </Link>
             </li>
-            <li>
-              <Link href={`/${locale}/admin`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
-                <span>{dict.navigation.admin}</span>
-              </Link>
-            </li>
+            {(userRole === 'admin' || userRole === 'manager') && (
+              <li>
+                <Link href={`/${locale}/admin`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
+                  <span>{dict.navigation.admin}</span>
+                </Link>
+              </li>
+            )}
             <li>
               <Link href={`/${locale}?category=learning-content`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
                 <span>{dict.header?.nav_learning || "Alqoritmlər & Öyrənmə"}</span>
@@ -180,13 +184,13 @@ export function Footer({ dict, locale }: FooterProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-xs text-gray-400 text-center md:text-left leading-relaxed">
             © {currentYear} RubikShop.az. {dict.footer?.all_rights_reserved || "Bütün hüquqlar qorunur."} <br className="hidden sm:block" />
-            Designed with <Heart className="h-3 w-3 text-rubik-brand inline" /> in Azerbaijan for speedcubers.
+            Azərbaycanlı sürətli kubçular üçün <Heart className="h-3 w-3 text-rubik-brand inline fill-rubik-brand mx-0.5" /> ilə hazırlanıb.
           </p>
 
           {/* Secure Payment Badges */}
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-[10px] uppercase text-gray-500 font-bold tracking-widest mr-2">
-              {t({ az: 'Təhlükəsiz Ödəniş', en: 'Secure Payment', ru: 'Безопасная Оплата' })}
+              {dict.footer?.secure_payment || "Təhlükəsiz Ödəniş"}
             </span>
             <div className="flex gap-2">
               <span className="bg-rubik-charcoal text-white text-[10px] font-bold px-2.5 py-1.5 rounded border border-border/10 tracking-wider shadow-soft-sm">
@@ -196,7 +200,7 @@ export function Footer({ dict, locale }: FooterProps) {
                 📱 Apple Pay
               </span>
               <span className="bg-rubik-charcoal text-white text-[10px] font-bold px-2.5 py-1.5 rounded border border-border/10 tracking-wider shadow-soft-sm">
-                💵 {t({ az: 'Qapıda Ödəniş', en: 'Cash on Delivery', ru: 'Оплата при получении' })}
+                💵 Qapıda Ödəniş
               </span>
             </div>
           </div>
