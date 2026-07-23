@@ -165,8 +165,17 @@ export async function getProductById(id: string) {
           .from('variants')
           .select('*')
           .eq('product_id', data.id);
-        if (vars) {
+        if (vars && vars.length > 0) {
           data.variants = vars;
+        } else {
+          const { data: pVars } = await supabase
+            .from('product_variants')
+            .select('*')
+            .eq('product_id', data.id);
+          if (pVars && pVars.length > 0) {
+            data.variants = pVars;
+            data.product_variants = pVars;
+          }
         }
       } catch (e) {
         data.variants = [];

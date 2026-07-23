@@ -1057,13 +1057,20 @@ function ProductDetailClientContentInner({
               </div>
             </div>
 
-            {/* Dynamic & Universal Variant Selector */}
+            {/* Dynamic & SpeedCubeShop-style Interactive Variant Selector */}
             {dbVariants.length > 0 && (
               <div className="space-y-3">
-                <span className="text-xs font-black text-foreground block uppercase tracking-wider">
-                  Məhsul Variantını Seçin
-                </span>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-foreground block uppercase tracking-wider flex items-center gap-1.5">
+                    VERSİYA SEÇİN / SELECT VERSION
+                  </span>
+                  {selectedVariant && (
+                    <span className="text-xs font-bold text-rubik-brand">
+                      {selectedVariant.name || selectedVariant.title_az || selectedVariant.sku}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {dbVariants.map((v: any) => {
                     const vStock = Number(v.stock_quantity ?? v.stock ?? 0);
                     const isVSelected = String(selectedVariantId) === String(v.id);
@@ -1109,8 +1116,8 @@ function ProductDetailClientContentInner({
               </div>
             )}
 
-            {/* Safe & Optional Custom Add-ons List (Strictly Null-Safe) */}
-            {addOnsList.length > 0 && (
+            {/* Safe & Optional Custom Add-ons List (Strictly Null-Safe, NO Hardcoded Setup) */}
+            {product?.add_ons && Array.isArray(product.add_ons) && product.add_ons.length > 0 && addOnsList.length > 0 && (
               <div className="border border-dashed border-rubik-brand/50 rounded-2xl p-4 bg-rubik-brand/5 space-y-3">
                 <span className="text-xs font-black text-rubik-brand block uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4" />
@@ -1156,38 +1163,6 @@ function ProductDetailClientContentInner({
                     );
                   })}
                 </div>
-              </div>
-            )}
-
-            {/* Service Option Toggle Addon (ONLY for Cube/Puzzle categories or has_setup) */}
-            {isCubeCategory && (
-              <div className="border border-dashed border-rubik-brand rounded-2xl p-4 bg-rubik-brand/5 space-y-2.5">
-                <label className="flex items-start gap-3 cursor-pointer select-none">
-                  <div className="pt-0.5">
-                    <div className={`h-5 w-5 rounded border flex items-center justify-center transition-all ${
-                      addonSetup
-                        ? 'bg-rubik-brand border-rubik-brand text-white'
-                        : 'border-rubik-brand/40 bg-white'
-                    }`}>
-                      {addonSetup && <Check className="h-4 w-4" />}
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={addonSetup}
-                      onChange={(e) => setAddonSetup(e.target.checked)}
-                      className="sr-only"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <span className="font-black text-sm text-foreground flex items-center gap-1.5">
-                      <Sparkles className="h-4 w-4 text-rubik-brand" />
-                      Rubikshop Premium Setup xidməti istəyirəm (+5.00 AZN)
-                    </span>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      Kubun hər tərəfli yağlanması, maqnit qüvvələrinin optimallaşdırılması və gərginliyin rəsmi WCA turnirləri standartlarına uyğunlaşdırılması xidməti.
-                    </p>
-                  </div>
-                </label>
               </div>
             )}
 

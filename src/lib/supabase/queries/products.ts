@@ -34,6 +34,45 @@ export interface Product {
   [key: string]: any;
 }
 
+export async function getProductById(id: string) {
+  if (!id || typeof id !== 'string') return null;
+  const cleanId = decodeURIComponent(id).trim();
+  const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanId);
+
+  try {
+    const selectQuery = '*, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
+    
+    let { data, error } = await supabase
+      .from('products')
+      .select(selectQuery)
+      .eq('id', cleanId)
+      .maybeSingle();
+
+    if (!data && !isUuid) {
+      const slugRes = await supabase
+        .from('products')
+        .select(selectQuery)
+        .eq('slug', cleanId)
+        .maybeSingle();
+      data = slugRes.data;
+    }
+
+    if (!data) {
+      const simpleRes = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', cleanId)
+        .maybeSingle();
+      data = simpleRes.data;
+    }
+
+    return data || null;
+  } catch (err) {
+    console.error('getProductById exception:', err);
+    return null;
+  }
+}
+
 export async function getProductBySlug(slug: string) {
   if (!slug || typeof slug !== 'string') return null;
   const cleanSlug = decodeURIComponent(slug).trim();
