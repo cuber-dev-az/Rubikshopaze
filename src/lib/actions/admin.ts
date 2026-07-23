@@ -1632,14 +1632,20 @@ export async function createProduct(payload: any) {
       is_magnetic: payload.is_magnetic ?? false,
       size_mm: payload.size_mm,
       difficulty_level: payload.difficulty_level ?? 'başlanğıc',
-      add_ons: payload.add_ons ?? [],
     };
 
-    const { data: product, error: prodError } = await supabase
+    let { data: product, error: prodError } = await supabase
       .from('products')
       .insert(insertObj)
       .select()
       .single();
+
+    if (prodError && (prodError.message?.includes('add_ons') || prodError.code === 'PGRST204')) {
+      delete insertObj.add_ons;
+      const res = await supabase.from('products').insert(insertObj).select().single();
+      product = res.data;
+      prodError = res.error;
+    }
 
     if (prodError) throw prodError;
 
@@ -1669,7 +1675,27 @@ export async function createProduct(payload: any) {
 export async function updateProduct(id: string, payload: any) {
   try {
     const supabase = await createServerSupabaseClient();
-    const { category_ids, variants, ...directFields } = payload;
+    const {
+      id: _id,
+      created_at: _created_at,
+      updated_at: _updated_at,
+      category_ids,
+      variants,
+      product_variants,
+      add_ons,
+      services,
+      brands,
+      categories,
+      product_categories,
+      ...directFields
+    } = payload;
+
+    delete directFields.add_ons;
+    delete directFields.services;
+    delete directFields.product_variants;
+    delete directFields.brands;
+    delete directFields.categories;
+    delete directFields.product_categories;
 
     if (directFields.slug || directFields.title_az || directFields.title_en) {
       const rawSlug = directFields.slug || directFields.title_az || directFields.title_en || '';
