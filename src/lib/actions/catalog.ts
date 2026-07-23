@@ -54,18 +54,49 @@ export async function getProducts(options?: {
 
 export async function getProductBySlug(slug: string) {
   try {
+    if (!slug) return { success: false, error: 'Slug təyin edilməyib' };
     const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        brands (*),
-        variants (*, variant_attribute_values (attribute_values (*, attributes (*))))
-      `)
-      .eq('slug', slug)
-      .single();
+    const cleanSlug = decodeURIComponent(slug).trim();
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanSlug);
 
-    if (error) throw error;
+    const selectQuery = `
+      *,
+      brands (*),
+      variants (*)
+    `;
+
+    let data = null;
+
+    const { data: slugData } = await supabase
+      .from('products')
+      .select(selectQuery)
+      .eq('slug', cleanSlug)
+      .maybeSingle();
+
+    data = slugData;
+
+    if (!data && isUuid) {
+      const { data: idData } = await supabase
+        .from('products')
+        .select(selectQuery)
+        .eq('id', cleanSlug)
+        .maybeSingle();
+      data = idData;
+    }
+
+    if (!data) {
+      const { data: simpleData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('slug', cleanSlug)
+        .maybeSingle();
+      data = simpleData;
+    }
+
+    if (!data) {
+      return { success: false, error: 'Məhsul tapılmadı' };
+    }
+
     return { success: true, data };
   } catch (error: any) {
     console.error('getProductBySlug Error:', error.message);
@@ -75,19 +106,70 @@ export async function getProductBySlug(slug: string) {
 
 export async function getProductById(id: string) {
   try {
+    if (!id) return { success: false, error: 'ID təyin edilməyib' };
     const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        brands (*),
-        variants (*),
-        product_categories (category_id)
-      `)
-      .eq('id', id)
-      .single();
+    const cleanId = decodeURIComponent(id).trim();
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanId);
 
-    if (error) throw error;
+    const selectQuery = `
+      *,
+      brands (*),
+      variants (*),
+      product_categories (category_id)
+    `;
+
+    let data = null;
+
+    if (isUuid) {
+      const { data: idData } = await supabase
+        .from('products')
+        .select(selectQuery)
+        .eq('id', cleanId)
+        .maybeSingle();
+      data = idData;
+    }
+
+    if (!data) {
+      const { data: slugData } = await supabase
+        .from('products')
+        .select(selectQuery)
+        .eq('slug', cleanId)
+        .maybeSingle();
+      data = slugData;
+    }
+
+    if (!data && !isUuid) {
+      const { data: simpleSlugData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('slug', cleanId)
+        .maybeSingle();
+      data = simpleSlugData;
+    }
+
+    if (!data && isUuid) {
+      const { data: simpleIdData } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', cleanId)
+        .maybeSingle();
+      data = simpleIdData;
+    }
+
+    if (!data) {
+      return { success: false, error: 'Məhsul tapılmadı' };
+    }
+
+    if (!data.variants || !Array.isArray(data.variants) || data.variants.length === 0) {
+      const { data: vars } = await supabase
+        .from('variants')
+        .select('*')
+        .eq('product_id', data.id);
+      if (vars) {
+        data.variants = vars;
+      }
+    }
+
     return { success: true, data };
   } catch (error: any) {
     console.error('getProductById Error:', error.message);

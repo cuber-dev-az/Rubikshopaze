@@ -471,6 +471,8 @@ function ProductDetailClientContentInner({
     resolvedBrand = (product as any)?.brand_name || product?.brand || 'Orijinal Brend';
   }
 
+  const pTitleLower = (product?.title || (product as any)?.name_az || (product as any)?.name || '').toLowerCase();
+
   let typeBadge = '';
   if (pTitleLower.includes('açarlıq') || pTitleLower.includes('keychain') || pTitleLower.includes('brelok')) {
     typeBadge = 'Açarlıq';
