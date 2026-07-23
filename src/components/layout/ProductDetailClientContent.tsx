@@ -37,6 +37,174 @@ import { useCartStore } from '@/store/useCartStore';
 import { addProductReview } from '@/lib/actions/reviews';
 import { toggleWishlist } from '@/lib/actions/wishlist';
 
+// Clean SVG Fallback for Speedcube Images
+function SpeedcubeImageFallback({ alt = 'Speedcube', className = '' }: { alt?: string; className?: string }) {
+  return (
+    <div className={`w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 text-slate-400 dark:text-slate-500 rounded-2xl p-6 ${className}`}>
+      <svg className="w-20 h-20 mb-2 opacity-80 shrink-0" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32 4L56 18V46L32 60L8 46V18L32 4Z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+        <path d="M32 4V60" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+        <path d="M8 18L56 46" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+        <path d="M56 18L8 46" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+        <circle cx="32" cy="32" r="8" fill="currentColor" fillOpacity="0.2" stroke="currentColor" strokeWidth="2" />
+      </svg>
+      <span className="text-xs font-black tracking-wider uppercase opacity-70 text-center line-clamp-1">{alt}</span>
+      <span className="text-[10px] font-bold text-rubik-brand tracking-widest uppercase mt-1">Rubikshop.az</span>
+    </div>
+  );
+}
+
+// Dynamic Comparison Matrix for Flagship Speedcube Series
+function SpeedcubeComparisonMatrix({ product }: { product: any }) {
+  const title = (product?.title || '').toLowerCase();
+  
+  // Check if custom comparison_table exists on product
+  if (product?.comparison_table && typeof product.comparison_table === 'object') {
+    const table = product.comparison_table;
+    return (
+      <div className="mt-8 border border-border rounded-2xl p-5 bg-card shadow-soft-sm space-y-4">
+        <h3 className="font-black text-lg text-foreground flex items-center gap-2">
+          <GitCompare className="h-5 w-5 text-rubik-brand" />
+          <span>Məhsul Versiyalarının Müqayisə Cədvəli</span>
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs md:text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/50">
+                <th className="p-3 font-extrabold text-foreground">Xüsusiyyət</th>
+                {table.headers?.map((h: string, idx: number) => (
+                  <th key={idx} className="p-3 font-extrabold text-rubik-brand text-center">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.rows?.map((row: any, rIdx: number) => (
+                <tr key={rIdx} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
+                  <td className="p-3 font-bold text-foreground">{row.feature}</td>
+                  {row.values?.map((val: string, vIdx: number) => (
+                    <td key={vIdx} className="p-3 text-center text-muted-foreground font-medium">{val}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  // Auto-generate comparison matrix for flagship cube lines (RS3 M, Tornado, WeiLong, GAN)
+  const isRS3M = title.includes('rs3 m') || title.includes('rs3m');
+  const isTornado = title.includes('tornado');
+  const isWeiLong = title.includes('weilong') || title.includes('v9') || title.includes('v10');
+  const isGAN = title.includes('gan');
+
+  if (!isRS3M && !isTornado && !isWeiLong && !isGAN) return null;
+
+  let lineTitle = 'Flagship Speedcube Series';
+  if (isRS3M) lineTitle = 'MoYu RS3 M Flagship Seriyası Müqayisəsi';
+  else if (isTornado) lineTitle = 'QiYi X-Man Tornado v3/v4 Seriyası Müqayisəsi';
+  else if (isWeiLong) lineTitle = 'MoYu WeiLong v9/v10 Seriyası Müqayisəsi';
+  else if (isGAN) lineTitle = 'GAN Flagship Speedcube Seriyası Müqayisəsi';
+
+  const comparisonData = [
+    {
+      feature: 'Səth Örtüyü (Finish)',
+      standard: 'Mat (Frosted)',
+      dualAdj: 'Mat / Yarı-Parlaq',
+      maglev: 'Mat / Glossy',
+      ballcore: 'Lüks UV-Coated (Parlaq & Yapışqan)'
+    },
+    {
+      feature: 'Gərginlik və Yay Sistemi',
+      standard: 'Klassik Yay + Vida',
+      dualAdj: '9-Səviyyəli Dual Adjustment',
+      maglev: 'MagLev (Maqnit Repulsiya)',
+      ballcore: 'MagLev + Dual Adjustment System'
+    },
+    {
+      feature: 'Maqnit Sistemi',
+      standard: '48 Ədəd Korpus Maqniti',
+      dualAdj: '48 Ədəd Yüksək Dəqiqlikli Maqnit',
+      maglev: '60+ Ədəd MagLev Maqniti',
+      ballcore: '88+ Ədəd Ball-Core 8-Maqnit Nüvə + Korpus'
+    },
+    {
+      feature: 'Nüvə Maqnitlənməsi (Ball-Core)',
+      standard: 'Yoxdur',
+      dualAdj: 'Yoxdur',
+      maglev: 'Seçilmiş Modellərdə',
+      ballcore: 'Var (360° Ball-Core Omni-Directional)'
+    },
+    {
+      feature: 'Avto-Hizalanma (Auto-Alignment)',
+      standard: '0° - 10°',
+      dualAdj: '10° - 15°',
+      maglev: '15° - 25°',
+      ballcore: '25° - 35° (Öz-özünə düzəlmə)'
+    },
+    {
+      feature: 'Fırlanma Hissiyyatı',
+      standard: 'Mülayim, Rahat',
+      dualAdj: 'Çevik və Tənzimlənən',
+      maglev: 'Ultra Sürətli, Sürtünməsiz',
+      ballcore: 'Mütləq Dəqiqlik & Maksimum İdarəolunma'
+    },
+    {
+      feature: 'Tövsiyə Olunan Səviyyə',
+      standard: 'Başlanğıc & Orta',
+      dualAdj: 'Orta & İrəli',
+      maglev: 'İrəli & Speedcuber',
+      ballcore: 'Peşəkar / WCA Turnir İştirakçısı'
+    }
+  ];
+
+  return (
+    <div className="mt-8 border border-border/80 rounded-3xl p-5 md:p-6 bg-card shadow-soft-sm space-y-4">
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-rubik-brand/10 text-rubik-brand rounded-xl">
+            <GitCompare className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="font-black text-base md:text-lg text-foreground tracking-tight">
+              {lineTitle}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Hangi versiyanın sizin fırlatma stilinizə daha uyğun olduğunu seçin
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs md:text-sm border-collapse min-w-[600px]">
+          <thead>
+            <tr className="border-b border-border bg-muted/40 text-foreground">
+              <th className="p-3 font-extrabold w-1/4">Xüsusiyyət</th>
+              <th className="p-3 font-extrabold text-center text-slate-700 dark:text-slate-300">Standard</th>
+              <th className="p-3 font-extrabold text-center text-blue-600 dark:text-blue-400">Dual Adjustment</th>
+              <th className="p-3 font-extrabold text-center text-purple-600 dark:text-purple-400">MagLev</th>
+              <th className="p-3 font-extrabold text-center text-rubik-brand bg-rubik-brand/5 rounded-t-xl">Ball-Core UV</th>
+            </tr>
+          </thead>
+          <tbody>
+            {comparisonData.map((row, idx) => (
+              <tr key={idx} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
+                <td className="p-3 font-bold text-foreground bg-muted/10">{row.feature}</td>
+                <td className="p-3 text-center text-muted-foreground">{row.standard}</td>
+                <td className="p-3 text-center text-muted-foreground">{row.dualAdj}</td>
+                <td className="p-3 text-center text-muted-foreground">{row.maglev}</td>
+                <td className="p-3 text-center font-bold text-foreground bg-rubik-brand/5">{row.ballcore}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean }
@@ -92,6 +260,10 @@ interface ProductDetailClientContentProps {
     specs: Record<string, string>;
     compatibility: string;
     variants?: any[];
+    product_variants?: any[];
+    add_ons?: any[];
+    services?: any[];
+    comparison_table?: any;
     gallery_images?: any;
     images?: any;
     [key: string]: any;
@@ -127,18 +299,47 @@ function ProductDetailClientContentInner({
   const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
 
-  // Database-driven variants selection setup
-  const dbVariants = React.useMemo(() => product?.variants || [], [product?.variants]);
+  // 1. Database-driven variants setup safely from product_variants or variants
+  const dbVariants = React.useMemo(() => {
+    return product?.product_variants || product?.variants || [];
+  }, [product?.product_variants, product?.variants]);
+
   const [selectedVariantId, setSelectedVariantId] = React.useState<string | null>(
     dbVariants.length > 0 ? dbVariants[0].id : null
   );
 
   const selectedVariant = React.useMemo(() => {
     if (dbVariants.length === 0) return null;
-    return dbVariants.find(v => v.id === selectedVariantId) || dbVariants[0];
+    return dbVariants.find((v: any) => v.id === selectedVariantId) || dbVariants[0];
   }, [dbVariants, selectedVariantId]);
 
-  // Category-aware setup service detection
+  // 2. Main Active Image & Error State
+  const [activeImage, setActiveImage] = React.useState(product?.image_url || '');
+  const [imageError, setImageError] = React.useState(false);
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [activeImage]);
+
+  // Auto switch main active image when selectedVariant changes or has specific image
+  React.useEffect(() => {
+    if (selectedVariant) {
+      const vImg = selectedVariant.image_url || (Array.isArray(selectedVariant.images) && selectedVariant.images[0]) || selectedVariant.image;
+      if (vImg) {
+        setActiveImage(vImg);
+      }
+    }
+  }, [selectedVariant]);
+
+  const handleVariantSelect = (v: any) => {
+    setSelectedVariantId(v.id);
+    const vImg = v.image_url || (Array.isArray(v.images) && v.images[0]) || v.image;
+    if (vImg) {
+      setActiveImage(vImg);
+    }
+  };
+
+  // 3. Category-aware setup service detection
   const isCubeCategory = React.useMemo(() => {
     if (!product) return false;
     if ((product as any).has_setup === true) return true;
@@ -149,17 +350,39 @@ function ProductDetailClientContentInner({
     return true;
   }, [product]);
 
+  // 4. Safe & Optional Add-ons List (Strictly Null-Safe)
+  const addOnsList = React.useMemo(() => {
+    const list = product?.add_ons || product?.services;
+    if (!list) return [];
+    if (Array.isArray(list)) return list.filter((item: any) => item && (item.title || item.name || item.title_az));
+    return [];
+  }, [product?.add_ons, product?.services]);
+
+  const [selectedAddonIds, setSelectedAddonIds] = React.useState<Set<string>>(new Set());
+
+  const toggleAddon = (id: string) => {
+    setSelectedAddonIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const addOnsCost = React.useMemo(() => {
+    if (addOnsList.length === 0) return 0;
+    return Array.from(selectedAddonIds).reduce((sum, id) => {
+      const addon = addOnsList.find((a: any) => String(a.id) === String(id));
+      return sum + (addon ? Number(addon.price_azn || addon.price || 0) : 0);
+    }, 0);
+  }, [addOnsList, selectedAddonIds]);
+
   // Core configuration selections
-  const [activeImage, setActiveImage] = React.useState(product?.image_url || '');
   const [addonSetup, setAddonSetup] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'description' | 'specs' | 'compatibility' | 'shipping' | 'return' | 'faq'>('description');
-
-  // Sync activeImage if product.image_url changes
-  React.useEffect(() => {
-    if (product?.image_url) {
-      setActiveImage(product.image_url);
-    }
-  }, [product?.image_url]);
 
   // Interactive video modal
   const [showVideoModal, setShowVideoModal] = React.useState(false);
@@ -255,19 +478,21 @@ function ProductDetailClientContentInner({
   const [isCompared, setIsCompared] = React.useState(false);
   const [showAddedToCartToast, setShowAddedToCartToast] = React.useState(false);
 
-  // Dynamic pricing directly from product object
+  // Dynamic pricing directly from product / variant / add-ons
   const basePrice = Number(product?.price_azn || (product as any)?.price || 0);
   const addonCost = (isCubeCategory && addonSetup) ? 5 : 0;
   
-  const finalPrice = selectedVariant 
+  const finalPrice = (selectedVariant 
     ? Number(selectedVariant.price_azn || selectedVariant.price || basePrice)
-    : basePrice + addonCost;
+    : basePrice) + addonCost + addOnsCost;
 
-  const originalPrice = product?.original_price || (product as any)?.discount_price || (product as any)?.compare_at_price_azn;
+  const originalPrice = selectedVariant
+    ? (selectedVariant.compare_at_price_azn || selectedVariant.discount_price || product?.original_price || (product as any)?.compare_at_price_azn)
+    : (product?.original_price || (product as any)?.discount_price || (product as any)?.compare_at_price_azn);
 
   // Dynamic Discount calculation
   const numOriginalPrice = Number(originalPrice || 0);
-  const numBasePrice = Number(basePrice || 0);
+  const numBasePrice = Number(finalPrice || basePrice || 0);
   const hasDiscount = numOriginalPrice > numBasePrice && numBasePrice > 0;
   const discountPercent = hasDiscount
     ? Math.round(((numOriginalPrice - numBasePrice) / numOriginalPrice) * 100)
@@ -314,10 +539,10 @@ function ProductDetailClientContentInner({
   }
 
   const currentSku = selectedVariant 
-    ? selectedVariant.sku 
+    ? (selectedVariant.sku || (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000')))
     : (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000'));
 
-  // Frequently Bought Together (Tez-tez Birlikdə Alınır) Bundle State
+  // Frequently Bought Together Bundle State
   const [bundleChecked2, setBundleChecked2] = React.useState(true);
   const [bundleChecked3, setBundleChecked3] = React.useState(true);
 
@@ -325,7 +550,7 @@ function ProductDetailClientContentInner({
     id: product?.id || '',
     title: product?.title || 'Məhsul',
     price: finalPrice || 0,
-    image: activeImage || product?.image_url || 'https://picsum.photos/seed/default/600/600',
+    image: activeImage || product?.image_url || '',
     required: true
   }), [product?.id, product?.title, finalPrice, activeImage, product?.image_url]);
 
@@ -501,47 +726,17 @@ function ProductDetailClientContentInner({
     return list;
   }, [reviews, reviewSearch, reviewSort, helpfulState]);
 
-  // Calculated Ratings Summary
   const averageRating = React.useMemo(() => {
-    if (!reviews || !Array.isArray(reviews) || reviews.length === 0) return null;
-    const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
-    return (total / reviews.length).toFixed(1);
+    if (!reviews || reviews.length === 0) return null;
+    const sum = reviews.reduce((acc, curr) => acc + (curr.rating || 0), 0);
+    return (sum / reviews.length).toFixed(1);
   }, [reviews]);
 
-  // Smart Category Information for Breadcrumbs
-  const categoryInfo = React.useMemo(() => {
-    let name = product?.category_name || product?.categories?.name_az;
-    let slug = product?.category_slug || product?.categories?.slug || product?.category;
-
-    if (name && slug && name !== 'Açarlıqlar') {
-      return { name, slug };
-    }
-
-    const titleLower = (product?.title || '').toLowerCase();
-    if (titleLower.includes('mat') || titleLower.includes('pad') || titleLower.includes('xalça') || titleLower.includes('kovrik')) {
-      return { name: 'Matlar və Aksesuarlar', slug: 'mats' };
-    }
-    if (titleLower.includes('açarlıq') || titleLower.includes('brelok') || titleLower.includes('keychain')) {
-      return { name: 'Açarlıqlar', slug: 'keychains' };
-    }
-    if (titleLower.includes('yağ') || titleLower.includes('lube') || titleLower.includes('смазка')) {
-      return { name: 'Yağlar və Baxım', slug: 'lubes' };
-    }
-    if (titleLower.includes('taymer') || titleLower.includes('timer')) {
-      return { name: 'Taymerlər', slug: 'timers' };
-    }
-    
-    if (name && slug) return { name, slug };
-    return { name: 'Sürət Kubları', slug: '3x3' };
-  }, [product]);
-
-  // Dynamic Related Products with Client-side Fallback
+  // Fallback Related Products
   const [displayRelated, setDisplayRelated] = React.useState(relatedProducts || []);
 
   React.useEffect(() => {
-    if (relatedProducts && relatedProducts.length > 0) {
-      setDisplayRelated(relatedProducts);
-    } else {
+    if (!relatedProducts || relatedProducts.length === 0) {
       async function loadFallbackRelated() {
         try {
           const { getActiveProducts } = await import('@/lib/supabase/queries/products');
@@ -554,7 +749,7 @@ function ProductDetailClientContentInner({
                 id: p.id,
                 title: p.title_az || p.name_az || p.title || p.name || 'Məhsul',
                 price_azn: Number(p.price || p.price_azn || 0),
-                image_url: p.image_url || 'https://picsum.photos/seed/default/600/600',
+                image_url: p.image_url || '',
                 stock_quantity: Number(p.stock_quantity || 0),
                 brand: p.brands?.name || p.brand || 'Z-Cube'
               }));
@@ -588,21 +783,23 @@ function ProductDetailClientContentInner({
       }
     }
     
-    // Completely purge any placeholder picsum.photos URLs from the secondary images
-    const cleanExtraImages = extraImages.filter((img: string) => img && typeof img === 'string' && !img.includes('picsum.photos'));
+    // Variant images
+    const variantImages = dbVariants.map((v: any) => v.image_url || (Array.isArray(v.images) && v.images[0]) || v.image).filter(Boolean);
+
+    // Completely purge placeholder picsum URLs
+    const cleanExtraImages = [...extraImages, ...variantImages].filter((img: string) => img && typeof img === 'string' && !img.includes('picsum.photos'));
     
     const list = [product.image_url, ...cleanExtraImages].filter(Boolean);
-    // Dedup array
     return Array.from(new Set(list)) as string[];
-  }, [product]);
+  }, [product, dbVariants]);
 
   const specsToDisplay = React.useMemo(() => {
     if (!product) return {};
     const baseSpecs: Record<string, string> = {};
     if (product.brand) baseSpecs['Brend'] = product.brand;
-    if (product.sku) baseSpecs['SKU'] = product.sku;
+    if (currentSku) baseSpecs['SKU'] = currentSku;
     if (product.category_slug) baseSpecs['Kateqoriya'] = product.category_slug;
-    if (product.stock_quantity !== undefined) baseSpecs['Anbardakı Sayı'] = `${product.stock_quantity} ədəd`;
+    if (effectiveStock !== undefined) baseSpecs['Anbardakı Sayı'] = `${effectiveStock} ədəd`;
     
     let parsedSpecs: Record<string, string> = {};
     if (typeof product.specs === 'object' && product.specs !== null) {
@@ -631,11 +828,11 @@ function ProductDetailClientContentInner({
     });
     
     return translatedSpecs;
-  }, [product]);
+  }, [product, currentSku, effectiveStock]);
 
   const effectiveStock = React.useMemo(() => {
     if (selectedVariant) {
-      const vStock = selectedVariant.stock ?? selectedVariant.stock_quantity;
+      const vStock = selectedVariant.stock_quantity ?? selectedVariant.stock;
       return typeof vStock === 'number' ? vStock : (parseInt(String(vStock), 10) || 0);
     }
     const pStock = product?.stock_quantity ?? product?.stock;
@@ -644,19 +841,17 @@ function ProductDetailClientContentInner({
 
   const isOutOfStock = effectiveStock <= 0;
 
-  // Sync quantity if selected variant or stock changes
+  // Sync quantity if stock changes
   React.useEffect(() => {
     if (effectiveStock > 0 && quantity > effectiveStock) {
       setQuantity(effectiveStock);
-    } else if (effectiveStock <= 0) {
-      setQuantity(1);
     }
   }, [effectiveStock, quantity]);
 
-  if (!product || !product.id) {
+  if (!product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-3xl font-black text-foreground mb-4">Məhsul tapılmadı</h1>
+        <h1 className="text-3xl font-black text-foreground mb-4">Məhsul Tapılmadı</h1>
         <p className="text-muted-foreground mb-8">Axtardığınız məhsul mövcud deyil, gizlədilib və ya silinib.</p>
         <Link 
           href={`/${locale}`} 
@@ -673,8 +868,12 @@ function ProductDetailClientContentInner({
       ? 1 
       : Math.max(1, Math.min(quantity, effectiveStock > 0 ? effectiveStock : 1));
 
-    const titleAddition = selectedVariant 
-      ? ` (${selectedVariant.name || selectedVariant.sku})`
+    const variantTitle = selectedVariant 
+      ? (selectedVariant.title_az || selectedVariant.name_az || selectedVariant.title_en || selectedVariant.name || selectedVariant.sku)
+      : null;
+
+    const titleAddition = variantTitle 
+      ? ` - ${variantTitle}`
       : (isCubeCategory && addonSetup) ? ' (+ Premium Setup)' : '';
 
     const cartItemId = selectedVariant 
@@ -683,10 +882,12 @@ function ProductDetailClientContentInner({
 
     const cartItem = {
       id: cartItemId,
+      variant_id: selectedVariant?.id || null,
+      sku: currentSku,
       title: `${product.title}${titleAddition}`,
       price_azn: finalPrice,
       quantity: currentQty,
-      image_url: product.image_url
+      image_url: activeImage || product.image_url
     };
 
     addItem(cartItem);
@@ -703,8 +904,6 @@ function ProductDetailClientContentInner({
     e.preventDefault();
     if (!newReviewComment.trim()) return;
 
-    // We no longer require the user to type their name if they are logged in, 
-    // but we can pass newReviewName as a fallback if desired, though DB profile name is used.
     const res = await addProductReview(product.id, newReviewRating, newReviewComment);
     if (res.success) {
       setReviews([{
@@ -723,56 +922,58 @@ function ProductDetailClientContentInner({
     }
   };
 
-
-
-  // Render Stars helper
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
       <Star
         key={i}
         className={`h-4 w-4 ${
-          i < Math.round(rating)
-            ? 'text-yellow-500 fill-yellow-500'
-            : 'text-muted border-muted-foreground'
+          i < Math.floor(rating)
+            ? 'fill-amber-400 text-amber-400'
+            : i < rating
+            ? 'fill-amber-400/50 text-amber-400'
+            : 'text-gray-300 dark:text-gray-600'
         }`}
       />
     ));
   };
 
   return (
-    <div className="w-full bg-background pb-24">
-      {/* Dynamic Breadcrumbs */}
-      <div className="bg-muted/40 py-4 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <Link href={`/${locale}`} className="hover:text-rubik-brand flex items-center gap-1">
-            <Home className="h-3.5 w-3.5" />
-            <span>{dict?.navigation?.home || 'Ana Səhifə'}</span>
-          </Link>
-          <ChevronRight className="h-3 w-3" />
-          <Link href={`/${locale}/category/${categoryInfo.slug}`} className="hover:text-rubik-brand capitalize">
-            {categoryInfo.name}
-          </Link>
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-foreground font-semibold line-clamp-1">{product.title}</span>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 lg:pt-12 space-y-12">
+    <div className="bg-background text-foreground min-h-screen py-6 md:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         
-        {/* Core Product Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center gap-2 text-xs text-muted-foreground font-medium overflow-x-auto pb-1">
+          <Link href={`/${locale}`} className="hover:text-foreground flex items-center gap-1 shrink-0">
+            <Home className="h-3.5 w-3.5" />
+            <span>Ana Səhifə</span>
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-50" />
+          <Link href={`/${locale}/catalog`} className="hover:text-foreground shrink-0">
+            Kataloq
+          </Link>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-50" />
+          <span className="text-foreground font-bold truncate max-w-[200px] sm:max-w-xs">{product.title}</span>
+        </nav>
+
+        {/* 1. Main Product Showcase & Control Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* 1. Media Gallery (Left Column) */}
+          {/* Gallery Showcase (Left Column) */}
           <div className="lg:col-span-6 space-y-4">
-            <div className="relative aspect-square w-full bg-muted/30 border border-border/80 rounded-3xl overflow-hidden flex items-center justify-center p-6 group">
-              <Image
-                src={activeImage}
-                alt={product.title}
-                fill
-                priority
-                referrerPolicy="no-referrer"
-                className="object-contain p-8 transform group-hover:scale-102 transition-transform duration-500"
-              />
+            <div className="relative aspect-square w-full rounded-3xl bg-muted/40 border border-border/80 overflow-hidden group shadow-soft-sm">
+              {!activeImage || imageError ? (
+                <SpeedcubeImageFallback alt={product.title} />
+              ) : (
+                <Image
+                  src={activeImage}
+                  alt={product.title}
+                  fill
+                  priority
+                  referrerPolicy="no-referrer"
+                  onError={() => setImageError(true)}
+                  className="object-contain p-8 transform group-hover:scale-102 transition-transform duration-500"
+                />
+              )}
 
               {isOutOfStock && (
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1.5px] flex items-center justify-center">
@@ -785,6 +986,7 @@ function ProductDetailClientContentInner({
               {/* Media Overlays */}
               <div className="absolute bottom-4 left-4 flex gap-2">
                 <button
+                  type="button"
                   onClick={() => setShowVideoModal(true)}
                   className="bg-background/90 hover:bg-background backdrop-blur-sm border border-border px-3.5 py-2 rounded-xl text-xs font-bold text-foreground flex items-center gap-1.5 shadow-soft-sm cursor-pointer"
                 >
@@ -800,6 +1002,7 @@ function ProductDetailClientContentInner({
                 {galleryImages.map((img, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setActiveImage(img)}
                     className={`relative w-16 h-16 rounded-2xl bg-muted/40 border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
                       activeImage === img ? 'border-rubik-brand ring-2 ring-rubik-brand/20 shadow-soft-md scale-95' : 'border-transparent hover:border-border'
@@ -906,44 +1109,104 @@ function ProductDetailClientContentInner({
               </div>
             </div>
 
-            {/* Selection Engine - Admin-driven Variant selectors (ONLY if dbVariants exists and has items) */}
+            {/* Dynamic & Universal Variant Selector */}
             {dbVariants.length > 0 && (
-              <div className="space-y-4">
-                <div className="space-y-2.5">
-                  <span className="text-xs font-bold text-foreground block uppercase tracking-wider">
-                    Məhsul Variantı Seçin
-                  </span>
-                  <div className="grid grid-cols-2 gap-3">
-                    {dbVariants.map((v) => {
-                      const vStock = v.stock ?? 0;
-                      const isVSelected = selectedVariantId === v.id;
-                      const vPrice = Number(v.price_azn || v.price || product.price_azn);
-                      return (
-                        <button
-                          key={v.id}
-                          onClick={() => setSelectedVariantId(v.id)}
-                          className={`p-3.5 text-left border rounded-xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.5rem] ${
-                            isVSelected
-                              ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm'
-                              : 'border-border bg-card text-foreground hover:border-foreground/20'
-                          }`}
-                        >
-                          <span className="font-bold text-sm flex items-center justify-between gap-2">
-                            <span className="truncate">{v.name || v.sku}</span>
-                            {isVSelected && <Check className="h-4 w-4 text-white shrink-0" />}
+              <div className="space-y-3">
+                <span className="text-xs font-black text-foreground block uppercase tracking-wider">
+                  Məhsul Variantını Seçin
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  {dbVariants.map((v: any) => {
+                    const vStock = Number(v.stock_quantity ?? v.stock ?? 0);
+                    const isVSelected = selectedVariantId === v.id;
+                    const vPrice = Number(v.price_azn || v.price || product.price_azn);
+                    const vTitle = v.title_az || v.name_az || v.title_en || v.name || v.sku || 'Variant';
+                    const vImg = v.image_url || (Array.isArray(v.images) && v.images[0]) || v.image;
+
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => handleVariantSelect(v)}
+                        className={`p-3.5 text-left border rounded-2xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.8rem] relative overflow-hidden ${
+                          isVSelected
+                            ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm ring-2 ring-rubik-brand/20'
+                            : 'border-border bg-card text-foreground hover:border-foreground/30'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {vImg && (
+                            <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-background/20 shrink-0 border border-white/20">
+                              <Image src={vImg} alt={vTitle} fill className="object-contain p-0.5" />
+                            </div>
+                          )}
+                          <span className="font-extrabold text-xs md:text-sm truncate flex-1">
+                            {vTitle}
                           </span>
-                          <span className="flex items-center justify-between text-[10px] mt-1">
-                            <span className={isVSelected ? 'text-white/80' : 'text-muted-foreground'}>
-                              {vStock > 0 ? `Stokda: ${vStock} ədəd` : 'Bitib (Sifarişlə)'}
-                            </span>
-                            <span className="font-bold">
-                              {vPrice.toFixed(2)} AZN
-                            </span>
+                          {isVSelected && <Check className="h-4 w-4 text-white shrink-0" />}
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] mt-2 pt-1 border-t border-current/10">
+                          <span className={isVSelected ? 'text-white/80 font-medium' : 'text-muted-foreground'}>
+                            {vStock > 0 ? `Stok: ${vStock} ədəd` : 'Bitib (Sifarişlə)'}
                           </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                          <span className="font-black">
+                            {vPrice.toFixed(2)} AZN
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Safe & Optional Custom Add-ons List (Strictly Null-Safe) */}
+            {addOnsList.length > 0 && (
+              <div className="border border-dashed border-rubik-brand/50 rounded-2xl p-4 bg-rubik-brand/5 space-y-3">
+                <span className="text-xs font-black text-rubik-brand block uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4" />
+                  Əlavə Xidmətlər və Aksesuarlar
+                </span>
+                <div className="space-y-2">
+                  {addOnsList.map((addon: any) => {
+                    const addonIdStr = String(addon.id || addon.title || addon.name);
+                    const isChecked = selectedAddonIds.has(addonIdStr);
+                    const addonPrice = Number(addon.price_azn || addon.price || 0);
+                    const addonTitle = addon.title_az || addon.title || addon.name || 'Əlavə Xidmət';
+                    const addonDesc = addon.description_az || addon.description;
+
+                    return (
+                      <label
+                        key={addonIdStr}
+                        className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                          isChecked ? 'bg-card border-rubik-brand shadow-soft-xs' : 'bg-background/60 border-border hover:border-border/80'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleAddon(addonIdStr)}
+                            className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
+                          />
+                          <div>
+                            <span className="font-extrabold text-xs md:text-sm text-foreground block">
+                              {addonTitle}
+                            </span>
+                            {addonDesc && (
+                              <span className="text-[11px] text-muted-foreground leading-snug block">
+                                {addonDesc}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-black text-xs md:text-sm text-rubik-brand shrink-0 ml-2">
+                          +{(addonPrice).toFixed(2)} AZN
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1065,6 +1328,7 @@ function ProductDetailClientContentInner({
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
+                  type="button"
                   onClick={() => handleAddToCart(false)}
                   disabled={isOutOfStock}
                   className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
@@ -1078,6 +1342,7 @@ function ProductDetailClientContentInner({
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => handleAddToCart(true)}
                   disabled={isOutOfStock}
                   className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
@@ -1094,6 +1359,7 @@ function ProductDetailClientContentInner({
               {/* Auxiliary actions */}
               <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 px-1">
                 <button
+                  type="button"
                   onClick={async () => {
                     const res = await toggleWishlist(product.id);
                     if (res.success) {
@@ -1106,6 +1372,7 @@ function ProductDetailClientContentInner({
                   <span>{isWishlisted ? 'İstək Siyahısında' : 'İstək Siyahısına At'}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setIsCompared(true);
                     setTimeout(() => setIsCompared(false), 2500);
@@ -1138,7 +1405,7 @@ function ProductDetailClientContentInner({
               )}
             </AnimatePresence>
 
-            {/* Auto-scroll Trust Banner with dot slide indicators */}
+            {/* Auto-scroll Trust Banner */}
             <div
               onMouseEnter={() => setIsTrustBannerPaused(true)}
               onMouseLeave={() => setIsTrustBannerPaused(false)}
@@ -1225,7 +1492,7 @@ function ProductDetailClientContentInner({
           </div>
         </div>
 
-        {/* 2. Tez-tez Birlikdə Alınır (Frequently Bought Together Bundle) Section */}
+        {/* 2. Frequently Bought Together Bundle Section */}
         <div className="bg-card border border-border/90 rounded-3xl p-5 md:p-6 shadow-soft-sm space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
             <div className="flex items-center gap-2.5">
@@ -1248,19 +1515,23 @@ function ProductDetailClientContentInner({
             )}
           </div>
 
-          {/* Bundle Items Visual Row with Real Thumbnails */}
+          {/* Bundle Items Visual Row */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
             <div className="lg:col-span-8 flex flex-col md:flex-row items-center gap-3">
               {/* Item 1 (Main product) */}
               <div className="flex items-center gap-3 bg-muted/30 border border-border/80 rounded-2xl p-3 w-full md:w-1/3 min-h-[95px]">
                 <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
-                  <Image
-                    src={bundleItem1.image}
-                    alt={bundleItem1.title}
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-contain"
-                  />
+                  {bundleItem1.image ? (
+                    <Image
+                      src={bundleItem1.image}
+                      alt={bundleItem1.title}
+                      fill
+                      referrerPolicy="no-referrer"
+                      className="object-contain"
+                    />
+                  ) : (
+                    <SpeedcubeImageFallback alt="Bundle item" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
                   <span className="text-[9px] font-black uppercase tracking-wider text-rubik-brand block">Əsas Məhsul</span>
@@ -1286,13 +1557,17 @@ function ProductDetailClientContentInner({
                   className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
                 />
                 <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
-                  <Image
-                    src={bundleItem2.image}
-                    alt={bundleItem2.title}
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-contain"
-                  />
+                  {bundleItem2.image ? (
+                    <Image
+                      src={bundleItem2.image}
+                      alt={bundleItem2.title}
+                      fill
+                      referrerPolicy="no-referrer"
+                      className="object-contain"
+                    />
+                  ) : (
+                    <SpeedcubeImageFallback alt="Bundle item" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
                   <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 block">Tövsiyə Olunan</span>
@@ -1323,13 +1598,17 @@ function ProductDetailClientContentInner({
                   className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
                 />
                 <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
-                  <Image
-                    src={bundleItem3.image}
-                    alt={bundleItem3.title}
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-contain"
-                  />
+                  {bundleItem3.image ? (
+                    <Image
+                      src={bundleItem3.image}
+                      alt={bundleItem3.title}
+                      fill
+                      referrerPolicy="no-referrer"
+                      className="object-contain"
+                    />
+                  ) : (
+                    <SpeedcubeImageFallback alt="Bundle item" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1 space-y-1">
                   <span className="text-[9px] font-black uppercase tracking-wider text-blue-500 block">Aksesuar</span>
@@ -1376,7 +1655,7 @@ function ProductDetailClientContentInner({
           </div>
         </div>
 
-        {/* 3. Information Tabs Accordion (Specifications, Compatibility, Return policy) */}
+        {/* 3. Information Tabs Accordion with Description & Dynamic Comparison Table */}
         <div className="border border-border rounded-3xl bg-card overflow-hidden shadow-soft-sm">
           {/* Tab Headers */}
           <div className="bg-muted border-b border-border flex flex-wrap">
@@ -1392,6 +1671,7 @@ function ProductDetailClientContentInner({
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center gap-2 px-5 py-4 text-xs md:text-sm font-bold border-r border-border transition-all cursor-pointer ${
                     activeTab === tab.id
@@ -1417,7 +1697,10 @@ function ProductDetailClientContentInner({
                   className="space-y-4 text-sm text-muted-foreground leading-relaxed"
                 >
                   <h4 className="text-base font-bold text-foreground">Məhsul Təsviri</h4>
-                  <p>{product.description}</p>
+                  <p className="whitespace-pre-line">{product.description}</p>
+                  
+                  {/* Dynamic Version Comparison Matrix */}
+                  <SpeedcubeComparisonMatrix product={product} />
                 </motion.div>
               )}
 
@@ -1448,7 +1731,7 @@ function ProductDetailClientContentInner({
                   className="space-y-3 text-sm text-muted-foreground leading-relaxed"
                 >
                   <h4 className="text-base font-bold text-foreground">Uyğunluq Şərtləri</h4>
-                  <p>{product.compatibility}</p>
+                  <p>{product.compatibility || 'Bütün yaş və təcrübə səviyyələrində olan speedcuberlər üçün tam uyğundur.'}</p>
                   <div className="bg-muted p-4 rounded-xl border border-border flex items-center gap-3 mt-2">
                     <Info className="h-5 w-5 text-rubik-brand shrink-0" />
                     <span className="text-xs leading-relaxed text-foreground">
@@ -1518,7 +1801,7 @@ function ProductDetailClientContentInner({
           </div>
         </div>
 
-        {/* 4. Interactive Review/Rating Module (Interactive read & write) */}
+        {/* 4. Interactive Review/Rating Module */}
         <section className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-8">
           <div className="flex flex-col md:flex-row gap-6 items-start justify-between border-b border-border pb-6">
             <div className="space-y-1">
@@ -1526,7 +1809,6 @@ function ProductDetailClientContentInner({
               <p className="text-xs text-muted-foreground">Müştərilərimizin bu məhsul haqqında qeyd etdiyi rəsmi fikirlər və reytinqlər</p>
             </div>
             
-            {/* Rating summary badge */}
             <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-2xl border border-border/60 shrink-0">
               {reviews.length > 0 && averageRating ? (
                 <>
@@ -1729,9 +2011,7 @@ function ProductDetailClientContentInner({
           </div>
         </section>
 
-
-
-        {/* 6. Recommendations / Related products list */}
+        {/* 5. Recommendations / Related products list */}
         <section className="space-y-6">
           <h3 className="text-xl md:text-2xl font-black text-foreground text-center md:text-left flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-rubik-brand" />
@@ -1748,14 +2028,18 @@ function ProductDetailClientContentInner({
                     className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group"
                   >
                     <Link href={`/${locale}/product/${rel.id}`} className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
-                      <Image
-                        src={rel.image_url}
-                        alt={rel.title}
-                        fill
-                        referrerPolicy="no-referrer"
-                        sizes="(max-width: 768px) 50vw, 25vw"
-                        className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
-                      />
+                      {rel.image_url ? (
+                        <Image
+                          src={rel.image_url}
+                          alt={rel.title}
+                          fill
+                          referrerPolicy="no-referrer"
+                          sizes="(max-width: 768px) 50vw, 25vw"
+                          className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <SpeedcubeImageFallback alt={rel.title} />
+                      )}
                       {outOfStock && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <span className="text-white text-[10px] font-black tracking-wider px-2 py-0.5 bg-red-600 rounded-md">
@@ -1783,6 +2067,7 @@ function ProductDetailClientContentInner({
                       </div>
 
                       <button
+                        type="button"
                         onClick={() => {
                           if (!outOfStock) {
                             addItem({
@@ -1843,7 +2128,7 @@ function ProductDetailClientContentInner({
             >
               <div className="flex justify-between items-center border-b border-border pb-3">
                 <h3 className="font-bold text-foreground text-sm md:text-base">Məhsulun Baxış Videosu</h3>
-                <button onClick={() => setShowVideoModal(false)} className="p-1 hover:bg-muted rounded-lg text-foreground cursor-pointer">X</button>
+                <button type="button" onClick={() => setShowVideoModal(false)} className="p-1 hover:bg-muted rounded-lg text-foreground cursor-pointer">X</button>
               </div>
               <div className="relative aspect-video w-full bg-slate-950 rounded-2xl flex flex-col items-center justify-center gap-3 overflow-hidden text-center p-4 border border-border/80">
                 <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: `url(${product.image_url})` }} />
@@ -1861,7 +2146,8 @@ function ProductDetailClientContentInner({
           </>
         )}
       </AnimatePresence>
-      {/* Sticky Bottom Mini-Bar for Mobile/Desktop on Scroll */}
+
+      {/* Sticky Bottom Mini-Bar */}
       <AnimatePresence>
         {showStickyBar && (
           <motion.div
@@ -1874,12 +2160,16 @@ function ProductDetailClientContentInner({
             <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative h-10 w-10 shrink-0 bg-muted rounded-xl overflow-hidden border border-border p-1">
-                  <Image
-                    src={activeImage || product.image_url}
-                    alt={product.title}
-                    fill
-                    className="object-contain"
-                  />
+                  {activeImage || product.image_url ? (
+                    <Image
+                      src={activeImage || product.image_url}
+                      alt={product.title}
+                      fill
+                      className="object-contain"
+                    />
+                  ) : (
+                    <SpeedcubeImageFallback alt="Mini image" />
+                  )}
                 </div>
                 <div className="min-w-0">
                   <h4 className="text-xs sm:text-sm font-black text-foreground truncate max-w-[140px] sm:max-w-[300px]">
@@ -1891,7 +2181,7 @@ function ProductDetailClientContentInner({
                     </span>
                     {selectedVariant && (
                       <span className="text-[10px] text-muted-foreground truncate hidden sm:inline">
-                        • {selectedVariant.name || selectedVariant.sku}
+                        • {selectedVariant.title_az || selectedVariant.name_az || selectedVariant.name || selectedVariant.sku}
                       </span>
                     )}
                   </div>

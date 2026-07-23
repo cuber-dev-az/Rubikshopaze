@@ -30,16 +30,17 @@ export interface Product {
 
 export async function getActiveProducts() {
   try {
+    // Primary query using 'variants (*)' table relationship
     let { data, error } = await supabase
       .from('products')
-      .select('*, brands (*), product_variants (*)')
+      .select('*, brands (*), variants (*)')
       .eq('is_active', true);
       
     if (error) {
-      console.error('Error fetching products with product_variants, trying fallback:', error);
+      // Secondary fallback query if variants relationship is named product_variants
       const fallbackResult = await supabase
         .from('products')
-        .select('*, brands (*), variants (*)')
+        .select('*, brands (*), product_variants (*)')
         .eq('is_active', true);
 
       if (!fallbackResult.error && fallbackResult.data) {
