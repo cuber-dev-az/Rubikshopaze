@@ -414,15 +414,96 @@ function ProductDetailClientContentInner({
   };
 
   // Live Interactive Review Module
-  const [reviews, setReviews] = React.useState(initialReviews.length > 0 ? initialReviews : []);
+  const [reviews, setReviews] = React.useState((Array.isArray(initialReviews) && initialReviews.length > 0) ? initialReviews : []);
   const [newReviewName, setNewReviewName] = React.useState('');
   const [newReviewRating, setNewReviewRating] = React.useState(5);
   const [newReviewComment, setNewReviewComment] = React.useState('');
   const [reviewSubmitted, setReviewSubmitted] = React.useState(false);
 
+  // Helpful / Unhelpful voting handler
+  const handleVoteHelpful = (reviewId: string | number, type: 'up' | 'down') => {
+    const idStr = String(reviewId);
+    setHelpfulState((prev) => {
+      const current = prev[idStr] || { up: 0, down: 0, userVote: null };
+      if (current.userVote === type) {
+        return {
+          ...prev,
+          [idStr]: {
+            ...current,
+            [type]: Math.max(0, current[type] - 1),
+            userVote: null
+          }
+        };
+      }
+      const prevVote = current.userVote;
+      let newUp = current.up;
+      let newDown = current.down;
+      if (prevVote === 'up') newUp = Math.max(0, newUp - 1);
+      if (prevVote === 'down') newDown = Math.max(0, newDown - 1);
+      if (type === 'up') newUp += 1;
+      if (type === 'down') newDown += 1;
+      return {
+        ...prev,
+        [idStr]: { up: newUp, down: newDown, userVote: type }
+      };
+    });
+  };
+
+  // Calculate Star Counts and Percentages
+  const starCounts = React.useMemo(() => {
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    if (!reviews || !Array.isArray(reviews)) return counts;
+    reviews.forEach((r) => {
+      const val = Math.round(r.rating || 5);
+      if (val >= 1 && val <= 5) {
+        counts[val as keyof typeof counts] += 1;
+      }
+    });
+    return counts;
+  }, [reviews]);
+
+  // Filtered and Sorted Reviews
+  const filteredAndSortedReviews = React.useMemo(() => {
+    if (!reviews || !Array.isArray(reviews)) return [];
+    let list = [...reviews];
+    if (reviewSearch.trim()) {
+      const q = reviewSearch.toLowerCase();
+      list = list.filter((r) => {
+        const name = (r.profiles?.full_name || r.name || '').toLowerCase();
+        const comment = (r.comment || '').toLowerCase();
+        return name.includes(q) || comment.includes(q);
+      });
+    }
+
+    list.sort((a, b) => {
+      if (reviewSort === 'newest') {
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+      }
+      if (reviewSort === 'oldest') {
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      }
+      if (reviewSort === 'highest') {
+        return (b.rating || 0) - (a.rating || 0);
+      }
+      if (reviewSort === 'lowest') {
+        return (a.rating || 0) - (b.rating || 0);
+      }
+      if (reviewSort === 'helpful') {
+        const aId = String(a.id);
+        const bId = String(b.id);
+        const aVotes = (helpfulState[aId]?.up || 0) - (helpfulState[aId]?.down || 0);
+        const bVotes = (helpfulState[bId]?.up || 0) - (helpfulState[bId]?.down || 0);
+        return bVotes - aVotes;
+      }
+      return 0;
+    });
+
+    return list;
+  }, [reviews, reviewSearch, reviewSort, helpfulState]);
+
   // Calculated Ratings Summary
   const averageRating = React.useMemo(() => {
-    if (!reviews || reviews.length === 0) return null;
+    if (!reviews || !Array.isArray(reviews) || reviews.length === 0) return null;
     const total = reviews.reduce((sum, r) => sum + (r.rating || 0), 0);
     return (total / reviews.length).toFixed(1);
   }, [reviews]);
@@ -665,7 +746,7 @@ function ProductDetailClientContentInner({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-muted-foreground">
           <Link href={`/${locale}`} className="hover:text-rubik-brand flex items-center gap-1">
             <Home className="h-3.5 w-3.5" />
-            <span>{dict.navigation.home}</span>
+            <span>{dict?.navigation?.home || 'Ana Səhifə'}</span>
           </Link>
           <ChevronRight className="h-3 w-3" />
           <Link href={`/${locale}/category/${categoryInfo.slug}`} className="hover:text-rubik-brand capitalize">
@@ -696,7 +777,7 @@ function ProductDetailClientContentInner({
               {isOutOfStock && (
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1.5px] flex items-center justify-center">
                   <span className="text-white text-sm font-black tracking-widest px-4 py-2 bg-red-600 rounded-xl shadow-lg uppercase">
-                    {dict.product.out_of_stock}
+                    {dict?.product?.out_of_stock || 'Bitib'}
                   </span>
                 </div>
               )}
@@ -1678,7 +1759,7 @@ function ProductDetailClientContentInner({
                       {outOfStock && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <span className="text-white text-[10px] font-black tracking-wider px-2 py-0.5 bg-red-600 rounded-md">
-                            {dict.product.out_of_stock}
+                            {dict?.product?.out_of_stock || 'Bitib'}
                           </span>
                         </div>
                       )}
@@ -1721,7 +1802,7 @@ function ProductDetailClientContentInner({
                         }`}
                       >
                         <ShoppingBag className="h-3.5 w-3.5" />
-                        <span>{outOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
+                        <span>{outOfStock ? (dict?.product?.out_of_stock || 'Bitib') : (dict?.product?.add_to_cart || 'Səbətə At')}</span>
                       </button>
                     </div>
                   </div>
