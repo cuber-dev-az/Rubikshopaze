@@ -64,40 +64,58 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
     let dbProduct = null;
 
-    // Primary query with joins
+    // Primary query by slug or ID directly without complex unquoted .or strings
     const selectQuery = '*, variants(*), brands(name, slug), categories(name_az, slug)';
-    const filterCond = isUuid
-      ? `id.eq.${rawSlug},slug.eq.${rawSlug}`
-      : `slug.eq.${rawSlug},slug.ilike.${rawSlug}`;
 
-    const { data: primaryData, error: primaryErr } = await supabase
+    // 1. Try exact slug match
+    const { data: slugMatch } = await supabase
       .from('products')
       .select(selectQuery)
-      .or(filterCond)
+      .eq('slug', rawSlug)
       .maybeSingle();
 
-    if (!primaryErr && primaryData) {
-      dbProduct = primaryData;
-    } else {
-      // Fallback 1: Simple select without joins to prevent FK embed errors
-      const { data: fallbackData } = await supabase
+    if (slugMatch) {
+      dbProduct = slugMatch;
+    } else if (isUuid) {
+      // 2. Try ID match if UUID
+      const { data: idMatch } = await supabase
+        .from('products')
+        .select(selectQuery)
+        .eq('id', rawSlug)
+        .maybeSingle();
+      if (idMatch) dbProduct = idMatch;
+    }
+
+    if (!dbProduct) {
+      // 3. Fallback: try simple query without joins
+      const { data: simpleSlugMatch } = await supabase
         .from('products')
         .select('*')
-        .or(filterCond)
+        .eq('slug', rawSlug)
         .maybeSingle();
 
-      if (fallbackData) {
-        dbProduct = fallbackData;
-      } else {
-        // Fallback 2: Fuzzy slug / title match
-        const cleanTerm = rawSlug.replace(/[^a-zA-Z0-9]/g, '%');
+      if (simpleSlugMatch) {
+        dbProduct = simpleSlugMatch;
+      } else if (isUuid) {
+        const { data: simpleIdMatch } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', rawSlug)
+          .maybeSingle();
+        if (simpleIdMatch) dbProduct = simpleIdMatch;
+      }
+    }
+
+    if (!dbProduct) {
+      // 4. Fallback: fuzzy match on title or name
+      const cleanTerm = rawSlug.replace(/[^a-zA-Z0-9]/g, '%');
+      if (cleanTerm.length > 2) {
         const { data: fuzzyData } = await supabase
           .from('products')
           .select('*')
           .or(`slug.ilike.%${cleanTerm}%,name_az.ilike.%${cleanTerm}%,title_az.ilike.%${cleanTerm}%`)
           .limit(1)
           .maybeSingle();
-
         dbProduct = fuzzyData;
       }
     }

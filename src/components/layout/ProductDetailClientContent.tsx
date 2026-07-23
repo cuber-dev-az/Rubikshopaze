@@ -250,17 +250,84 @@ function ProductDetailClientContentInner({
     return () => clearInterval(interval);
   }, [isTrustBannerPaused, trustSlides.length]);
 
+  // Social action toggles
+  const [isWishlisted, setIsWishlisted] = React.useState(false);
+  const [isCompared, setIsCompared] = React.useState(false);
+  const [showAddedToCartToast, setShowAddedToCartToast] = React.useState(false);
+
+  // Dynamic pricing directly from product object
+  const basePrice = Number(product?.price_azn || (product as any)?.price || 0);
+  const addonCost = (isCubeCategory && addonSetup) ? 5 : 0;
+  
+  const finalPrice = selectedVariant 
+    ? Number(selectedVariant.price_azn || selectedVariant.price || basePrice)
+    : basePrice + addonCost;
+
+  const originalPrice = product?.original_price || (product as any)?.discount_price || (product as any)?.compare_at_price_azn;
+
+  // Dynamic Discount calculation
+  const numOriginalPrice = Number(originalPrice || 0);
+  const numBasePrice = Number(basePrice || 0);
+  const hasDiscount = numOriginalPrice > numBasePrice && numBasePrice > 0;
+  const discountPercent = hasDiscount
+    ? Math.round(((numOriginalPrice - numBasePrice) / numOriginalPrice) * 100)
+    : 0;
+
+  // Resolve Brand and Product Type for Badges
+  const rawBrand = (
+    product?.brands?.name ||
+    (product as any)?.brand_name ||
+    product?.brand ||
+    ''
+  ).trim();
+
+  let resolvedBrand = '';
+  if (rawBrand && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(rawBrand.toUpperCase())) {
+    resolvedBrand = rawBrand;
+  }
+
+  const pTitleLower = (product?.title || '').toLowerCase();
+  if (!resolvedBrand) {
+    if (pTitleLower.includes('moyu')) resolvedBrand = 'MoYu';
+    else if (pTitleLower.includes('qiyi')) resolvedBrand = 'QiYi';
+    else if (/\bgan\b/.test(pTitleLower)) resolvedBrand = 'GAN';
+    else if (pTitleLower.includes('z-cube') || pTitleLower.includes('zcube')) resolvedBrand = 'Z-Cube';
+    else if (pTitleLower.includes('shengshou')) resolvedBrand = 'ShengShou';
+    else if (pTitleLower.includes('yuxin')) resolvedBrand = 'YuXin';
+    else if (pTitleLower.includes('diansheng')) resolvedBrand = 'DianSheng';
+    else if (pTitleLower.includes('dayan')) resolvedBrand = 'DaYan';
+    else if (pTitleLower.includes('monster go') || pTitleLower.includes('monstergo')) resolvedBrand = 'Monster Go';
+    else resolvedBrand = 'Orijinal Brend';
+  }
+
+  let typeBadge = '';
+  if (pTitleLower.includes('açarlıq') || pTitleLower.includes('keychain') || pTitleLower.includes('brelok')) {
+    typeBadge = 'Açarlıq';
+  } else if (pTitleLower.includes('mat') || pTitleLower.includes('pad') || pTitleLower.includes('xalça') || pTitleLower.includes('kovrik')) {
+    typeBadge = 'Aksessuar Matı';
+  } else if (pTitleLower.includes('yağ') || pTitleLower.includes('lube')) {
+    typeBadge = 'Baxım Yağı';
+  } else if (pTitleLower.includes('taymer') || pTitleLower.includes('timer')) {
+    typeBadge = 'Yarış Taymeri';
+  } else if (product?.product_type) {
+    typeBadge = product.product_type;
+  }
+
+  const currentSku = selectedVariant 
+    ? selectedVariant.sku 
+    : (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000'));
+
   // Frequently Bought Together (Tez-tez Birlikdə Alınır) Bundle State
   const [bundleChecked2, setBundleChecked2] = React.useState(true);
   const [bundleChecked3, setBundleChecked3] = React.useState(true);
 
   const bundleItem1 = React.useMemo(() => ({
-    id: product.id,
-    title: product.title,
-    price: finalPrice,
-    image: activeImage || product.image_url,
+    id: product?.id || '',
+    title: product?.title || 'Məhsul',
+    price: finalPrice || 0,
+    image: activeImage || product?.image_url || 'https://picsum.photos/seed/default/600/600',
     required: true
-  }), [product.id, product.title, finalPrice, activeImage, product.image_url]);
+  }), [product?.id, product?.title, finalPrice, activeImage, product?.image_url]);
 
   const bundleItem2 = React.useMemo(() => {
     if (relatedProducts && relatedProducts.length > 0) {
@@ -346,160 +413,12 @@ function ProductDetailClientContentInner({
     setTimeout(() => setShowAddedToCartToast(false), 3000);
   };
 
-  // Social action toggles
-  const [isWishlisted, setIsWishlisted] = React.useState(false);
-  const [isCompared, setIsCompared] = React.useState(false);
-  const [showAddedToCartToast, setShowAddedToCartToast] = React.useState(false);
-
   // Live Interactive Review Module
   const [reviews, setReviews] = React.useState(initialReviews.length > 0 ? initialReviews : []);
   const [newReviewName, setNewReviewName] = React.useState('');
   const [newReviewRating, setNewReviewRating] = React.useState(5);
   const [newReviewComment, setNewReviewComment] = React.useState('');
   const [reviewSubmitted, setReviewSubmitted] = React.useState(false);
-
-  // Helpful / Unhelpful voting handler
-  const handleVoteHelpful = (reviewId: string | number, type: 'up' | 'down') => {
-    const idStr = String(reviewId);
-    setHelpfulState((prev) => {
-      const current = prev[idStr] || { up: 0, down: 0, userVote: null };
-      if (current.userVote === type) {
-        return {
-          ...prev,
-          [idStr]: {
-            ...current,
-            [type]: Math.max(0, current[type] - 1),
-            userVote: null
-          }
-        };
-      }
-      const prevVote = current.userVote;
-      let newUp = current.up;
-      let newDown = current.down;
-      if (prevVote === 'up') newUp = Math.max(0, newUp - 1);
-      if (prevVote === 'down') newDown = Math.max(0, newDown - 1);
-      if (type === 'up') newUp += 1;
-      if (type === 'down') newDown += 1;
-      return {
-        ...prev,
-        [idStr]: { up: newUp, down: newDown, userVote: type }
-      };
-    });
-  };
-
-  // Calculate Star Counts and Percentages
-  const starCounts = React.useMemo(() => {
-    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    if (!reviews) return counts;
-    reviews.forEach((r) => {
-      const val = Math.round(r.rating || 5);
-      if (val >= 1 && val <= 5) {
-        counts[val as keyof typeof counts] += 1;
-      }
-    });
-    return counts;
-  }, [reviews]);
-
-  // Filtered and Sorted Reviews
-  const filteredAndSortedReviews = React.useMemo(() => {
-    if (!reviews) return [];
-    let list = [...reviews];
-    if (reviewSearch.trim()) {
-      const q = reviewSearch.toLowerCase();
-      list = list.filter((r) => {
-        const name = (r.profiles?.full_name || r.name || '').toLowerCase();
-        const comment = (r.comment || '').toLowerCase();
-        return name.includes(q) || comment.includes(q);
-      });
-    }
-
-    list.sort((a, b) => {
-      if (reviewSort === 'newest') {
-        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-      }
-      if (reviewSort === 'oldest') {
-        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
-      }
-      if (reviewSort === 'highest') {
-        return (b.rating || 0) - (a.rating || 0);
-      }
-      if (reviewSort === 'lowest') {
-        return (a.rating || 0) - (b.rating || 0);
-      }
-      if (reviewSort === 'helpful') {
-        const aId = String(a.id);
-        const bId = String(b.id);
-        const aVotes = (helpfulState[aId]?.up || 0) - (helpfulState[aId]?.down || 0);
-        const bVotes = (helpfulState[bId]?.up || 0) - (helpfulState[bId]?.down || 0);
-        return bVotes - aVotes;
-      }
-      return 0;
-    });
-
-    return list;
-  }, [reviews, reviewSearch, reviewSort, helpfulState]);
-
-  // Dynamic pricing directly from product object
-  const basePrice = Number(product?.price_azn || (product as any)?.price || 0);
-  const addonCost = (isCubeCategory && addonSetup) ? 5 : 0;
-  
-  const finalPrice = selectedVariant 
-    ? Number(selectedVariant.price_azn || selectedVariant.price || basePrice)
-    : basePrice + addonCost;
-
-  const originalPrice = product?.original_price || (product as any)?.discount_price || (product as any)?.compare_at_price_azn;
-
-  // Dynamic Discount calculation
-  const numOriginalPrice = Number(originalPrice || 0);
-  const numBasePrice = Number(basePrice || 0);
-  const hasDiscount = numOriginalPrice > numBasePrice && numBasePrice > 0;
-  const discountPercent = hasDiscount
-    ? Math.round(((numOriginalPrice - numBasePrice) / numOriginalPrice) * 100)
-    : 0;
-
-  // Resolve Brand and Product Type for Badges
-  const rawBrand = (
-    product?.brands?.name ||
-    (product as any)?.brand_name ||
-    product?.brand ||
-    ''
-  ).trim();
-
-  let resolvedBrand = '';
-  if (rawBrand && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(rawBrand.toUpperCase())) {
-    resolvedBrand = rawBrand;
-  }
-
-  const pTitleLower = (product?.title || '').toLowerCase();
-  if (!resolvedBrand) {
-    if (pTitleLower.includes('moyu')) resolvedBrand = 'MoYu';
-    else if (pTitleLower.includes('qiyi')) resolvedBrand = 'QiYi';
-    else if (/\bgan\b/.test(pTitleLower)) resolvedBrand = 'GAN';
-    else if (pTitleLower.includes('z-cube') || pTitleLower.includes('zcube')) resolvedBrand = 'Z-Cube';
-    else if (pTitleLower.includes('shengshou')) resolvedBrand = 'ShengShou';
-    else if (pTitleLower.includes('yuxin')) resolvedBrand = 'YuXin';
-    else if (pTitleLower.includes('diansheng')) resolvedBrand = 'DianSheng';
-    else if (pTitleLower.includes('dayan')) resolvedBrand = 'DaYan';
-    else if (pTitleLower.includes('monster go') || pTitleLower.includes('monstergo')) resolvedBrand = 'Monster Go';
-    else resolvedBrand = 'Orijinal Brend';
-  }
-
-  let typeBadge = '';
-  if (pTitleLower.includes('açarlıq') || pTitleLower.includes('keychain') || pTitleLower.includes('brelok')) {
-    typeBadge = 'Açarlıq';
-  } else if (pTitleLower.includes('mat') || pTitleLower.includes('pad') || pTitleLower.includes('xalça') || pTitleLower.includes('kovrik')) {
-    typeBadge = 'Aksessuar Matı';
-  } else if (pTitleLower.includes('yağ') || pTitleLower.includes('lube')) {
-    typeBadge = 'Baxım Yağı';
-  } else if (pTitleLower.includes('taymer') || pTitleLower.includes('timer')) {
-    typeBadge = 'Yarış Taymeri';
-  } else if (product?.product_type) {
-    typeBadge = product.product_type;
-  }
-
-  const currentSku = selectedVariant 
-    ? selectedVariant.sku 
-    : (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000'));
 
   // Calculated Ratings Summary
   const averageRating = React.useMemo(() => {
@@ -633,21 +552,6 @@ function ProductDetailClientContentInner({
     return translatedSpecs;
   }, [product]);
 
-  if (!product || !product.id) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-3xl font-black text-foreground mb-4">Məhsul tapılmadı</h1>
-        <p className="text-muted-foreground mb-8">Axtardığınız məhsul mövcud deyil, gizlədilib və ya silinib.</p>
-        <Link 
-          href={`/${locale}`} 
-          className="inline-flex items-center px-6 py-3 bg-rubik-brand text-white font-bold rounded-xl shadow-md hover:bg-rubik-brand-dark transition-colors"
-        >
-          Ana Səhifəyə Qayıt
-        </Link>
-      </div>
-    );
-  }
-
   const effectiveStock = React.useMemo(() => {
     if (selectedVariant) {
       const vStock = selectedVariant.stock ?? selectedVariant.stock_quantity;
@@ -666,7 +570,22 @@ function ProductDetailClientContentInner({
     } else if (effectiveStock <= 0) {
       setQuantity(1);
     }
-  }, [effectiveStock]);
+  }, [effectiveStock, quantity]);
+
+  if (!product || !product.id) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+        <h1 className="text-3xl font-black text-foreground mb-4">Məhsul tapılmadı</h1>
+        <p className="text-muted-foreground mb-8">Axtardığınız məhsul mövcud deyil, gizlədilib və ya silinib.</p>
+        <Link 
+          href={`/${locale}`} 
+          className="inline-flex items-center px-6 py-3 bg-rubik-brand text-white font-bold rounded-xl shadow-md hover:bg-rubik-brand-dark transition-colors"
+        >
+          Ana Səhifəyə Qayıt
+        </Link>
+      </div>
+    );
+  }
 
   const handleAddToCart = (redirect = false) => {
     const currentQty = isOutOfStock 
