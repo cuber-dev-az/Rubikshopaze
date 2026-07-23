@@ -2222,10 +2222,50 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
         }
 
         // Map variants if provided
-        if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
-          const variantsToInsert = mapVariantsPayload(item.variants, priceVal, newProd.id, newProd.slug);
-          if (variantsToInsert.length > 0) {
-            await supabase.from('variants').insert(variantsToInsert);
+        if (newProd?.id && item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
+          // Delete existing variants for product
+          await supabase.from('product_variants').delete().eq('product_id', newProd.id);
+
+          const variantsToInsert = item.variants.map((variant: any) => ({
+            product_id: newProd.id,
+            sku: variant.sku || null,
+            title_az: variant.name_az || variant.title_az || '',
+            title_en: variant.name_en || variant.title_en || '',
+            title_ru: variant.name_ru || variant.title_ru || '',
+            price_azn: parseFloat(String(variant.price || variant.price_azn || 0)),
+            compare_at_price_azn: variant.discount_price ? parseFloat(String(variant.discount_price)) : null,
+            weight_g: variant.weight_g ? parseFloat(String(variant.weight_g)) : null,
+            stock_quantity: parseInt(String(variant.stock_quantity || 0), 10)
+          }));
+
+          let { error: varError } = await supabase.from('product_variants').insert(variantsToInsert);
+
+          // Fallback if product_variants table is missing in schema
+          if (varError && (varError.code === 'PGRST205' || varError.message?.includes('product_variants'))) {
+            const fallbackVariants = variantsToInsert.map((v: any, idx: number) => ({
+              product_id: newProd.id,
+              sku: v.sku || `${newProd.slug || 'var'}-${idx + 1}`,
+              price_azn: v.price_azn,
+              compare_at_price_azn: v.compare_at_price_azn,
+              stock: v.stock_quantity,
+              name: v.title_az,
+              price: v.price_azn
+            }));
+            await supabase.from('variants').delete().eq('product_id', newProd.id);
+            await supabase.from('variants').insert(fallbackVariants);
+          }
+
+          // Calculate min price among variants and update parent product price if valid
+          const validVariantPrices = variantsToInsert
+            .map((v: any) => v.price_azn)
+            .filter((p: number) => !isNaN(p) && p > 0);
+
+          if (validVariantPrices.length > 0) {
+            const minPrice = Math.min(...validVariantPrices);
+            await supabase
+              .from('products')
+              .update({ price: minPrice, price_azn: minPrice })
+              .eq('id', newProd.id);
           }
         }
 

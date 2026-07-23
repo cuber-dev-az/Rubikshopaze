@@ -30,11 +30,31 @@ export interface Product {
 
 export async function getActiveProducts() {
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('products')
-      .select('*, brands (*)')
+      .select('*, brands (*), product_variants (*)')
       .eq('is_active', true);
       
+    if (error) {
+      console.error('Error fetching products with product_variants, trying fallback:', error);
+      const fallbackResult = await supabase
+        .from('products')
+        .select('*, brands (*), variants (*)')
+        .eq('is_active', true);
+
+      if (!fallbackResult.error && fallbackResult.data) {
+        data = fallbackResult.data;
+        error = null;
+      } else {
+        const simpleResult = await supabase
+          .from('products')
+          .select('*, brands (*)')
+          .eq('is_active', true);
+        data = simpleResult.data;
+        error = simpleResult.error;
+      }
+    }
+    
     if (error) {
       console.error('Error fetching products:', error);
       return [];
@@ -114,6 +134,8 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     else if (title.includes('monster go') || title.includes('monstergo')) resolvedBrand = 'Monster Go';
   }
 
+  const productVariants = raw.product_variants || raw.variants || [];
+
   return {
     ...raw,
     id: raw.id,
@@ -133,5 +155,6 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     brand: resolvedBrand || undefined,
     brand_name: resolvedBrand || undefined,
     brand_id: raw.brand_id || undefined,
+    product_variants: productVariants,
   };
 }
