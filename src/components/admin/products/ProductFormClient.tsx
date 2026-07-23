@@ -163,25 +163,57 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
               setSelectedCategoryId('');
             }
             
-            if (prod.add_ons && Array.isArray(prod.add_ons)) {
-              setAddOns(prod.add_ons);
-            } else {
-              setAddOns([]);
+            let parsedAddOns: any[] = [];
+            if (Array.isArray(prod.add_ons)) {
+              parsedAddOns = prod.add_ons;
+            } else if (typeof prod.add_ons === 'string') {
+              try {
+                const p = JSON.parse(prod.add_ons);
+                if (Array.isArray(p)) parsedAddOns = p;
+              } catch {
+                parsedAddOns = [];
+              }
+            }
+            setAddOns(parsedAddOns);
+
+            let rawVariants: any[] = [];
+            if (Array.isArray(prod.variants)) {
+              rawVariants = prod.variants;
+            } else if (typeof prod.variants === 'string') {
+              try {
+                const p = JSON.parse(prod.variants);
+                if (Array.isArray(p)) rawVariants = p;
+              } catch {
+                rawVariants = [];
+              }
             }
 
-            if (prod.variants && Array.isArray(prod.variants)) {
-              setVariants(prod.variants.map((v: any, index: number) => ({
+            setVariants(rawVariants.map((v: any, index: number) => {
+              let vGallery: string[] = [];
+              if (Array.isArray(v.gallery_images)) {
+                vGallery = v.gallery_images;
+              } else if (Array.isArray(v.images)) {
+                vGallery = v.images;
+              } else if (typeof v.gallery_images === 'string') {
+                try {
+                  const parsed = JSON.parse(v.gallery_images);
+                  if (Array.isArray(parsed)) vGallery = parsed;
+                  else if (v.gallery_images) vGallery = [v.gallery_images];
+                } catch {
+                  vGallery = v.gallery_images.split(',').map((s: string) => s.trim()).filter(Boolean);
+                }
+              }
+
+              return {
                 id: v.id || `var_${index + 1}_${Date.now()}`,
                 sku: v.sku || '',
                 name: v.name || v.title_az || '',
                 price: v.price !== undefined ? String(v.price) : (v.price_azn !== undefined ? String(v.price_azn) : ''),
                 stock: v.stock !== undefined ? v.stock : (v.stock_quantity || 0),
                 image_url: v.image_url || v.image || '',
-                gallery_images: Array.isArray(v.gallery_images)
-                  ? v.gallery_images
-                  : (Array.isArray(v.images) ? v.images : (typeof v.gallery_images === 'string' ? JSON.parse(v.gallery_images) : []))
-              })));
-            }
+                gallery_images: vGallery
+              };
+            }));
           } else {
             setErrorMsg(res.error || 'Məhsul yüklənərkən xəta baş verdi');
           }

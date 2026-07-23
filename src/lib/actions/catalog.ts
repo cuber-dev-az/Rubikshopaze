@@ -108,14 +108,13 @@ export async function getProductById(id: string) {
   try {
     if (!id) return { success: false, error: 'ID təyin edilməyib' };
     const supabase = await createServerSupabaseClient();
-    const cleanId = decodeURIComponent(id).trim();
+    const cleanId = decodeURIComponent(String(id)).trim();
     const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanId);
 
     const selectQuery = `
       *,
       brands (*),
-      variants (*),
-      product_categories (category_id)
+      variants (*)
     `;
 
     let data = null;
@@ -161,19 +160,37 @@ export async function getProductById(id: string) {
     }
 
     if (!data.variants || !Array.isArray(data.variants) || data.variants.length === 0) {
-      const { data: vars } = await supabase
-        .from('variants')
-        .select('*')
-        .eq('product_id', data.id);
-      if (vars) {
-        data.variants = vars;
+      try {
+        const { data: vars } = await supabase
+          .from('variants')
+          .select('*')
+          .eq('product_id', data.id);
+        if (vars) {
+          data.variants = vars;
+        }
+      } catch (e) {
+        data.variants = [];
+      }
+    }
+
+    if (!data.product_categories || !Array.isArray(data.product_categories) || data.product_categories.length === 0) {
+      try {
+        const { data: catRel } = await supabase
+          .from('product_categories')
+          .select('category_id')
+          .eq('product_id', data.id);
+        if (catRel) {
+          data.product_categories = catRel;
+        }
+      } catch (e) {
+        data.product_categories = [];
       }
     }
 
     return { success: true, data };
   } catch (error: any) {
-    console.error('getProductById Error:', error.message);
-    return { success: false, error: error.message };
+    console.error('getProductById Error:', error?.message || error);
+    return { success: false, error: error?.message || 'Sistem xətası baş verdi' };
   }
 }
 
