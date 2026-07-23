@@ -89,6 +89,15 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState('');
 
+  // SEO, Specs & Add-ons state
+  const [seoTitle, setSeoTitle] = useState('');
+  const [seoDesc, setSeoDesc] = useState('');
+  const [weight_g, setWeight_g] = useState('');
+  const [isMagnetic, setIsMagnetic] = useState(false);
+  const [size_mm, setSize_mm] = useState('');
+  const [difficultyLevel, setDifficultyLevel] = useState('başlanğıc');
+  const [addOns, setAddOns] = useState<any[]>([]);
+
   // Fetch metadata on mount
   React.useEffect(() => {
     const loadMetadata = async () => {
