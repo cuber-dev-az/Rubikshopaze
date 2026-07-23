@@ -62,26 +62,44 @@ export async function getProductBySlug(slug: string) {
     const selectQuery = `
       *,
       brands (*),
+      product_variants (*),
       variants (*)
     `;
 
     let data = null;
 
-    const { data: slugData } = await supabase
-      .from('products')
-      .select(selectQuery)
-      .eq('slug', cleanSlug)
-      .maybeSingle();
-
-    data = slugData;
-
-    if (!data && isUuid) {
-      const { data: idData } = await supabase
+    try {
+      const { data: slugData } = await supabase
         .from('products')
         .select(selectQuery)
-        .eq('id', cleanSlug)
+        .eq('slug', cleanSlug)
         .maybeSingle();
-      data = idData;
+      data = slugData;
+    } catch {
+      const { data: fallbackSlugData } = await supabase
+        .from('products')
+        .select('*, brands(*), variants(*)')
+        .eq('slug', cleanSlug)
+        .maybeSingle();
+      data = fallbackSlugData;
+    }
+
+    if (!data && isUuid) {
+      try {
+        const { data: idData } = await supabase
+          .from('products')
+          .select(selectQuery)
+          .eq('id', cleanSlug)
+          .maybeSingle();
+        data = idData;
+      } catch {
+        const { data: fallbackIdData } = await supabase
+          .from('products')
+          .select('*, brands(*), variants(*)')
+          .eq('id', cleanSlug)
+          .maybeSingle();
+        data = fallbackIdData;
+      }
     }
 
     if (!data) {
@@ -96,6 +114,26 @@ export async function getProductBySlug(slug: string) {
     if (!data) {
       return { success: false, error: 'Məhsul tapılmadı' };
     }
+
+    // Normalize variants payload
+    const rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
+      ? data.variants
+      : ((Array.isArray(data.product_variants) && data.product_variants.length > 0) ? data.product_variants : []);
+
+    const normalizedVars = rawVars.map((v: any) => ({
+      ...v,
+      price_azn: v.price_azn ?? v.price ?? 0,
+      compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price ?? 0,
+      stock_quantity: v.stock_quantity ?? v.stock ?? 0,
+      sku: v.sku ?? '',
+      name_az: v.name_az ?? v.name ?? v.title_az ?? v.title ?? '',
+      name_en: v.name_en ?? v.name ?? v.title_en ?? v.title ?? '',
+      name_ru: v.name_ru ?? v.name ?? v.title_ru ?? v.title ?? '',
+      image_url: v.image_url ?? v.image ?? null,
+    }));
+
+    data.variants = normalizedVars;
+    data.product_variants = normalizedVars;
 
     return { success: true, data };
   } catch (error: any) {
@@ -114,27 +152,46 @@ export async function getProductById(id: string) {
     const selectQuery = `
       *,
       brands (*),
+      product_variants (*),
       variants (*)
     `;
 
     let data = null;
 
     if (isUuid) {
-      const { data: idData } = await supabase
-        .from('products')
-        .select(selectQuery)
-        .eq('id', cleanId)
-        .maybeSingle();
-      data = idData;
+      try {
+        const { data: idData } = await supabase
+          .from('products')
+          .select(selectQuery)
+          .eq('id', cleanId)
+          .maybeSingle();
+        data = idData;
+      } catch {
+        const { data: fallbackIdData } = await supabase
+          .from('products')
+          .select('*, brands(*), variants(*)')
+          .eq('id', cleanId)
+          .maybeSingle();
+        data = fallbackIdData;
+      }
     }
 
     if (!data) {
-      const { data: slugData } = await supabase
-        .from('products')
-        .select(selectQuery)
-        .eq('slug', cleanId)
-        .maybeSingle();
-      data = slugData;
+      try {
+        const { data: slugData } = await supabase
+          .from('products')
+          .select(selectQuery)
+          .eq('slug', cleanId)
+          .maybeSingle();
+        data = slugData;
+      } catch {
+        const { data: fallbackSlugData } = await supabase
+          .from('products')
+          .select('*, brands(*), variants(*)')
+          .eq('slug', cleanId)
+          .maybeSingle();
+        data = fallbackSlugData;
+      }
     }
 
     if (!data && !isUuid) {
@@ -181,6 +238,25 @@ export async function getProductById(id: string) {
         data.variants = [];
       }
     }
+
+    const rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
+      ? data.variants
+      : ((Array.isArray(data.product_variants) && data.product_variants.length > 0) ? data.product_variants : []);
+
+    const normalizedVars = rawVars.map((v: any) => ({
+      ...v,
+      price_azn: v.price_azn ?? v.price ?? 0,
+      compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price ?? 0,
+      stock_quantity: v.stock_quantity ?? v.stock ?? 0,
+      sku: v.sku ?? '',
+      name_az: v.name_az ?? v.name ?? v.title_az ?? v.title ?? '',
+      name_en: v.name_en ?? v.name ?? v.title_en ?? v.title ?? '',
+      name_ru: v.name_ru ?? v.name ?? v.title_ru ?? v.title ?? '',
+      image_url: v.image_url ?? v.image ?? null,
+    }));
+
+    data.variants = normalizedVars;
+    data.product_variants = normalizedVars;
 
     if (!data.product_categories || !Array.isArray(data.product_categories) || data.product_categories.length === 0) {
       try {

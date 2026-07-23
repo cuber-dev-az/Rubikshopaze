@@ -120,23 +120,30 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
           const res = await getProductById(productId);
           if (res.success && res.data) {
             const prod = res.data;
-            setTitle_az(prod.title_az || '');
-            setTitle_en(prod.title_en || '');
-            setTitle_ru(prod.title_ru || '');
-            setDescription_az(prod.description_az || '');
-            setDescription_en(prod.description_en || '');
-            setDescription_ru(prod.description_ru || '');
-            setPrice_azn(prod.price_azn !== undefined ? String(prod.price_azn) : '');
-            setCompareAtPrice_azn(prod.compare_at_price_azn !== undefined && prod.compare_at_price_azn !== null ? String(prod.compare_at_price_azn) : '');
+            setTitle_az(prod.title_az || prod.title || prod.name_az || prod.name || '');
+            setTitle_en(prod.title_en || prod.title || prod.name_en || prod.name || '');
+            setTitle_ru(prod.title_ru || prod.title || prod.name_ru || prod.name || '');
+            setDescription_az(prod.description_az || prod.description || '');
+            setDescription_en(prod.description_en || prod.description || '');
+            setDescription_ru(prod.description_ru || prod.description || '');
+            
+            const rawPrice = prod.price_azn ?? prod.price ?? '';
+            setPrice_azn(rawPrice !== undefined && rawPrice !== null ? String(rawPrice) : '');
+            
+            const rawComparePrice = prod.compare_at_price_azn ?? prod.discount_price ?? prod.compare_at_price ?? prod.old_price;
+            setCompareAtPrice_azn(rawComparePrice !== undefined && rawComparePrice !== null ? String(rawComparePrice) : '');
+            
             setSlug(prod.slug || '');
             setStatus(prod.status || (prod.is_active ? 'publish' : 'draft'));
-            setImageUrl(prod.image_url || '');
+            setImageUrl(prod.image_url || prod.image || '');
+            
             if (prod.gallery_images) {
               if (Array.isArray(prod.gallery_images)) {
                 setGalleryImages(prod.gallery_images);
               } else if (typeof prod.gallery_images === 'string') {
                 try {
-                  setGalleryImages(JSON.parse(prod.gallery_images));
+                  const parsed = JSON.parse(prod.gallery_images);
+                  setGalleryImages(Array.isArray(parsed) ? parsed : [prod.gallery_images]);
                 } catch {
                   setGalleryImages(prod.gallery_images.split(',').map((s: string) => s.trim()).filter(Boolean));
                 }
@@ -144,8 +151,10 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             } else {
               setGalleryImages([]);
             }
+
             setVideoUrl(prod.video_url || '');
-            setStock_quantity(prod.stock_quantity !== undefined && prod.stock_quantity !== null ? Number(prod.stock_quantity) : 0);
+            const rawStock = prod.stock_quantity ?? prod.stock ?? 0;
+            setStock_quantity(Number(rawStock) || 0);
             setIsFeatured(prod.is_featured || false);
             setSelectedBrandId(prod.brand_id || '');
             setProductType(prod.product_type || 'standard');
@@ -177,8 +186,10 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setAddOns(parsedAddOns);
 
             let rawVariants: any[] = [];
-            if (Array.isArray(prod.variants)) {
+            if (Array.isArray(prod.variants) && prod.variants.length > 0) {
               rawVariants = prod.variants;
+            } else if (Array.isArray(prod.product_variants) && prod.product_variants.length > 0) {
+              rawVariants = prod.product_variants;
             } else if (typeof prod.variants === 'string') {
               try {
                 const p = JSON.parse(prod.variants);
@@ -204,12 +215,15 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 }
               }
 
+              const vPrice = v.price_azn ?? v.price ?? '';
+              const vStock = v.stock_quantity ?? v.stock ?? 0;
+
               return {
                 id: v.id || `var_${index + 1}_${Date.now()}`,
                 sku: v.sku || '',
-                name: v.name || v.title_az || '',
-                price: v.price !== undefined ? String(v.price) : (v.price_azn !== undefined ? String(v.price_azn) : ''),
-                stock: v.stock !== undefined ? v.stock : (v.stock_quantity || 0),
+                name: v.name || v.title_az || v.name_az || '',
+                price: vPrice !== undefined && vPrice !== null ? String(vPrice) : '',
+                stock: Number(vStock) || 0,
                 image_url: v.image_url || v.image || '',
                 gallery_images: vGallery
               };

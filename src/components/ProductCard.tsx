@@ -122,7 +122,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     else if (titleLower.includes('diansheng')) brandName = 'DianSheng';
     else if (titleLower.includes('dayan')) brandName = 'DaYan';
     else if (titleLower.includes('monster go') || titleLower.includes('monstergo')) brandName = 'Monster Go';
-    else brandName = 'Z-Cube';
+    else brandName = '';
   }
 
   // 2. Resolve Type / Magnetic label accurately
