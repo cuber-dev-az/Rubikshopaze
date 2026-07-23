@@ -4,6 +4,7 @@ import * as React from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 import Image from 'next/image';
+import { sanitizeImageUrl } from '@/lib/image';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingBag,
@@ -253,7 +254,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                       {/* Image Thumbnail */}
                       <div className="relative w-16 h-16 rounded-xl bg-muted/30 border border-border flex-shrink-0 overflow-hidden flex items-center justify-center p-1.5 self-start md:self-auto">
                         <Image
-                          src={item.image_url}
+                          src={sanitizeImageUrl(item.image_url, item.id)}
                           alt={item.title}
                           fill
                           referrerPolicy="no-referrer"
@@ -343,7 +344,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                       <div key={item.id} className="flex flex-col md:flex-row md:items-center gap-4 py-4 first:pt-0 last:pb-0">
                         <div className="relative w-12 h-12 rounded-xl bg-muted/20 border border-border overflow-hidden flex items-center justify-center p-1 flex-shrink-0">
                           <Image
-                            src={item.image_url}
+                            src={sanitizeImageUrl(item.image_url, item.id)}
                             alt={item.title}
                             fill
                             referrerPolicy="no-referrer"
@@ -390,7 +391,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                       <div className="space-y-3">
                         <div className="relative aspect-square w-16 h-16 rounded-xl bg-muted/40 mx-auto overflow-hidden flex items-center justify-center p-1.5">
                           <Image
-                            src={up.image_url}
+                            src={sanitizeImageUrl(up.image_url, up.id)}
                             alt={up.title}
                             fill
                             referrerPolicy="no-referrer"

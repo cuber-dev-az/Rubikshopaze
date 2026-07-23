@@ -10,6 +10,7 @@ import {
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase/client';
 import { bulkImportProductsAction, BulkImportResult } from '@/lib/actions/admin';
+import { sanitizeImageUrl } from '@/lib/image';
 
 // Helper to convert AZ/RU characters and spaces into clean URL slugs
 const slugify = (text: string) => {
@@ -317,7 +318,7 @@ export default function ProductsListClient() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-800 border border-slate-700">
-                        <Image src={product.image_url || 'https://picsum.photos/seed/1/100/100'} alt={product.title_az} fill className="object-cover" />
+                        <Image src={sanitizeImageUrl(product.image_url, product.id)} alt={product.title_az || 'Product'} fill className="object-cover" />
                       </div>
                       <div>
                         <div className="font-bold text-white flex items-center gap-2">

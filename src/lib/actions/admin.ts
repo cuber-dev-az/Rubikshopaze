@@ -1583,13 +1583,12 @@ function mapVariantsPayload(variants: any[], basePrice: number, productId?: stri
 
     const item: any = {
       sku: uniqueSku,
-      name: v.name || `Variant ${idx + 1}`,
+      name: v.name || v.title_az || `Variant ${idx + 1}`,
       price_azn: variantPrice,
       price: variantPrice,
       stock: Number(v.stock ?? v.stock_quantity ?? 0),
       is_active: v.is_active ?? true,
-      image_url: v.image_url ? String(v.image_url).trim() : null,
-      gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : [])
+      image_url: v.image_url ? String(v.image_url).trim() : (v.image ? String(v.image).trim() : null),
     };
     if (productId) {
       item.product_id = productId;
@@ -2264,7 +2263,8 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
             price_azn: parseFloat(String(variant.price || variant.price_azn || 0)),
             compare_at_price_azn: variant.discount_price ? parseFloat(String(variant.discount_price)) : null,
             weight_g: variant.weight_g ? parseFloat(String(variant.weight_g)) : null,
-            stock_quantity: parseInt(String(variant.stock_quantity || 0), 10)
+            stock_quantity: parseInt(String(variant.stock_quantity || 0), 10),
+            image_url: variant.image_url ? String(variant.image_url).trim() : null
           }));
 
           let { error: varError } = await supabase.from('product_variants').insert(variantsToInsert);
@@ -2278,7 +2278,8 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
               compare_at_price_azn: v.compare_at_price_azn,
               stock: v.stock_quantity,
               name: v.title_az,
-              price: v.price_azn
+              price: v.price_azn,
+              image_url: v.image_url
             }));
             await supabase.from('variants').delete().eq('product_id', newProd.id);
             await supabase.from('variants').insert(fallbackVariants);

@@ -321,7 +321,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
             <div className="lg:col-span-5 flex justify-center">
               <div className="relative w-64 h-64 bg-black/40 rounded-2xl border border-border/10 p-4 flex items-center justify-center">
                 <Image
-                  src={bundleProduct.image_url}
+                  src={sanitizeImageUrl(bundleProduct.image_url, bundleProduct.id)}
                   alt={bundleProduct.title}
                   fill
                   referrerPolicy="no-referrer"
@@ -686,7 +686,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
 
                   <div className="relative aspect-square w-full bg-black/30 rounded-2xl overflow-hidden p-4 mb-5 flex items-center justify-center">
                     <Image
-                      src={heroProduct.image_url}
+                      src={sanitizeImageUrl(heroProduct.image_url, heroProduct.id)}
                       alt={heroProduct.title}
                       fill
                       referrerPolicy="no-referrer"

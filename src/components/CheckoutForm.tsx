@@ -4,6 +4,7 @@ import * as React from 'react';
 import { signIn } from '@/lib/actions/auth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { sanitizeImageUrl } from '@/lib/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -945,7 +946,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                 <div key={item.id} className="flex gap-3 py-3 first:pt-0 last:pb-0">
                   <div className="relative w-12 h-12 bg-muted/30 border border-border rounded-xl overflow-hidden p-1 flex-shrink-0 flex items-center justify-center">
                     <Image
-                      src={item.image_url}
+                      src={sanitizeImageUrl(item.image_url, item.id)}
                       alt={item.title}
                       fill
                       referrerPolicy="no-referrer"

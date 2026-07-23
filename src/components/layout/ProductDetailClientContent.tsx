@@ -36,6 +36,7 @@ import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
 import { addProductReview } from '@/lib/actions/reviews';
 import { toggleWishlist } from '@/lib/actions/wishlist';
+import { sanitizeImageUrl } from '@/lib/image';
 
 // Clean SVG Fallback for Speedcube Images
 function SpeedcubeImageFallback({ alt = 'Speedcube', className = '' }: { alt?: string; className?: string }) {
@@ -898,7 +899,7 @@ function ProductDetailClientContentInner({
                 <SpeedcubeImageFallback alt={product.title} />
               ) : (
                 <Image
-                  src={activeImage}
+                  src={sanitizeImageUrl(activeImage, product.id)}
                   alt={product.title}
                   fill
                   priority
@@ -942,7 +943,7 @@ function ProductDetailClientContentInner({
                     }`}
                   >
                     <Image
-                      src={img}
+                      src={sanitizeImageUrl(img, `${product.id}_${idx}`)}
                       alt={`${product.title} - ${idx}`}
                       fill
                       referrerPolicy="no-referrer"
@@ -1077,7 +1078,7 @@ function ProductDetailClientContentInner({
                         <div className="flex items-center gap-2">
                           {vImg && (
                             <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-background/20 shrink-0 border border-white/20">
-                              <Image src={vImg} alt={vTitle} fill className="object-contain p-0.5" />
+                              <Image src={sanitizeImageUrl(vImg, v.id)} alt={vTitle} fill className="object-contain p-0.5" />
                             </div>
                           )}
                           <span className="font-extrabold text-xs md:text-sm truncate flex-1">
@@ -1431,7 +1432,7 @@ function ProductDetailClientContentInner({
                 <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
                   {bundleItem1.image ? (
                     <Image
-                      src={bundleItem1.image}
+                      src={sanitizeImageUrl(bundleItem1.image, 'bundle1')}
                       alt={bundleItem1.title}
                       fill
                       referrerPolicy="no-referrer"
@@ -1467,7 +1468,7 @@ function ProductDetailClientContentInner({
                 <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
                   {bundleItem2.image ? (
                     <Image
-                      src={bundleItem2.image}
+                      src={sanitizeImageUrl(bundleItem2.image, 'bundle2')}
                       alt={bundleItem2.title}
                       fill
                       referrerPolicy="no-referrer"
@@ -1508,7 +1509,7 @@ function ProductDetailClientContentInner({
                 <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
                   {bundleItem3.image ? (
                     <Image
-                      src={bundleItem3.image}
+                      src={sanitizeImageUrl(bundleItem3.image, 'bundle3')}
                       alt={bundleItem3.title}
                       fill
                       referrerPolicy="no-referrer"
@@ -1938,7 +1939,7 @@ function ProductDetailClientContentInner({
                     <Link href={`/${locale}/product/${rel.id}`} className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
                       {rel.image_url ? (
                         <Image
-                          src={rel.image_url}
+                          src={sanitizeImageUrl(rel.image_url, rel.id)}
                           alt={rel.title}
                           fill
                           referrerPolicy="no-referrer"
@@ -2070,7 +2071,7 @@ function ProductDetailClientContentInner({
                 <div className="relative h-10 w-10 shrink-0 bg-muted rounded-xl overflow-hidden border border-border p-1">
                   {activeImage || product.image_url ? (
                     <Image
-                      src={activeImage || product.image_url}
+                      src={sanitizeImageUrl(activeImage || product.image_url, product.id)}
                       alt={product.title}
                       fill
                       className="object-contain"

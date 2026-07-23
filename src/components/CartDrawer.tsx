@@ -9,6 +9,7 @@ import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Sparkles, Check, Truck
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeImageUrl } from '@/lib/image';
 import type { ApplicationDictionary } from '@/types/application.types';
 
 interface CartDrawerProps {
@@ -132,7 +133,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                         {/* Thumb */}
                         <div className="relative w-16 h-16 rounded-xl bg-muted/30 border border-border flex-shrink-0 overflow-hidden flex items-center justify-center p-1.5">
                           <Image
-                            src={item.image_url}
+                            src={sanitizeImageUrl(item.image_url, item.id)}
                             alt={item.title}
                             fill
                             referrerPolicy="no-referrer"

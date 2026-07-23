@@ -7,6 +7,7 @@ import { Heart, ShoppingCart, Trash2, ArrowRight, Sparkles, LogIn } from 'lucide
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
 import { toggleWishlist } from '@/lib/actions/wishlist';
+import { sanitizeImageUrl } from '@/lib/image';
 import type { ApplicationDictionary } from '@/types/application.types';
 
 interface WishlistItem {
@@ -144,7 +145,7 @@ export function WishlistClient({ locale, dict, initialItems, isLoggedIn }: Wishl
                   <div className="relative aspect-square w-full rounded-xl bg-muted/20 border border-border/50 overflow-hidden flex items-center justify-center p-4">
                     {item.image_url ? (
                       <Image
-                        src={item.image_url}
+                        src={sanitizeImageUrl(item.image_url, item.id)}
                         alt={item.title}
                         fill
                         className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
