@@ -169,8 +169,15 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     });
   };
 
-  const productSlug = product.slug ? encodeURIComponent(product.slug.trim()) : product.id;
-  const productUrl = `/${locale}/product/${productSlug}`;
+  let productUrl = `/${locale}/product/${product.id}`;
+  if (product.slug) {
+    if (product.slug.includes('?')) {
+      const [path, query] = product.slug.split('?');
+      productUrl = `/${locale}/product/${encodeURIComponent(path.trim())}?${query}`;
+    } else {
+      productUrl = `/${locale}/product/${encodeURIComponent(product.slug.trim())}`;
+    }
+  }
 
   return (
     <Link 

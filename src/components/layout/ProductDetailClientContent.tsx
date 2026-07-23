@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   ShoppingBag,
@@ -54,11 +54,8 @@ function SpeedcubeImageFallback({ alt = 'Speedcube', className = '' }: { alt?: s
   );
 }
 
-// Dynamic Comparison Matrix for Flagship Speedcube Series
+// Dynamic Comparison Matrix for Flagship Speedcube Series (Strictly Data-Driven)
 function SpeedcubeComparisonMatrix({ product }: { product: any }) {
-  const title = (product?.title || '').toLowerCase();
-  
-  // Check if custom comparison_table exists on product
   if (product?.comparison_table && typeof product.comparison_table === 'object') {
     const table = product.comparison_table;
     return (
@@ -93,116 +90,7 @@ function SpeedcubeComparisonMatrix({ product }: { product: any }) {
     );
   }
 
-  // Auto-generate comparison matrix for flagship cube lines (RS3 M, Tornado, WeiLong, GAN)
-  const isRS3M = title.includes('rs3 m') || title.includes('rs3m');
-  const isTornado = title.includes('tornado');
-  const isWeiLong = title.includes('weilong') || title.includes('v9') || title.includes('v10');
-  const isGAN = title.includes('gan');
-
-  if (!isRS3M && !isTornado && !isWeiLong && !isGAN) return null;
-
-  let lineTitle = 'Flagship Speedcube Series';
-  if (isRS3M) lineTitle = 'MoYu RS3 M Flagship Seriyası Müqayisəsi';
-  else if (isTornado) lineTitle = 'QiYi X-Man Tornado v3/v4 Seriyası Müqayisəsi';
-  else if (isWeiLong) lineTitle = 'MoYu WeiLong v9/v10 Seriyası Müqayisəsi';
-  else if (isGAN) lineTitle = 'GAN Flagship Speedcube Seriyası Müqayisəsi';
-
-  const comparisonData = [
-    {
-      feature: 'Səth Örtüyü (Finish)',
-      standard: 'Mat (Frosted)',
-      dualAdj: 'Mat / Yarı-Parlaq',
-      maglev: 'Mat / Glossy',
-      ballcore: 'Lüks UV-Coated (Parlaq & Yapışqan)'
-    },
-    {
-      feature: 'Gərginlik və Yay Sistemi',
-      standard: 'Klassik Yay + Vida',
-      dualAdj: '9-Səviyyəli Dual Adjustment',
-      maglev: 'MagLev (Maqnit Repulsiya)',
-      ballcore: 'MagLev + Dual Adjustment System'
-    },
-    {
-      feature: 'Maqnit Sistemi',
-      standard: '48 Ədəd Korpus Maqniti',
-      dualAdj: '48 Ədəd Yüksək Dəqiqlikli Maqnit',
-      maglev: '60+ Ədəd MagLev Maqniti',
-      ballcore: '88+ Ədəd Ball-Core 8-Maqnit Nüvə + Korpus'
-    },
-    {
-      feature: 'Nüvə Maqnitlənməsi (Ball-Core)',
-      standard: 'Yoxdur',
-      dualAdj: 'Yoxdur',
-      maglev: 'Seçilmiş Modellərdə',
-      ballcore: 'Var (360° Ball-Core Omni-Directional)'
-    },
-    {
-      feature: 'Avto-Hizalanma (Auto-Alignment)',
-      standard: '0° - 10°',
-      dualAdj: '10° - 15°',
-      maglev: '15° - 25°',
-      ballcore: '25° - 35° (Öz-özünə düzəlmə)'
-    },
-    {
-      feature: 'Fırlanma Hissiyyatı',
-      standard: 'Mülayim, Rahat',
-      dualAdj: 'Çevik və Tənzimlənən',
-      maglev: 'Ultra Sürətli, Sürtünməsiz',
-      ballcore: 'Mütləq Dəqiqlik & Maksimum İdarəolunma'
-    },
-    {
-      feature: 'Tövsiyə Olunan Səviyyə',
-      standard: 'Başlanğıc & Orta',
-      dualAdj: 'Orta & İrəli',
-      maglev: 'İrəli & Speedcuber',
-      ballcore: 'Peşəkar / WCA Turnir İştirakçısı'
-    }
-  ];
-
-  return (
-    <div className="mt-8 border border-border/80 rounded-3xl p-5 md:p-6 bg-card shadow-soft-sm space-y-4">
-      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-rubik-brand/10 text-rubik-brand rounded-xl">
-            <GitCompare className="h-5 w-5" />
-          </div>
-          <div>
-            <h3 className="font-black text-base md:text-lg text-foreground tracking-tight">
-              {lineTitle}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Hangi versiyanın sizin fırlatma stilinizə daha uyğun olduğunu seçin
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs md:text-sm border-collapse min-w-[600px]">
-          <thead>
-            <tr className="border-b border-border bg-muted/40 text-foreground">
-              <th className="p-3 font-extrabold w-1/4">Xüsusiyyət</th>
-              <th className="p-3 font-extrabold text-center text-slate-700 dark:text-slate-300">Standard</th>
-              <th className="p-3 font-extrabold text-center text-blue-600 dark:text-blue-400">Dual Adjustment</th>
-              <th className="p-3 font-extrabold text-center text-purple-600 dark:text-purple-400">MagLev</th>
-              <th className="p-3 font-extrabold text-center text-rubik-brand bg-rubik-brand/5 rounded-t-xl">Ball-Core UV</th>
-            </tr>
-          </thead>
-          <tbody>
-            {comparisonData.map((row, idx) => (
-              <tr key={idx} className="border-b border-border/40 hover:bg-muted/20 transition-colors">
-                <td className="p-3 font-bold text-foreground bg-muted/10">{row.feature}</td>
-                <td className="p-3 text-center text-muted-foreground">{row.standard}</td>
-                <td className="p-3 text-center text-muted-foreground">{row.dualAdj}</td>
-                <td className="p-3 text-center text-muted-foreground">{row.maglev}</td>
-                <td className="p-3 text-center font-bold text-foreground bg-rubik-brand/5">{row.ballcore}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 class ErrorBoundary extends React.Component<
@@ -297,20 +185,63 @@ function ProductDetailClientContentInner({
   initialReviews = []
 }: ProductDetailClientContentProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const addItem = useCartStore((state) => state.addItem);
 
-  // 1. Database-driven variants setup safely from product_variants or variants
+  // 1. Universal Database-driven variants setup safely from product_variants or variants
   const dbVariants = React.useMemo(() => {
-    return product?.product_variants || product?.variants || [];
-  }, [product?.product_variants, product?.variants]);
+    const rawVariants = product?.product_variants || product?.variants || [];
+    if (Array.isArray(rawVariants) && rawVariants.length > 0) {
+      return rawVariants.map((v: any, index: number) => ({
+        id: String(v.id || `var_${index}`),
+        sku: v.sku || `SKU-${index + 1}`,
+        name: v.name || v.title_az || v.title || v.name_az || `Versiya ${index + 1}`,
+        price: v.price !== undefined && v.price !== null && v.price !== ''
+          ? Number(v.price)
+          : (v.price_azn !== undefined ? Number(v.price_azn) : Number(product?.price_azn || product?.price || 0)),
+        price_azn: v.price_azn !== undefined && v.price_azn !== null && v.price_azn !== ''
+          ? Number(v.price_azn)
+          : (v.price !== undefined ? Number(v.price) : Number(product?.price_azn || product?.price || 0)),
+        compare_at_price_azn: v.compare_at_price_azn || v.discount_price || v.original_price,
+        stock: v.stock !== undefined ? Number(v.stock) : Number(v.stock_quantity || product?.stock_quantity || 0),
+        stock_quantity: v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(v.stock || product?.stock_quantity || 0),
+        image_url: v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product?.image_url,
+        gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : []),
+        specs: v.specs || {}
+      }));
+    }
+    return [];
+  }, [product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url]);
 
-  const [selectedVariantId, setSelectedVariantId] = React.useState<string | null>(
-    dbVariants.length > 0 ? dbVariants[0].id : null
-  );
+  // Read searchParam `variant` or `version` or `sku`
+  const variantParam = searchParams ? (searchParams.get('variant') || searchParams.get('version') || searchParams.get('sku')) : null;
+
+  const initialVariantId = React.useMemo(() => {
+    if (dbVariants.length === 0) return null;
+    if (variantParam) {
+      const qLower = variantParam.toLowerCase().trim();
+      const match = dbVariants.find((v: any) =>
+        String(v.sku).toLowerCase() === qLower ||
+        String(v.id).toLowerCase() === qLower ||
+        String(v.name).toLowerCase() === qLower
+      );
+      if (match) return match.id;
+    }
+    return dbVariants[0].id;
+  }, [dbVariants, variantParam]);
+
+  const [selectedVariantId, setSelectedVariantId] = React.useState<string | null>(initialVariantId);
+
+  React.useEffect(() => {
+    if (initialVariantId && initialVariantId !== selectedVariantId) {
+      setSelectedVariantId(initialVariantId);
+    }
+  }, [initialVariantId]);
 
   const selectedVariant = React.useMemo(() => {
     if (dbVariants.length === 0) return null;
-    return dbVariants.find((v: any) => v.id === selectedVariantId) || dbVariants[0];
+    return dbVariants.find((v: any) => String(v.id) === String(selectedVariantId)) || dbVariants[0];
   }, [dbVariants, selectedVariantId]);
 
   // 2. Main Active Image & Error State
@@ -324,18 +255,28 @@ function ProductDetailClientContentInner({
   // Auto switch main active image when selectedVariant changes or has specific image
   React.useEffect(() => {
     if (selectedVariant) {
-      const vImg = selectedVariant.image_url || (Array.isArray(selectedVariant.images) && selectedVariant.images[0]) || selectedVariant.image;
+      const vImg = selectedVariant.image_url || (Array.isArray(selectedVariant.gallery_images) && selectedVariant.gallery_images[0]) || product?.image_url;
       if (vImg) {
         setActiveImage(vImg);
       }
     }
-  }, [selectedVariant]);
+  }, [selectedVariant, product?.image_url]);
 
   const handleVariantSelect = (v: any) => {
     setSelectedVariantId(v.id);
-    const vImg = v.image_url || (Array.isArray(v.images) && v.images[0]) || v.image;
+    const vImg = v.image_url || (Array.isArray(v.gallery_images) && v.gallery_images[0]) || product?.image_url;
     if (vImg) {
       setActiveImage(vImg);
+    }
+
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (v.sku) {
+        url.searchParams.set('variant', v.sku);
+      } else {
+        url.searchParams.set('variant', v.id);
+      }
+      window.history.replaceState(null, '', url.toString());
     }
   };
 
@@ -511,18 +452,8 @@ function ProductDetailClientContentInner({
     resolvedBrand = rawBrand;
   }
 
-  const pTitleLower = (product?.title || '').toLowerCase();
   if (!resolvedBrand) {
-    if (pTitleLower.includes('moyu')) resolvedBrand = 'MoYu';
-    else if (pTitleLower.includes('qiyi')) resolvedBrand = 'QiYi';
-    else if (/\bgan\b/.test(pTitleLower)) resolvedBrand = 'GAN';
-    else if (pTitleLower.includes('z-cube') || pTitleLower.includes('zcube')) resolvedBrand = 'Z-Cube';
-    else if (pTitleLower.includes('shengshou')) resolvedBrand = 'ShengShou';
-    else if (pTitleLower.includes('yuxin')) resolvedBrand = 'YuXin';
-    else if (pTitleLower.includes('diansheng')) resolvedBrand = 'DianSheng';
-    else if (pTitleLower.includes('dayan')) resolvedBrand = 'DaYan';
-    else if (pTitleLower.includes('monster go') || pTitleLower.includes('monstergo')) resolvedBrand = 'Monster Go';
-    else resolvedBrand = 'Orijinal Brend';
+    resolvedBrand = (product as any)?.brand_name || product?.brand || 'Orijinal Brend';
   }
 
   let typeBadge = '';
@@ -1118,10 +1049,10 @@ function ProductDetailClientContentInner({
                 <div className="grid grid-cols-2 gap-3">
                   {dbVariants.map((v: any) => {
                     const vStock = Number(v.stock_quantity ?? v.stock ?? 0);
-                    const isVSelected = selectedVariantId === v.id;
-                    const vPrice = Number(v.price_azn || v.price || product.price_azn);
-                    const vTitle = v.title_az || v.name_az || v.title_en || v.name || v.sku || 'Variant';
-                    const vImg = v.image_url || (Array.isArray(v.images) && v.images[0]) || v.image;
+                    const isVSelected = String(selectedVariantId) === String(v.id);
+                    const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
+                    const vTitle = v.name || v.title_az || v.name_az || v.title || v.sku || 'Variant';
+                    const vImg = v.image_url || (Array.isArray(v.gallery_images) && v.gallery_images[0]) || (Array.isArray(v.images) && v.images[0]);
 
                     return (
                       <button
@@ -1150,7 +1081,7 @@ function ProductDetailClientContentInner({
                           <span className={isVSelected ? 'text-white/80 font-medium' : 'text-muted-foreground'}>
                             {vStock > 0 ? `Stok: ${vStock} ədəd` : 'Bitib (Sifarişlə)'}
                           </span>
-                          <span className="font-black">
+                          <span className="font-black font-mono">
                             {vPrice.toFixed(2)} AZN
                           </span>
                         </div>

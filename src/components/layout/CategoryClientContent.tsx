@@ -39,6 +39,9 @@ interface Product {
   mechanics?: 'magnetic' | 'maglev' | 'ball-core' | 'standard' | string;
   created_at?: string;
   slug?: string;
+  product_variants?: any[];
+  variants?: any[];
+  [key: string]: any;
 }
 
 interface CategoryClientContentProps {
@@ -56,7 +59,6 @@ interface CategoryClientContentProps {
 const getBrandName = (p: any): string => {
   if (!p) return '';
   
-  // Check relational brands object or brand_name if valid string
   if (p.brands && typeof p.brands === 'object' && !Array.isArray(p.brands) && p.brands.name) {
     const bName = String(p.brands.name).trim();
     if (bName && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(bName.toUpperCase())) return bName;
@@ -78,17 +80,6 @@ const getBrandName = (p: any): string => {
     if (bName && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(bName.toUpperCase())) return bName;
   }
   
-  // Fallback check from product title
-  const title = (p.name_az || p.name || p.title_az || p.title || p.title_en || '').toLowerCase();
-  if (title.includes('z-cube') || title.includes('zcube') || title.includes('z cube')) return 'Z-Cube';
-  if (title.includes('moyu')) return 'MoYu';
-  if (title.includes('qiyi')) return 'QiYi';
-  if (/\bgan\b/.test(title)) return 'GAN';
-  if (title.includes('shengshou')) return 'ShengShou';
-  if (title.includes('yuxin')) return 'YuXin';
-  if (title.includes('diansheng')) return 'DianSheng';
-  if (title.includes('dayan')) return 'DaYan';
-  if (title.includes('monster go') || title.includes('monstergo')) return 'Monster Go';
   return '';
 };
 
@@ -105,45 +96,93 @@ export function CategoryClientContent({
   // Cart operations
   const addItem = useCartStore((state) => state.addItem);
 
-  
-
-  
-  // Merge database items if any
+  // Universal Catalog Flattening & Category Mapping
   const baseProducts = React.useMemo(() => {
-    const dbMapped = initialProducts.map(p => {
+    if (!initialProducts || !Array.isArray(initialProducts)) return [];
+
+    const flattened: any[] = [];
+
+    initialProducts.forEach((p) => {
       const pTitle = p.title || (p as any).name || '';
-      const resolvedBrand = getBrandName(p) || p.brand || 'Other';
-      return {
-        ...p,
-        category_slug: p.category_slug || null,
-        brand: resolvedBrand,
-        mechanics: p.mechanics || (pTitle.toLowerCase().includes('maglev') ? 'maglev' : pTitle.toLowerCase().includes('ball-core') ? 'ball-core' : pTitle.toLowerCase().includes('magnetic') ? 'magnetic' : 'standard')
-      };
-    });
+      const resolvedBrand = getBrandName(p) || (p as any).brand || '';
+      const pVariants = (p as any).product_variants || (p as any).variants || [];
+      const parentSlug = p.slug || p.id;
 
-    if (dbMapped.length > 0) {
-      if (categoryItem) {
-        const targetSlug = categoryItem.slug.toLowerCase();
-        const targetId = categoryItem.id.toLowerCase();
+      if (Array.isArray(pVariants) && pVariants.length > 1) {
+        pVariants.forEach((v: any, index: number) => {
+          const variantName = v.name || v.title_az || v.title || v.name_az || `Variant ${index + 1}`;
+          const fullTitle = variantName.toLowerCase().includes(pTitle.toLowerCase())
+            ? variantName
+            : `${pTitle} (${variantName})`;
 
-        return dbMapped.filter(p => {
-          if (!p.category_slug) return true;
-          const pCat = p.category_slug.toLowerCase();
-          return (
-            pCat === targetSlug ||
-            pCat === targetId ||
-            (targetSlug === '3x3' && (pCat === '3x3-kub' || pCat === '3x3-kublar')) ||
-            (targetSlug === '2x2' && (pCat === '2x2-kub' || pCat === '2x2-kublar')) ||
-            (targetSlug === '4x4' && (pCat === '4x4-kub' || pCat === '4x4-kublar')) ||
-            (targetSlug === '5x5' && (pCat === '5x5-kub' || pCat === '5x5-kublar'))
-          );
+          const vPrice = v.price !== undefined && v.price !== null && v.price !== ''
+            ? Number(v.price)
+            : (v.price_azn !== undefined ? Number(v.price_azn) : Number(p.price_azn || 0));
+
+          const vComparePrice = v.compare_at_price_azn || v.discount_price || v.original_price || (p as any).compare_at_price_azn || (p as any).compare_at_price;
+
+          const vStock = v.stock !== undefined && v.stock !== null
+            ? Number(v.stock)
+            : (v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(p.stock_quantity || 0));
+
+          const vImage = v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || p.image_url;
+          const vSku = v.sku || `${(p as any).sku || 'SKU'}-${index + 1}`;
+
+          const variantSlugParam = v.sku ? v.sku : (v.id || index);
+          const cardSlug = `${parentSlug}?variant=${encodeURIComponent(variantSlugParam)}`;
+
+          flattened.push({
+            ...p,
+            id: `${p.id}__var_${v.id || v.sku || index}`,
+            original_product_id: p.id,
+            variant_id: v.id,
+            title: fullTitle,
+            name: fullTitle,
+            price_azn: vPrice,
+            price: vPrice,
+            compare_at_price_azn: vComparePrice ? Number(vComparePrice) : undefined,
+            old_price: vComparePrice ? Number(vComparePrice) : undefined,
+            image_url: vImage,
+            stock_quantity: vStock,
+            sku: vSku,
+            variant_sku: vSku,
+            slug: cardSlug,
+            is_variant_card: true,
+            variant_name: variantName,
+            brand: resolvedBrand,
+            mechanics: (p as any).mechanics || (fullTitle.toLowerCase().includes('maglev') ? 'maglev' : fullTitle.toLowerCase().includes('ball-core') ? 'ball-core' : fullTitle.toLowerCase().includes('magnetic') ? 'magnetic' : 'standard')
+          });
+        });
+      } else {
+        flattened.push({
+          ...p,
+          category_slug: p.category_slug || null,
+          brand: resolvedBrand,
+          mechanics: (p as any).mechanics || (pTitle.toLowerCase().includes('maglev') ? 'maglev' : pTitle.toLowerCase().includes('ball-core') ? 'ball-core' : pTitle.toLowerCase().includes('magnetic') ? 'magnetic' : 'standard')
         });
       }
-      return dbMapped;
-    }
-    return [];
-  }, [initialProducts, categoryItem]);
+    });
 
+    if (categoryItem) {
+      const targetSlug = categoryItem.slug.toLowerCase();
+      const targetId = categoryItem.id.toLowerCase();
+
+      return flattened.filter(p => {
+        if (!p.category_slug) return true;
+        const pCat = p.category_slug.toLowerCase();
+        return (
+          pCat === targetSlug ||
+          pCat === targetId ||
+          (targetSlug === '3x3' && (pCat === '3x3-kub' || pCat === '3x3-kublar')) ||
+          (targetSlug === '2x2' && (pCat === '2x2-kub' || pCat === '2x2-kublar')) ||
+          (targetSlug === '4x4' && (pCat === '4x4-kub' || pCat === '4x4-kublar')) ||
+          (targetSlug === '5x5' && (pCat === '5x5-kub' || pCat === '5x5-kublar'))
+        );
+      });
+    }
+
+    return flattened;
+  }, [initialProducts, categoryItem]);
 
   // Read filters from SearchParams for absolute URL persistence
   const initialMinPrice = Number(searchParams.get('min_price')) || 0;
@@ -161,11 +200,11 @@ export function CategoryClientContent({
   const [isMobileFilterOpen, setIsMobileFilterOpen] = React.useState(false);
   const [isMobileSortOpen, setIsMobileSortOpen] = React.useState(false);
 
-  // Available brands and mechanics dynamically based on category products (filtering empty/Other)
+  // Available brands and mechanics dynamically based on category products
   const availableBrands = React.useMemo(() => {
     const brandsSet = new Set<string>();
     baseProducts.forEach(p => {
-      const bName = getBrandName(p);
+      const bName = getBrandName(p) || p.brand;
       if (bName) {
         const upper = bName.toUpperCase();
         if (!['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(upper)) {
@@ -208,7 +247,7 @@ export function CategoryClientContent({
     // Filter by Brand
     if (selectedBrands.length > 0) {
       result = result.filter(p => {
-        const bName = getBrandName(p);
+        const bName = getBrandName(p) || p.brand;
         return Boolean(bName && selectedBrands.includes(bName));
       });
     }
@@ -303,7 +342,7 @@ export function CategoryClientContent({
               SEZON ENDİRİMİ
             </span>
             <h2 className="text-lg md:text-2xl font-black">
-              Bütün GAN və MoYu flaqmanlarına xüsusi 15% Endirim!
+              Bütün rəsmi sürət kublarına xüsusi endirimlər!
             </h2>
             <p className="text-xs text-blue-100 max-w-lg">
               Sifariş zamanı rəsmi Rubikshop Premium Setup xidmətindən pulsuz yararlanın. Peşəkarlarımız sizin üçün kubu nizama salacaq.
@@ -478,17 +517,6 @@ export function CategoryClientContent({
                 ))}
               </div>
             )}
-
-            {/* Pagination Placeholder */}
-            {filteredProducts.length > 0 && (
-              <div className="pt-8 border-t border-border flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Səhifə 1 / 1</span>
-                <div className="flex gap-2">
-                  <button className="px-4 py-2 border border-border rounded-xl text-xs font-semibold text-muted-foreground cursor-not-allowed" disabled>Əvvəlki</button>
-                  <button className="px-4 py-2 bg-foreground text-card rounded-xl text-xs font-semibold hover:bg-foreground/90 transition-all cursor-pointer">Növbəti</button>
-                </div>
-              </div>
-            )}
           </main>
         </div>
 
@@ -498,7 +526,7 @@ export function CategoryClientContent({
             {categoryTitle} Haqqında Ətraflı Məlumat
           </h2>
           <p className="text-muted-foreground text-xs md:text-sm leading-relaxed">
-            Hər bir sürətli həll (speedcubing) həvəskarının ehtiyac duyduğu premium modellər Rubikshop-da bir araya gəlir. GAN, MoYu və QiYi brendlərinin flaqman məhsulları maqnit gücü və sürtünmə dərəcəsinə görə xüsusi olaraq qruplaşdırılmışdır. Bu məhsulların hamısı Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və rəsmi turnirlərdə istifadə edilə bilər.
+            Hər bir sürətli həll (speedcubing) həvəskarının ehtiyac duyduğu premium modellər Rubikshop-da bir araya gəlir. Brendlərin flaqman məhsulları maqnit gücü və sürtünmə dərəcəsinə görə xüsusi olaraq qruplaşdırılmışdır. Bu məhsulların hamısı Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və rəsmi turnirlərdə istifadə edilə bilər.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="bg-muted p-4 rounded-xl border border-border/40">
@@ -520,14 +548,14 @@ export function CategoryClientContent({
           <div className="max-w-3xl mx-auto space-y-3">
             {[
               { q: 'Bizdə satılan məhsullar zəmanətlidir?', a: 'Bəli, Rubikshop-da satılan hər bir professional sürətli kub modelinə rəsmi istehsalçı və orijinallıq zəmanəti verilir.' },
-              { q: 'Sifarişdən sonra kub necə yağlanır və ayarlanır?', a: 'Sifariş qeydində kubu istədiyiniz gərginlikdə və sürətdə tələb edə bilərsiniz. Professional mütəxəssislərimiz GAN/MoYu yağları ilə kubu tam hazır edərək göndərəcək.' },
+              { q: 'Sifarişdən sonra kub necə yağlanır və ayarlanır?', a: 'Sifariş qeydində kubu istədiyiniz gərginlikdə və sürətdə tələb edə bilərsiniz. Professional mütəxəssislərimiz xüsusi yağlar ilə kubu tam hazır edərək göndərəcək.' },
               { q: 'Kuryerlərlə qapıda yoxlamaq olar?', a: 'Əlbəttə. Kuryer sifarişi çatdırdıqda məhsulun qutusunu açıb fırlatma tərzini və aksesuarlarını tam yoxladıqdan sonra nağd və ya terminal ilə ödəniş edə bilərsiniz.' }
             ].map((faq, index) => (
               <div key={index} className="bg-card border border-border rounded-xl p-4 space-y-2">
                 <span className="block font-bold text-sm md:text-base text-foreground">{faq.q}</span>
                 <span className="block text-xs md:text-sm text-muted-foreground leading-relaxed">{faq.a}</span>
               </div>
-                ))}
+            ))}
           </div>
         </section>
       </div>
@@ -598,7 +626,7 @@ export function CategoryClientContent({
                           />
                           <span>{brand}</span>
                         </label>
-                        ))}
+                      ))}
                     </div>
                   </div>
                 )}
@@ -625,7 +653,7 @@ export function CategoryClientContent({
                           />
                           <span className="capitalize">{mech === 'maglev' ? 'MagLev' : mech === 'ball-core' ? 'Ball-Core' : mech === 'magnetic' ? 'Magnetic' : 'Standard'}</span>
                         </label>
-                        ))}
+                      ))}
                     </div>
                   </div>
                 )}

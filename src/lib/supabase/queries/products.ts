@@ -27,6 +27,11 @@ export interface Product {
   original_price_azn?: number;
   discount_percent?: number;
   slug?: string;
+  product_variants?: any[];
+  variants?: any[];
+  family_slug?: string;
+  product_family?: string;
+  [key: string]: any;
 }
 
 export async function getActiveProducts() {
@@ -71,6 +76,91 @@ export async function getActiveProducts() {
   }
 }
 
+/**
+ * Fetch all sibling products belonging to a family (e.g., family_slug or product_family).
+ */
+export async function getProductFamilySiblings(familyIdentifier: string) {
+  if (!familyIdentifier || typeof familyIdentifier !== 'string') return [];
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, brands (*), variants (*)')
+      .or(`family_slug.eq.${familyIdentifier},product_family.eq.${familyIdentifier}`)
+      .eq('is_active', true);
+
+    if (error || !data) return [];
+    return data;
+  } catch (err) {
+    console.error('getProductFamilySiblings exception:', err);
+    return [];
+  }
+}
+
+/**
+ * Flattens products with variants into individual catalog items for grid rendering.
+ */
+export function flattenProductsWithVariants(products: Product[]): Product[] {
+  if (!products || !Array.isArray(products)) return [];
+
+  const flattened: Product[] = [];
+
+  for (const product of products) {
+    const rawVariants = product.product_variants || product.variants || [];
+
+    if (Array.isArray(rawVariants) && rawVariants.length > 1) {
+      const parentTitle = product.title || (product as any).name || '';
+      const parentSlug = product.slug || product.id;
+
+      rawVariants.forEach((v: any, index: number) => {
+        const variantName = v.name || v.title_az || v.title || v.name_az || `Variant ${index + 1}`;
+        const fullTitle = variantName.toLowerCase().includes(parentTitle.toLowerCase())
+          ? variantName
+          : `${parentTitle} (${variantName})`;
+
+        const vPrice = v.price !== undefined && v.price !== null && v.price !== ''
+          ? Number(v.price)
+          : (v.price_azn !== undefined ? Number(v.price_azn) : Number(product.price_azn || 0));
+
+        const vComparePrice = v.compare_at_price_azn || v.discount_price || v.original_price || product.compare_at_price_azn;
+
+        const vStock = v.stock !== undefined && v.stock !== null
+          ? Number(v.stock)
+          : (v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(product.stock_quantity || 0));
+
+        const vImage = v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product.image_url;
+        const vSku = v.sku || `${product.sku || 'SKU'}-${index + 1}`;
+
+        // Embed searchParam into slug so ProductCard automatically opens the variant
+        const variantSlugParam = v.sku ? v.sku : (v.id || index);
+        const cardSlug = `${parentSlug}?variant=${encodeURIComponent(variantSlugParam)}`;
+
+        flattened.push({
+          ...product,
+          id: `${product.id}__var_${v.id || v.sku || index}`,
+          original_product_id: product.id,
+          variant_id: v.id,
+          title: fullTitle,
+          name: fullTitle,
+          price_azn: vPrice,
+          compare_at_price_azn: vComparePrice ? Number(vComparePrice) : undefined,
+          original_price_azn: vComparePrice ? Number(vComparePrice) : undefined,
+          image_url: sanitizeImageUrl(vImage, product.id),
+          stock_quantity: vStock,
+          sku: vSku,
+          variant_sku: vSku,
+          slug: cardSlug,
+          is_variant_card: true,
+          variant_name: variantName,
+        });
+      });
+    } else {
+      flattened.push(product);
+    }
+  }
+
+  return flattened;
+}
+
 export function mapProductToLocale(raw: RawProduct, locale: string): Product & { [key: string]: any } {
   const titleKey = `title_${locale}` as keyof RawProduct;
   const descKey = `description_${locale}` as keyof RawProduct;
@@ -112,29 +202,17 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     ? Math.round(((finalOldPrice - finalPrice) / finalOldPrice) * 100)
     : (raw.discount_percent ? Number(raw.discount_percent) : undefined);
 
-  // Resolve brand name safely
-  const rawBrand = (
+  // Universal Brand Resolution directly from database properties (Zero hardcoding)
+  const resolvedBrand = (
     raw.brands?.name ||
     raw.brand_name ||
     raw.brand ||
     ''
-  ).trim();
+  ).toString().trim();
 
-  let resolvedBrand = '';
-  if (rawBrand && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(rawBrand.toUpperCase())) {
-    resolvedBrand = rawBrand;
-  } else {
-    const title = (raw[titleKey] || raw.title_az || raw.name || raw.name_az || '').toLowerCase();
-    if (title.includes('z-cube') || title.includes('zcube') || title.includes('z cube')) resolvedBrand = 'Z-Cube';
-    else if (title.includes('moyu')) resolvedBrand = 'MoYu';
-    else if (title.includes('qiyi')) resolvedBrand = 'QiYi';
-    else if (/\bgan\b/.test(title)) resolvedBrand = 'GAN';
-    else if (title.includes('shengshou')) resolvedBrand = 'ShengShou';
-    else if (title.includes('yuxin')) resolvedBrand = 'YuXin';
-    else if (title.includes('diansheng')) resolvedBrand = 'DianSheng';
-    else if (title.includes('dayan')) resolvedBrand = 'DaYan';
-    else if (title.includes('monster go') || title.includes('monstergo')) resolvedBrand = 'Monster Go';
-  }
+  const cleanBrand = (resolvedBrand && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(resolvedBrand.toUpperCase()))
+    ? resolvedBrand
+    : '';
 
   const productVariants = raw.product_variants || raw.variants || [];
 
@@ -154,9 +232,12 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     stock_quantity: Number(raw.stock_quantity || 0),
     slug: raw.slug || undefined,
     brands: raw.brands || undefined,
-    brand: resolvedBrand || undefined,
-    brand_name: resolvedBrand || undefined,
+    brand: cleanBrand || undefined,
+    brand_name: cleanBrand || undefined,
     brand_id: raw.brand_id || undefined,
     product_variants: productVariants,
+    variants: productVariants,
+    family_slug: raw.family_slug || raw.product_family || undefined,
+    product_family: raw.product_family || raw.family_slug || undefined,
   };
 }
