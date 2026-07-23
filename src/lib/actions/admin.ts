@@ -1587,7 +1587,9 @@ function mapVariantsPayload(variants: any[], basePrice: number, productId?: stri
       price_azn: variantPrice,
       price: variantPrice,
       stock: Number(v.stock ?? v.stock_quantity ?? 0),
-      is_active: v.is_active ?? true
+      is_active: v.is_active ?? true,
+      image_url: v.image_url ? String(v.image_url).trim() : null,
+      gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : [])
     };
     if (productId) {
       item.product_id = productId;
@@ -1630,6 +1632,7 @@ export async function createProduct(payload: any) {
       is_magnetic: payload.is_magnetic ?? false,
       size_mm: payload.size_mm,
       difficulty_level: payload.difficulty_level ?? 'başlanğıc',
+      add_ons: payload.add_ons ?? [],
     };
 
     const { data: product, error: prodError } = await supabase

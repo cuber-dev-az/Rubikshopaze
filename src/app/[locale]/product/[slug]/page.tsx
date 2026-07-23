@@ -2,6 +2,7 @@ import { getDictionary } from '@/i18n/dictionaries';
 import { ProductDetailClientContent } from '@/components/layout/ProductDetailClientContent';
 import { supabase } from '@/lib/supabase/client';
 import { getProductReviews } from '@/lib/actions/reviews';
+import { sanitizeImageUrl } from '@/lib/image';
 import Link from 'next/link';
 
 export const revalidate = 60;
@@ -139,7 +140,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         title: String(titleVal),
         price_azn: priceVal,
         original_price: origPriceVal ? Number(origPriceVal) : undefined,
-        image_url: dbProduct.image_url || 'https://picsum.photos/seed/default/600/600',
+        image_url: sanitizeImageUrl(dbProduct.image_url, dbProduct.id),
         stock_quantity: Number(dbProduct.stock_quantity || 0),
         brand: cleanBrandName,
         brands: dbProduct.brands,
@@ -239,7 +240,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       id: p.id,
       title: (p[`title_${locale}`] || p[`name_${locale}`] || p.title_az || p.name_az || p.title || p.name || '') as string,
       price_azn: Number(p.price ?? p.price_azn ?? 0),
-      image_url: p.image_url || 'https://picsum.photos/seed/default/600/600',
+      image_url: sanitizeImageUrl(p.image_url, p.id),
       stock_quantity: Number(p.stock_quantity || 0),
       category_slug: p.categories?.slug || p.category_slug || p.category || '',
       brand: cleanRelBrand

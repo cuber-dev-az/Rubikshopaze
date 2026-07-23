@@ -1,4 +1,5 @@
 import { supabase } from '../client';
+import { sanitizeImageUrl } from '@/lib/image';
 
 export interface RawProduct {
   id: string;
@@ -149,7 +150,7 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     discount_price: finalOldPrice,
     old_price: finalOldPrice,
     discount_percent: calculatedPercent,
-    image_url: raw.image_url || 'https://picsum.photos/seed/default/600/600',
+    image_url: sanitizeImageUrl(raw.image_url, raw.id || 'default'),
     stock_quantity: Number(raw.stock_quantity || 0),
     slug: raw.slug || undefined,
     brands: raw.brands || undefined,

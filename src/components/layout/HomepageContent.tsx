@@ -33,6 +33,7 @@ import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
 import { createClient } from '@/lib/supabase/client';
 import { ProductCard } from '@/components/ProductCard';
+import { sanitizeImageUrl } from '@/lib/image';
 
 interface Product {
   id: string;
@@ -183,7 +184,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
             title: (chosenHero[titleKey] || chosenHero.title_az || '') as string,
             description: (chosenHero[descKey] || chosenHero.description_az || '') as string,
             price_azn: Number(chosenHero.price_azn || 0),
-            image_url: chosenHero.image_url || 'https://picsum.photos/seed/default/600/600',
+            image_url: sanitizeImageUrl(chosenHero.image_url, chosenHero.id),
             stock_quantity: Number(chosenHero.stock_quantity || 0),
             compare_at_price_azn: chosenHero.compare_at_price_azn ? Number(chosenHero.compare_at_price_azn) : undefined,
             original_price_azn: chosenHero.original_price_azn ? Number(chosenHero.original_price_azn) : undefined,
@@ -237,7 +238,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 title: (bProd[titleKey] || bProd.title_az || '') as string,
                 description: (bProd[descKey] || bProd.description_az || '') as string,
                 price_azn: Number(bProd.price_azn || 0),
-                image_url: bProd.image_url || 'https://picsum.photos/seed/default/600/600',
+                image_url: sanitizeImageUrl(bProd.image_url, bProd.id),
                 stock_quantity: Number(bProd.stock_quantity || 0),
                 compare_at_price_azn: bProd.compare_at_price_azn ? Number(bProd.compare_at_price_azn) : undefined,
                 original_price_azn: bProd.original_price_azn ? Number(bProd.original_price_azn) : undefined,
@@ -580,7 +581,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                   className="w-full max-w-sm rounded-3xl overflow-hidden shadow-soft-2xl relative aspect-square"
                 >
                   <Image
-                    src={banners[currentBannerIndex].image_url || "https://picsum.photos/seed/flagship3x3/500/500"}
+                    src={sanitizeImageUrl(banners[currentBannerIndex].image_url, 'banner')}
                     alt={banners[currentBannerIndex][`title_${locale}`] || 'Banner Image'}
                     fill
                     referrerPolicy="no-referrer"

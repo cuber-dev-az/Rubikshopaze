@@ -56,6 +56,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [stock_quantity, setStock_quantity] = useState<number>(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [tags, setTags] = useState('gan, flagship, maglev');
+  const [selectedMediaTarget, setSelectedMediaTarget] = useState<string>('product');
+  const [addOns, setAddOns] = useState<any[]>([]);
   
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDesc, setSeoDesc] = useState('');
@@ -160,13 +162,23 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
               setSelectedCategoryId('');
             }
             
+            if (prod.add_ons && Array.isArray(prod.add_ons)) {
+              setAddOns(prod.add_ons);
+            } else {
+              setAddOns([]);
+            }
+
             if (prod.variants && Array.isArray(prod.variants)) {
               setVariants(prod.variants.map((v: any, index: number) => ({
-                id: v.id || index + 1,
+                id: v.id || `var_${index + 1}_${Date.now()}`,
                 sku: v.sku || '',
-                name: v.name || '',
-                price: v.price !== undefined ? String(v.price) : '',
-                stock: v.stock || 0
+                name: v.name || v.title_az || '',
+                price: v.price !== undefined ? String(v.price) : (v.price_azn !== undefined ? String(v.price_azn) : ''),
+                stock: v.stock !== undefined ? v.stock : (v.stock_quantity || 0),
+                image_url: v.image_url || v.image || '',
+                gallery_images: Array.isArray(v.gallery_images)
+                  ? v.gallery_images
+                  : (Array.isArray(v.images) ? v.images : (typeof v.gallery_images === 'string' ? JSON.parse(v.gallery_images) : []))
               })));
             }
           } else {
@@ -248,12 +260,24 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         const parsedVariantPrice = parseFloat(String(v.price).replace(',', '.'));
         const roundedPrice = !isNaN(parsedVariantPrice) && isFinite(parsedVariantPrice) ? Math.round(parsedVariantPrice * 100) / 100 : 0;
         return {
+          id: v.id,
           sku: v.sku || '',
           name: v.name || '',
           price: roundedPrice,
-          stock: Number(v.stock) || 0
+          stock: Number(v.stock) || 0,
+          image_url: v.image_url ? String(v.image_url).trim() : '',
+          gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images.map((g: string) => String(g).trim()).filter(Boolean) : []
         };
       });
+
+      const payloadAddOns = addOns.map(a => ({
+        id: a.id || `addon_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        title_az: a.title_az || a.title || 'Əlavə xidmət',
+        title_en: a.title_en || a.title_az || '',
+        title_ru: a.title_ru || a.title_az || '',
+        price_azn: Number(a.price_azn || a.price || 0),
+        description_az: a.description_az || ''
+      }));
 
       const parsedComparePrice = parseFloat(String(compareAtPrice_azn).replace(',', '.'));
       const comparePriceNumber = !isNaN(parsedComparePrice) && isFinite(parsedComparePrice) ? Math.round(parsedComparePrice * 100) / 100 : null;
@@ -278,6 +302,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         video_url: videoUrl || undefined,
         stock_quantity: Number(stock_quantity) || 0,
         variants: payloadVariants,
+        add_ons: payloadAddOns,
         category_ids: selectedCategoryId ? [selectedCategoryId] : [],
         brand_id: selectedBrandId || undefined,
         is_featured: isFeatured,
@@ -321,8 +346,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
   const tabs = [
     { id: 'core', label: 'Əsas Məlumatlar', icon: Settings },
-    { id: 'media', label: 'Media Mərkəzi', icon: ImageIcon },
+    { id: 'media', label: 'Şəkil Meneceri', icon: ImageIcon },
     { id: 'variants', label: 'Variantlar', icon: Layers },
+    { id: 'addons', label: 'Əlavə Xidmətlər', icon: Tag },
     { id: 'seo', label: 'SEO & Meta', icon: Globe },
   ];
 
@@ -622,143 +648,230 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
           )}
 
           {/* Tab Content: Media */}
-          {activeTab === 'media' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-4">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-amber-500" /> Şəkil Meneceri
-                </h3>
+          {activeTab === 'media' && (() => {
+            const isProductTarget = selectedMediaTarget === 'product';
+            const selectedVariantObj = !isProductTarget
+              ? variants.find(v => String(v.id) === String(selectedMediaTarget))
+              : null;
 
-                <div className="space-y-4">
+            const activeTargetImageUrl = isProductTarget
+              ? imageUrl
+              : (selectedVariantObj?.image_url || '');
+
+            const setActiveTargetImageUrl = (newVal: string) => {
+              if (isProductTarget) {
+                setImageUrl(newVal);
+              } else if (selectedVariantObj) {
+                handleUpdateVariant(selectedVariantObj.id, 'image_url', newVal);
+              }
+            };
+
+            const activeTargetGalleryImages: string[] = isProductTarget
+              ? galleryImages
+              : (Array.isArray(selectedVariantObj?.gallery_images) ? selectedVariantObj.gallery_images : []);
+
+            const setActiveTargetGalleryImages = (newArr: string[]) => {
+              if (isProductTarget) {
+                setGalleryImages(newArr);
+              } else if (selectedVariantObj) {
+                handleUpdateVariant(selectedVariantObj.id, 'gallery_images', newArr);
+              }
+            };
+
+            return (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Target Scope Selection Bar */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-soft-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Əsas Şəkil URL-i</label>
+                    <label className="block text-xs font-black text-amber-500 uppercase tracking-wider mb-1">
+                      Şəkil İdarəetmə Hədəfi (Scope)
+                    </label>
+                    <p className="text-xs text-slate-400">
+                      Ümumi məhsul şəkli və ya konkret variant üçün xüsusi şəkillər seçin
+                    </p>
+                  </div>
+                  <select
+                    value={selectedMediaTarget}
+                    onChange={(e) => setSelectedMediaTarget(e.target.value)}
+                    className="w-full sm:w-auto bg-slate-950 border border-slate-700 text-amber-400 font-extrabold text-xs sm:text-sm rounded-2xl px-4 py-2.5 outline-none focus:border-amber-500 cursor-pointer shadow-inner"
+                  >
+                    <option value="product">📦 Ümumi Məhsul (Əsas Fallback Şəkil)</option>
+                    {variants.map((v, i) => (
+                      <option key={v.id || i} value={String(v.id)}>
+                        🎨 Variant: {v.name || `Variant ${i + 1}`} ({v.sku || 'SKU yoxdur'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-5">
+                  {/* Context Banner */}
+                  {isProductTarget ? (
+                    <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <span className="text-[10px] font-black uppercase text-amber-500 tracking-wider">Hədəf: Ümumi Məhsul</span>
+                        <h4 className="text-sm font-bold text-white">Məhsulun Əsas və Qalereya Şəkilləri</h4>
+                        <p className="text-xs text-slate-400">
+                          Bu şəkillər variantların xüsusi şəkli olmadıqda fallback olaraq istifadə edilir.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Hədəf: Konkret Variant</span>
+                        <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black uppercase">Variant Şəkli</span>
+                      </div>
+                      <h4 className="text-sm font-extrabold text-white">
+                        {selectedVariantObj?.name || 'Variant'} <span className="font-mono text-slate-400 text-xs">({selectedVariantObj?.sku || 'SKU yoxdur'})</span>
+                      </h4>
+                      {!activeTargetImageUrl && (
+                        <p className="text-xs text-amber-300/80 pt-1">
+                          ℹ️ Qeyd: Bu variant üçün xüsusi şəkil təyin edilməyib. Saytda məhsulun əsas şəkli <span className="underline font-mono">{imageUrl || 'seçilməyib'}</span> göstəriləcək.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <h3 className="text-base font-black text-white flex items-center gap-2 pt-2">
+                    <ImageIcon className="w-5 h-5 text-amber-500" /> 
+                    {isProductTarget ? 'Əsas Şəkil URL-i' : `${selectedVariantObj?.name || 'Variant'} Əsas Şəkli`}
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <input 
+                        type="url" 
+                        className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm"
+                        placeholder="https://... (Şəkil URL-i daxil edin)"
+                        value={activeTargetImageUrl}
+                        onChange={e => setActiveTargetImageUrl(e.target.value)}
+                      />
+                    </div>
+
+                    {activeTargetImageUrl ? (
+                      <div className="mt-4">
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Önizləmə</p>
+                        <div className="relative w-48 aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
+                          <Image 
+                            src={activeTargetImageUrl} 
+                            alt="Önizləmə" 
+                            fill 
+                            className="object-cover" 
+                            unoptimized={true}
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute top-2 left-2 px-2 py-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded uppercase tracking-wider shadow-md">
+                            {isProductTarget ? 'Məhsul Əsas' : 'Variant Əsas'}
+                          </div>
+                          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button 
+                              type="button"
+                              onClick={() => setActiveTargetImageUrl('')}
+                              className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-slate-800 bg-slate-950/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+                        <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3">
+                          <ImageIcon className="w-6 h-6 text-slate-400" />
+                        </div>
+                        <p className="text-xs font-bold text-white mb-1">Şəkil URL-i daxil edilməyib</p>
+                        <p className="text-[11px] text-slate-500">
+                          {isProductTarget ? 'Məhsulun əsas şəkli olaraq istifadə olunacaq.' : 'Bu variant üçün xüsusi şəkil daxil edilmədikdə əsas məhsul şəkli istifadə ediləcək.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ƏLAVƏ QALEREYA ŞƏKİLLƏRİ */}
+                  <div className="pt-6 border-t border-slate-800 space-y-4">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div>
+                        <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider">
+                          {isProductTarget ? 'Ümumi Qalereya Şəkilləri' : `${selectedVariantObj?.name || 'Variant'} Qalereya Şəkilləri`}
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-0.5">Məhsul detalları səhifəsində mini karusel şəkilləri</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTargetGalleryImages([...activeTargetGalleryImages, ''])}
+                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 hover:text-amber-400 font-bold text-xs rounded-xl transition-colors border border-slate-700 shrink-0"
+                      >
+                        <Plus className="w-4 h-4" /> + Əlavə Şəkil
+                      </button>
+                    </div>
+
+                    {activeTargetGalleryImages.length === 0 ? (
+                      <div className="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl text-center text-xs text-slate-500">
+                        Əlavə qalereya şəkli yoxdur.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {activeTargetGalleryImages.map((imgUrl, index) => (
+                          <div key={index} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3">
+                            <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
+                              {imgUrl ? (
+                                <Image
+                                  src={imgUrl}
+                                  alt={`Qalereya ${index + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized={true}
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <ImageIcon className="w-5 h-5 text-slate-600" />
+                              )}
+                            </div>
+                            <input
+                              type="url"
+                              value={imgUrl}
+                              onChange={(e) => {
+                                const updated = [...activeTargetGalleryImages];
+                                updated[index] = e.target.value;
+                                setActiveTargetGalleryImages(updated);
+                              }}
+                              placeholder="Əlavə şəkil URL-i daxil edin (https://...)"
+                              className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setActiveTargetGalleryImages(activeTargetGalleryImages.filter((_, i) => i !== index))}
+                              className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+                              title="Şəkli Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-4">
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Video className="w-5 h-5 text-blue-400" /> Video Meneceri
+                  </h3>
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">YouTube Video Linki</label>
                     <input 
                       type="url" 
                       className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
-                      placeholder="Şəkil URL daxil edin (məs. Supabase Storage linki və ya hər hansı şəkil URL)"
-                      value={imageUrl}
-                      onChange={e => setImageUrl(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      value={videoUrl}
+                      onChange={e => setVideoUrl(e.target.value)}
                     />
                   </div>
-
-                  {imageUrl ? (
-                    <div className="mt-4">
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Şəkil Önizləməsi</p>
-                      <div className="relative w-48 aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
-                        <Image 
-                          src={imageUrl} 
-                          alt="Önizləmə" 
-                          fill 
-                          className="object-cover" 
-                          unoptimized={true}
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute top-2 left-2 px-2 py-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded uppercase tracking-wider shadow-md">
-                          Əsas
-                        </div>
-                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                            type="button"
-                            onClick={() => setImageUrl('')}
-                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="border-2 border-dashed border-slate-700 bg-slate-950/50 rounded-2xl p-10 flex flex-col items-center justify-center text-center">
-                      <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                        <ImageIcon className="w-8 h-8 text-slate-400" />
-                      </div>
-                      <p className="text-sm font-bold text-white mb-1">Şəkil URL-i boşdur</p>
-                      <p className="text-xs text-slate-500">Məhsulun əsas şəkli olaraq göstəriləcək bir URL daxil edin</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* ƏLAVƏ QALEREYA ŞƏKİLLƏRİ */}
-                <div className="pt-6 border-t border-slate-800 space-y-4">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                    <div>
-                      <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider">Əlavə Qalereya Şəkilləri</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">Məhsul səhifəsində mini şəkil qalereyası olaraq göstəriləcək şəkil linkləri</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setGalleryImages([...galleryImages, ''])}
-                      className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 hover:text-amber-400 font-bold text-xs rounded-xl transition-colors border border-slate-700 shrink-0"
-                    >
-                      <Plus className="w-4 h-4" /> + Əlavə Şəkil Əlavə Et
-                    </button>
-                  </div>
-
-                  {galleryImages.length === 0 ? (
-                    <div className="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl text-center text-xs text-slate-500">
-                      Əlavə qalereya şəkli əlavə edilməyib. Yuxarıdakı knopkadan əlavə edə bilərsiniz.
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {galleryImages.map((imgUrl, index) => (
-                        <div key={index} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3">
-                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
-                            {imgUrl ? (
-                              <Image
-                                src={imgUrl}
-                                alt={`Qalereya ${index + 1}`}
-                                fill
-                                className="object-cover"
-                                unoptimized={true}
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <ImageIcon className="w-5 h-5 text-slate-600" />
-                            )}
-                          </div>
-                          <input
-                            type="url"
-                            value={imgUrl}
-                            onChange={(e) => {
-                              const updated = [...galleryImages];
-                              updated[index] = e.target.value;
-                              setGalleryImages(updated);
-                            }}
-                            placeholder="Əlavə şəkil URL-i daxil edin (https://...)"
-                            className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition-colors"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setGalleryImages(galleryImages.filter((_, i) => i !== index))}
-                            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
-                            title="Şəkli Sil"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-4">
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <Video className="w-5 h-5 text-blue-400" /> Video Meneceri
-                </h3>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">YouTube Video Linki</label>
-                  <input 
-                    type="url" 
-                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
-                    placeholder="https://youtube.com/watch?v=..."
-                    value={videoUrl}
-                    onChange={e => setVideoUrl(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Tab Content: Variants */}
           {activeTab === 'variants' && (
@@ -766,7 +879,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-black text-white">Variantlar Mühərriki</h3>
-                  <p className="text-xs text-slate-400 mt-1">Rəng, mexanika və ölçü variantları əlavə edin.</p>
+                  <p className="text-xs text-slate-400 mt-1">Hər variant üçün ad, SKU, qiymət, stok və xüsusi şəkil təyin edin.</p>
                 </div>
                 <button 
                   onClick={handleAddVariant}
@@ -778,63 +891,194 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
               <div className="space-y-4">
                 {variants.map((v, i) => (
-                  <div key={v.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col sm:flex-row gap-4 items-center">
-                    <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-4 gap-4">
-                      <div className="sm:col-span-1">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Variant Adı</label>
-                        <input 
-                          type="text" 
-                          value={v.name || ''} 
-                          onChange={(e) => handleUpdateVariant(v.id, 'name', e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500" 
-                        />
+                  <div key={v.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                      <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div className="sm:col-span-1">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Variant Adı</label>
+                          <input 
+                            type="text" 
+                            value={v.name || ''} 
+                            onChange={(e) => handleUpdateVariant(v.id, 'name', e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500" 
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">SKU</label>
+                          <input 
+                            type="text" 
+                            value={v.sku || ''} 
+                            onChange={(e) => handleUpdateVariant(v.id, 'sku', e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-amber-500" 
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Qiymət (AZN)</label>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            step="0.01"
+                            value={String(v.price)}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(',', '.');
+                              if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                                handleUpdateVariant(v.id, 'price', val);
+                              }
+                            }}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Stok</label>
+                          <input 
+                            type="number" 
+                            value={v.stock !== undefined ? String(v.stock) : ''} 
+                            onChange={(e) => handleUpdateVariant(v.id, 'stock', parseInt(e.target.value) || 0)}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500" 
+                          />
+                        </div>
                       </div>
-                      <div className="sm:col-span-1">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">SKU</label>
-                        <input 
-                          type="text" 
-                          value={v.sku || ''} 
-                          onChange={(e) => handleUpdateVariant(v.id, 'sku', e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-amber-500" 
-                        />
-                      </div>
-                      <div className="sm:col-span-1">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Qiymət (AZN)</label>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          step="0.01"
-                          value={String(v.price)}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(',', '.');
-                            if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-                              handleUpdateVariant(v.id, 'price', val);
-                            }
-                          }}
-                          className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
-                        />
-                      </div>
-                      <div className="sm:col-span-1">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Stok</label>
-                        <input 
-                          type="number" 
-                          value={v.stock !== undefined ? String(v.stock) : ''} 
-                          onChange={(e) => handleUpdateVariant(v.id, 'stock', parseInt(e.target.value) || 0)}
-                          className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500" 
-                        />
+                      <div className="pt-2 sm:pt-4 self-end sm:self-center">
+                        <button 
+                          onClick={() => handleDeleteVariantClick(v.id)}
+                          className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+                          title="Variantı Sil"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     </div>
-                    <div className="pt-5 sm:pt-4">
-                      <button 
-                        onClick={() => handleDeleteVariantClick(v.id)}
-                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
+
+                    {/* Variant Specific Image quick input */}
+                    <div className="pt-3 border-t border-slate-900/80 flex flex-col sm:flex-row items-center gap-3">
+                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
+                        {v.image_url ? (
+                          <Image
+                            src={v.image_url}
+                            alt={v.name || 'Variant'}
+                            fill
+                            className="object-cover"
+                            unoptimized={true}
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <ImageIcon className="w-4 h-4 text-slate-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 w-full">
+                        <input
+                          type="url"
+                          placeholder="Variant xüsusi şəkil URL-i (https://... - boş olarsa məhsul əsas şəkli istifadə ediləcək)"
+                          value={v.image_url || ''}
+                          onChange={(e) => handleUpdateVariant(v.id, 'image_url', e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedMediaTarget(String(v.id));
+                          setActiveTab('media');
+                        }}
+                        className="text-xs text-amber-500 hover:text-amber-400 font-bold bg-amber-500/10 px-3 py-2 rounded-lg transition-colors shrink-0"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        Şəkil Menecerində Aç
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Tab Content: Add-ons (Əlavə Xidmətlər) */}
+          {activeTab === 'addons' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Tag className="w-5 h-5 text-amber-500" /> Əlavə Xidmətlər (Add-ons)
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Məhsul səhifəsində alıcılara təklif olunan əlavə xidmətlər (məs. Premium Setup xidməti, Qoruyucu çanta və s.).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAddOns([...addOns, { id: `addon_${Date.now()}`, title_az: '', price_azn: 5.0, description_az: '' }])}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 font-bold text-xs rounded-xl transition-colors border border-slate-700 shrink-0"
+                >
+                  <Plus className="w-4 h-4" /> + Yeni Əlavə Xidmət
+                </button>
+              </div>
+
+              {addOns.length === 0 ? (
+                <div className="p-8 bg-slate-950/50 border border-slate-800 rounded-2xl text-center space-y-1">
+                  <p className="text-sm font-bold text-slate-300">Bu məhsul üçün heç bir əlavə xidmət təyin edilməyib</p>
+                  <p className="text-xs text-slate-500">Məhsul səhifəsində əlavə xidmət checkbox/bölməsi ÜMUMİYYƏTLƏ göstərilməyəcək.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {addOns.map((addon, index) => (
+                    <div key={addon.id || index} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="sm:col-span-2">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Xidmətin Adı (AZ)</label>
+                          <input
+                            type="text"
+                            placeholder="Məs: Rubikshop Premium Setup xidməti"
+                            value={addon.title_az || ''}
+                            onChange={(e) => {
+                              const updated = [...addOns];
+                              updated[index] = { ...updated[index], title_az: e.target.value };
+                              setAddOns(updated);
+                            }}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                        <div className="sm:col-span-1">
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Qiymət (AZN)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="5.00"
+                            value={addon.price_azn !== undefined ? addon.price_azn : ''}
+                            onChange={(e) => {
+                              const updated = [...addOns];
+                              updated[index] = { ...updated[index], price_azn: parseFloat(e.target.value) || 0 };
+                              setAddOns(updated);
+                            }}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Təsviri (Məhsul səhifəsində görünən məlumat)</label>
+                        <input
+                          type="text"
+                          placeholder="Məs: Kubun hər tərəfli yağlanması və gərginliyin tənzimlənməsi"
+                          value={addon.description_az || ''}
+                          onChange={(e) => {
+                            const updated = [...addOns];
+                            updated[index] = { ...updated[index], description_az: e.target.value };
+                            setAddOns(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setAddOns(addOns.filter((_, i) => i !== index))}
+                          className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 font-bold px-3 py-1.5 bg-red-400/10 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Xidməti Sil
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

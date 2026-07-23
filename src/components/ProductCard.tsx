@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/useCartStore';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { Heart, Loader2 } from 'lucide-react';
 import { toggleWishlist } from '@/lib/actions/wishlist';
+import { sanitizeImageUrl } from '@/lib/image';
 
 interface ProductCardProps {
   product: {
@@ -199,7 +200,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
 
       <div className="relative aspect-square w-full bg-gray-50">
         <Image
-          src={product.image_url || 'https://picsum.photos/seed/default/600/600'}
+          src={sanitizeImageUrl(product.image_url, product.id || 'default')}
           alt={productTitle}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"

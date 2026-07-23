@@ -793,6 +793,17 @@ function ProductDetailClientContentInner({
     return Array.from(new Set(list)) as string[];
   }, [product, dbVariants]);
 
+  const effectiveStock = React.useMemo(() => {
+    if (selectedVariant) {
+      const vStock = selectedVariant.stock_quantity ?? selectedVariant.stock;
+      return typeof vStock === 'number' ? vStock : (parseInt(String(vStock), 10) || 0);
+    }
+    const pStock = product?.stock_quantity ?? product?.stock;
+    return typeof pStock === 'number' ? pStock : (parseInt(String(pStock), 10) || 0);
+  }, [selectedVariant, product?.stock_quantity, product?.stock]);
+
+  const isOutOfStock = effectiveStock <= 0;
+
   const specsToDisplay = React.useMemo(() => {
     if (!product) return {};
     const baseSpecs: Record<string, string> = {};
@@ -829,17 +840,6 @@ function ProductDetailClientContentInner({
     
     return translatedSpecs;
   }, [product, currentSku, effectiveStock]);
-
-  const effectiveStock = React.useMemo(() => {
-    if (selectedVariant) {
-      const vStock = selectedVariant.stock_quantity ?? selectedVariant.stock;
-      return typeof vStock === 'number' ? vStock : (parseInt(String(vStock), 10) || 0);
-    }
-    const pStock = product?.stock_quantity ?? product?.stock;
-    return typeof pStock === 'number' ? pStock : (parseInt(String(pStock), 10) || 0);
-  }, [selectedVariant, product?.stock_quantity, product?.stock]);
-
-  const isOutOfStock = effectiveStock <= 0;
 
   // Sync quantity if stock changes
   React.useEffect(() => {
