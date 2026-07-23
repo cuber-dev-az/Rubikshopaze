@@ -52,7 +52,7 @@ interface HomepageContentProps {
   banners?: any[];
 }
 
-export function HomepageContent({ products, dict, locale, banners = [] }: HomepageContentProps) {
+export function HomepageContent({ products = [], dict, locale, banners = [] }: HomepageContentProps) {
   const [activeTab, setActiveTab] = React.useState<'new' | 'best' | 'sale'>('new');
   const [activeFaq, setActiveFaq] = React.useState<number | null>(null);
   const [currentBannerIndex, setCurrentBannerIndex] = React.useState(0);
@@ -78,14 +78,15 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
     return obj[locale as 'az' | 'en' | 'ru'] || obj.az;
   };
 
-  const currentProducts = products;
+  const currentProducts = Array.isArray(products) ? products : [];
 
   // Filter products into tab items
   const newArrivals = currentProducts.slice(0, 4);
-  const bestSellers = currentProducts.filter(p => p.stock_quantity > 0).slice(0, 4);
+  const bestSellers = currentProducts.filter(p => p && p.stock_quantity > 0).slice(0, 4);
   
   const saleProducts = currentProducts
     .filter(p => {
+      if (!p) return false;
       const candidates = [
         p.original_price_azn,
         p.compare_at_price_azn,
@@ -537,7 +538,7 @@ export function HomepageContent({ products, dict, locale, banners = [] }: Homepa
       <section className="relative bg-gradient-to-br from-rubik-charcoal via-rubik-charcoal-dark to-black text-white py-16 lg:py-28 px-4 sm:px-6 lg:px-8 border-b border-border/5 overflow-hidden">
         <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#3182ce_1px,transparent_1px)] [background-size:16px_16px]"></div>
         
-        {banners.length > 0 ? (
+        {banners.length > 0 && banners[currentBannerIndex] ? (
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 min-h-[400px]">
             <AnimatePresence mode="wait">
               <motion.div 

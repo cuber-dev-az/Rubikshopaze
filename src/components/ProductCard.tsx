@@ -112,39 +112,43 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   const titleLower = productTitle.toLowerCase();
 
   if (!brandName) {
-    if (titleLower.includes('z-cube') || titleLower.includes('zcube')) brandName = 'Z-Cube';
+    if (titleLower.includes('z-cube') || titleLower.includes('zcube') || titleLower.includes('z cube')) brandName = 'Z-Cube';
     else if (titleLower.includes('moyu')) brandName = 'MoYu';
     else if (titleLower.includes('qiyi')) brandName = 'QiYi';
     else if (/\bgan\b/.test(titleLower)) brandName = 'GAN';
     else if (titleLower.includes('shengshou')) brandName = 'ShengShou';
     else if (titleLower.includes('yuxin')) brandName = 'YuXin';
     else if (titleLower.includes('diansheng')) brandName = 'DianSheng';
+    else if (titleLower.includes('dayan')) brandName = 'DaYan';
+    else if (titleLower.includes('monster go') || titleLower.includes('monstergo')) brandName = 'Monster Go';
     else brandName = 'Z-Cube';
   }
 
   // 2. Resolve Type / Magnetic label accurately
   let typeLabel = '';
 
-  if (titleLower.includes('açarlıq') || titleLower.includes('keychain') || titleLower.includes('key chain') || titleLower.includes('acarliq')) {
+  if (titleLower.includes('açarlıq') || titleLower.includes('keychain') || titleLower.includes('key chain') || titleLower.includes('acarliq') || titleLower.includes('brelok') || titleLower.includes('брелок')) {
     typeLabel = 'Açarlıq';
-  } else if (titleLower.includes('mat') || titleLower.includes('pad') || titleLower.includes('xalça') || titleLower.includes('xalca')) {
+  } else if (titleLower.includes('mat') || titleLower.includes('pad') || titleLower.includes('xalça') || titleLower.includes('xalca') || titleLower.includes('kovrik') || titleLower.includes('коврик')) {
     typeLabel = 'Mat';
-  } else if (titleLower.includes('yağ') || titleLower.includes('yag') || titleLower.includes('lube')) {
+  } else if (titleLower.includes('yağ') || titleLower.includes('yag') || titleLower.includes('lube') || titleLower.includes('lubricant') || titleLower.includes('смазка')) {
     typeLabel = 'Yağ';
-  } else if (titleLower.includes('taymer') || titleLower.includes('timer')) {
+  } else if (titleLower.includes('taymer') || titleLower.includes('timer') || titleLower.includes('секундомер')) {
     typeLabel = 'Taymer';
-  } else if (titleLower.includes('aksessuar') || titleLower.includes('accessory') || titleLower.includes('stend') || titleLower.includes('stand') || titleLower.includes('çanta') || titleLower.includes('canta')) {
+  } else if (titleLower.includes('aksessuar') || titleLower.includes('accessory') || titleLower.includes('stend') || titleLower.includes('stand') || titleLower.includes('çanta') || titleLower.includes('canta') || titleLower.includes('bag') || titleLower.includes('box') || titleLower.includes('подставка')) {
     typeLabel = 'Aksessuar';
   } else if (product.product_type && !['speedcube', 'other', 'default', 'puzzle', 'magnetic', 'maqnitli', 'standart', 'standard'].includes(product.product_type.toLowerCase())) {
     typeLabel = product.product_type;
   } else {
+    const isExplicitlyNonMagnetic = product.is_magnetic === false || String(product.is_magnetic) === 'false';
     const hasMagneticText = 
       titleLower.includes('magnetic') ||
       titleLower.includes('maqnit') ||
       titleLower.includes('maglev') ||
+      titleLower.includes('ball-core') ||
       /\b\d+x\d+\s*m\b/i.test(productTitle);
 
-    const isMagnetic = (product.is_magnetic === true || String(product.is_magnetic) === 'true') || hasMagneticText;
+    const isMagnetic = !isExplicitlyNonMagnetic && ((product.is_magnetic === true || String(product.is_magnetic) === 'true') || hasMagneticText);
 
     typeLabel = isMagnetic ? 'Maqnitli' : 'Standart';
   }

@@ -29,19 +29,24 @@ export interface Product {
 }
 
 export async function getActiveProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*, brands (*)')
-    .eq('is_active', true);
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, brands (*)')
+      .eq('is_active', true);
+      
+    if (error) {
+      console.error('Error fetching products:', error);
+      return [];
+    }
     
-  if (error) {
-    console.error('Error fetching products:', error);
+    if (!data || !Array.isArray(data)) return [];
+    const uniqueProducts = Array.from(new Map(data.map((p: any) => [p.id, p])).values());
+    return uniqueProducts as RawProduct[];
+  } catch (err) {
+    console.error('getActiveProducts exception:', err);
     return [];
   }
-  
-  if (!data || !Array.isArray(data)) return [];
-  const uniqueProducts = Array.from(new Map(data.map((p: any) => [p.id, p])).values());
-  return uniqueProducts as RawProduct[];
 }
 
 export function mapProductToLocale(raw: RawProduct, locale: string): Product & { [key: string]: any } {
@@ -85,6 +90,30 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     ? Math.round(((finalOldPrice - finalPrice) / finalOldPrice) * 100)
     : (raw.discount_percent ? Number(raw.discount_percent) : undefined);
 
+  // Resolve brand name safely
+  const rawBrand = (
+    raw.brands?.name ||
+    raw.brand_name ||
+    raw.brand ||
+    ''
+  ).trim();
+
+  let resolvedBrand = '';
+  if (rawBrand && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(rawBrand.toUpperCase())) {
+    resolvedBrand = rawBrand;
+  } else {
+    const title = (raw[titleKey] || raw.title_az || raw.name || raw.name_az || '').toLowerCase();
+    if (title.includes('z-cube') || title.includes('zcube') || title.includes('z cube')) resolvedBrand = 'Z-Cube';
+    else if (title.includes('moyu')) resolvedBrand = 'MoYu';
+    else if (title.includes('qiyi')) resolvedBrand = 'QiYi';
+    else if (/\bgan\b/.test(title)) resolvedBrand = 'GAN';
+    else if (title.includes('shengshou')) resolvedBrand = 'ShengShou';
+    else if (title.includes('yuxin')) resolvedBrand = 'YuXin';
+    else if (title.includes('diansheng')) resolvedBrand = 'DianSheng';
+    else if (title.includes('dayan')) resolvedBrand = 'DaYan';
+    else if (title.includes('monster go') || title.includes('monstergo')) resolvedBrand = 'Monster Go';
+  }
+
   return {
     ...raw,
     id: raw.id,
@@ -93,13 +122,16 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     price_azn: finalPrice,
     compare_at_price_azn: finalOldPrice,
     original_price_azn: finalOldPrice,
+    compare_at_price: finalOldPrice,
     discount_price: finalOldPrice,
+    old_price: finalOldPrice,
     discount_percent: calculatedPercent,
     image_url: raw.image_url || 'https://picsum.photos/seed/default/600/600',
     stock_quantity: Number(raw.stock_quantity || 0),
     slug: raw.slug || undefined,
     brands: raw.brands || undefined,
-    brand: raw.brands?.name || raw.brand || raw.brand_name || undefined,
+    brand: resolvedBrand || undefined,
+    brand_name: resolvedBrand || undefined,
     brand_id: raw.brand_id || undefined,
   };
 }

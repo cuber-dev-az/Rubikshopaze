@@ -40,19 +40,38 @@ export default function StorefrontPage({ params }: PageProps) {
       try {
         const supabase = createClient();
         
-        // Fetch banners
-        const { data: bannersData } = await supabase
-          .from('banners')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true });
-          
-        setBanners(bannersData || []);
+        // Fetch banners safely
+        try {
+          const { data: bannersData } = await supabase
+            .from('banners')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
+            
+          if (bannersData) {
+            setBanners(bannersData);
+          }
+        } catch (bannerErr) {
+          console.warn('Banners fetch skipped or failed:', bannerErr);
+        }
         
-        // Fetch products
-        const rawProducts = await getActiveProducts();
-        const formatted = rawProducts.map((p) => mapProductToLocale(p, locale));
-        const withDiscounts = await applyCampaignDiscounts(formatted);
+        // Fetch products safely
+        let rawProducts: any[] = [];
+        try {
+          rawProducts = await getActiveProducts();
+        } catch (prodErr) {
+          console.warn('Products fetch skipped or failed:', prodErr);
+        }
+
+        const formatted = (rawProducts || []).map((p) => mapProductToLocale(p, locale));
+        
+        let withDiscounts = formatted;
+        try {
+          withDiscounts = await applyCampaignDiscounts(formatted);
+        } catch (campErr) {
+          console.warn('Campaign discounts application skipped or failed:', campErr);
+        }
+
         setProducts(withDiscounts);
       } catch (err) {
         console.error('Error loading storefront data:', err);

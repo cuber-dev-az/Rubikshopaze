@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
+import { ProductCard } from '@/components/ProductCard';
 
 interface Product {
   id: string;
@@ -54,21 +55,40 @@ interface CategoryClientContentProps {
 
 const getBrandName = (p: any): string => {
   if (!p) return '';
-  if (typeof p.brand === 'string' && p.brand.trim()) return p.brand.trim();
-  if (p.brands && typeof p.brands === 'object' && !Array.isArray(p.brands) && p.brands.name) return String(p.brands.name).trim();
-  if (Array.isArray(p.brands) && p.brands[0]?.name) return String(p.brands[0].name).trim();
-  if (typeof p.brand_name === 'string' && p.brand_name.trim()) return p.brand_name.trim();
-  if (p.brand && typeof p.brand === 'object' && p.brand.name) return String(p.brand.name).trim();
+  
+  // Check relational brands object or brand_name if valid string
+  if (p.brands && typeof p.brands === 'object' && !Array.isArray(p.brands) && p.brands.name) {
+    const bName = String(p.brands.name).trim();
+    if (bName && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(bName.toUpperCase())) return bName;
+  }
+  if (Array.isArray(p.brands) && p.brands[0]?.name) {
+    const bName = String(p.brands[0].name).trim();
+    if (bName && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(bName.toUpperCase())) return bName;
+  }
+  if (typeof p.brand_name === 'string' && p.brand_name.trim()) {
+    const bName = p.brand_name.trim();
+    if (bName && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(bName.toUpperCase())) return bName;
+  }
+  if (p.brand && typeof p.brand === 'object' && p.brand.name) {
+    const bName = String(p.brand.name).trim();
+    if (bName && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(bName.toUpperCase())) return bName;
+  }
+  if (typeof p.brand === 'string' && p.brand.trim()) {
+    const bName = p.brand.trim();
+    if (bName && !['OTHER', 'OTHER BRAND', 'UNKNOWN', 'DEFAULTS'].includes(bName.toUpperCase())) return bName;
+  }
   
   // Fallback check from product title
-  const title = (p.name_az || p.name || p.title_az || p.title || '').toLowerCase();
-  if (title.includes('z-cube') || title.includes('zcube')) return 'Z-Cube';
+  const title = (p.name_az || p.name || p.title_az || p.title || p.title_en || '').toLowerCase();
+  if (title.includes('z-cube') || title.includes('zcube') || title.includes('z cube')) return 'Z-Cube';
   if (title.includes('moyu')) return 'MoYu';
   if (title.includes('qiyi')) return 'QiYi';
   if (/\bgan\b/.test(title)) return 'GAN';
   if (title.includes('shengshou')) return 'ShengShou';
   if (title.includes('yuxin')) return 'YuXin';
   if (title.includes('diansheng')) return 'DianSheng';
+  if (title.includes('dayan')) return 'DaYan';
+  if (title.includes('monster go') || title.includes('monstergo')) return 'Monster Go';
   return '';
 };
 
@@ -91,11 +111,12 @@ export function CategoryClientContent({
   // Merge database items if any
   const baseProducts = React.useMemo(() => {
     const dbMapped = initialProducts.map(p => {
-      const pTitle = p.title || '';
+      const pTitle = p.title || (p as any).name || '';
+      const resolvedBrand = getBrandName(p) || p.brand || 'Other';
       return {
         ...p,
         category_slug: p.category_slug || null,
-        brand: p.brand || (pTitle.includes('GAN') ? 'GAN' : pTitle.includes('MoYu') ? 'MoYu' : pTitle.includes('QiYi') ? 'QiYi' : 'Other'),
+        brand: resolvedBrand,
         mechanics: p.mechanics || (pTitle.toLowerCase().includes('maglev') ? 'maglev' : pTitle.toLowerCase().includes('ball-core') ? 'ball-core' : pTitle.toLowerCase().includes('magnetic') ? 'magnetic' : 'standard')
       };
     });
@@ -106,7 +127,7 @@ export function CategoryClientContent({
         const targetId = categoryItem.id.toLowerCase();
 
         return dbMapped.filter(p => {
-          if (!p.category_slug) return false;
+          if (!p.category_slug) return true;
           const pCat = p.category_slug.toLowerCase();
           return (
             pCat === targetSlug ||
@@ -452,81 +473,9 @@ export function CategoryClientContent({
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                {filteredProducts.map((product) => {
-                  const isOutOfStock = product.stock_quantity <= 0;
-                  return (
-                    <div
-                      key={product.id}
-                      className="flex flex-col bg-card border border-border/80 rounded-2xl overflow-hidden shadow-soft-sm hover:shadow-soft-md hover:border-foreground/10 transition-all duration-300 group relative"
-                    >
-                      {/* Stretched Link for perfect clickability across the whole card */}
-                      <Link
-                        href={`/${locale}/product/${product.slug || product.id}`}
-                        className="absolute inset-0 z-10 cursor-pointer"
-                        aria-label={product.title}
-                      />
-
-                      <div className="relative aspect-square w-full bg-muted/40 flex items-center justify-center p-4">
-                        <Image
-                          src={product.image_url}
-                          alt={product.title}
-                          fill
-                          referrerPolicy="no-referrer"
-                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                          className="object-contain p-6 transform group-hover:scale-105 transition-transform duration-300"
-                        />
-
-                        {isOutOfStock && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[1.5px] z-20 pointer-events-none">
-                            <span className="text-white text-xs font-black tracking-wider px-3 py-1 bg-red-600 rounded-lg shadow-soft-sm">
-                              {dict.product.out_of_stock}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-4 md:p-5 flex flex-col flex-grow space-y-2.5 relative">
-                        <span className="text-[10px] uppercase font-bold text-rubik-brand tracking-wider">
-                          {product.brand} • {product.mechanics === 'maglev' ? 'MagLev' : product.mechanics === 'ball-core' ? 'Ball Core' : 'Magnetic'}
-                        </span>
-                        <h2 className="text-sm md:text-base font-bold text-foreground line-clamp-2 min-h-[2.5rem] group-hover:text-rubik-brand transition-colors">
-                          {product.title}
-                        </h2>
-
-                        <div className="flex items-baseline gap-2 mt-auto">
-                          <span className="text-base md:text-lg font-black text-foreground">
-                            {product.price_azn.toFixed(2)} AZN
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (!isOutOfStock) {
-                              addItem({
-                                id: product.id,
-                                title: product.title,
-                                price_azn: product.price_azn,
-                                quantity: 1,
-                                image_url: product.image_url,
-                              });
-                            }
-                          }}
-                          disabled={isOutOfStock}
-                          className={`w-full py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer relative z-20 ${
-                            isOutOfStock
-                              ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                              : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white active:scale-95'
-                          }`}
-                        >
-                          <ShoppingBag className="h-4 w-4" />
-                          <span>{isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                {filteredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} dict={dict} />
+                ))}
               </div>
             )}
 
