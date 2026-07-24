@@ -198,9 +198,13 @@ function ProductDetailClientContentInner({
   const pathname = usePathname();
   const addItem = useCartStore((state) => state.addItem);
 
-  // SpeedCubeShop Rich Dropdown Ref & Open State
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = React.useState(false);
+  const formatPrice = (val: number) => {
+    try {
+      return new Intl.NumberFormat('az-AZ', { style: 'currency', currency: 'AZN' }).format(val);
+    } catch {
+      return `${val.toFixed(2)} ₼`;
+    }
+  };
 
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -1048,7 +1052,7 @@ function ProductDetailClientContentInner({
                 )}
               </div>
 
-              <h1 className="text-2xl md:text-4xl font-black tracking-tight text-foreground">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground line-clamp-2">
                 {product.title}
               </h1>
 
@@ -1073,148 +1077,101 @@ function ProductDetailClientContentInner({
               </div>
             </div>
 
-            {/* SpeedCubeShop 1:1 Replica Rich Dropdown Version Selector */}
-            {dbVariants.length > 1 ? (
-              <div className="space-y-2 relative" ref={dropdownRef}>
-                {/* 1. Label: "Versiya: [Aktiv Versiya Adı]" */}
-                <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <span className="text-muted-foreground font-semibold">Versiya:</span>
-                  <span className="font-extrabold text-rubik-brand">
-                    {selectedVariant?.name || selectedVariant?.title_az || selectedVariant?.sku || product.title}
-                  </span>
-                </div>
-
-                {/* 2. Interactive Dropdown Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsVersionDropdownOpen((prev) => !prev)}
-                  className="w-full text-left px-4 py-3 bg-card border-2 border-rubik-brand/70 hover:border-rubik-brand rounded-xl shadow-soft-xs transition-all flex items-center justify-between gap-3 focus:outline-none focus:ring-2 focus:ring-rubik-brand/20 cursor-pointer"
-                >
-                  <span className="font-extrabold text-sm text-foreground truncate">
-                    {selectedVariant?.name || selectedVariant?.title_az || selectedVariant?.sku || product.title}
-                  </span>
-                  <ChevronDown
-                    className={`h-5 w-5 text-rubik-brand shrink-0 transition-transform duration-200 ${
-                      isVersionDropdownOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-
-                {/* 3. Expandable Option Menu Dropdown */}
-                <AnimatePresence>
-                  {isVersionDropdownOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6, scale: 0.99 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.99 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute z-50 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-[380px] overflow-y-auto divide-y divide-border/60"
-                    >
-                      {dbVariants.map((v: any) => {
-                        const isSelected = String(selectedVariant?.id) === String(v.id);
-                        const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
-                        const vTitle = v.name || v.title_az || v.sku || 'Versiya';
-                        const vDesc = v.description || v.description_az || v.subtitle || '';
-
-                        return (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => {
-                              handleVariantSelect(v);
-                              setIsVersionDropdownOpen(false);
-                            }}
-                            className={`w-full text-left p-3.5 transition-colors cursor-pointer flex items-start gap-3 ${
-                              isSelected
-                                ? 'bg-blue-50/80 dark:bg-blue-950/40 text-foreground'
-                                : 'hover:bg-muted/50 text-foreground'
-                            }`}
-                          >
-                            {/* Left Checkmark Icon */}
-                            <div className="mt-0.5 shrink-0 w-5 flex items-center justify-center">
-                              {isSelected ? (
-                                <Check className="h-4 w-4 text-blue-600 dark:text-blue-400 font-bold" />
-                              ) : (
-                                <div className="w-4 h-4" />
-                              )}
-                            </div>
-
-                            {/* Main Option Details */}
-                            <div className="flex-1 min-w-0 space-y-1">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-extrabold text-xs md:text-sm text-foreground leading-snug">
-                                  {vTitle}
-                                </span>
-                                <span className="font-extrabold text-xs md:text-sm text-muted-foreground whitespace-nowrap font-mono">
-                                  {vPrice.toFixed(2)} AZN
-                                </span>
-                              </div>
-
-                              {vDesc && (
-                                <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-3 leading-relaxed font-normal">
-                                  {vDesc}
-                                </p>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ) : dbVariants.length === 1 && dbVariants[0]?.name ? (
-              <div className="space-y-1.5">
-                <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <span className="text-muted-foreground font-semibold">Versiya:</span>
-                  <span className="font-extrabold text-rubik-brand">
-                    {dbVariants[0].name}
-                  </span>
-                </div>
-                <div className="px-4 py-2.5 bg-muted/30 border border-border/70 rounded-xl text-xs md:text-sm font-bold text-foreground flex items-center justify-between">
-                  <span>{dbVariants[0].name}</span>
-                  {dbVariants[0].description && (
-                    <span className="text-muted-foreground text-xs font-normal truncate max-w-[220px]">
-                      {dbVariants[0].description}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Price Segment */}
-            <div className="bg-muted/40 border border-border/60 p-5 rounded-2xl flex items-baseline justify-between">
+            {/* 4. Active Price Tag */}
+            <div className="bg-muted/40 border border-border/60 p-4 rounded-2xl flex items-baseline justify-between my-2">
               <div className="space-y-1">
                 <span className="text-xs font-bold text-muted-foreground block uppercase tracking-wider">
                   Qiymət
                 </span>
                 <div className="flex items-baseline gap-3">
                   <span className="text-3xl font-black text-foreground">
-                    {finalPrice.toFixed(2)} AZN
+                    {formatPrice(finalPrice)}
                   </span>
                   {originalPrice && (
                     <span className="text-lg text-muted-foreground line-through font-semibold">
-                      {(Number(originalPrice) + addonCost).toFixed(2)} AZN
+                      {formatPrice(Number(originalPrice) + addonCost)}
+                    </span>
+                  )}
+                  {hasDiscount && (
+                    <span className="px-2.5 py-1 bg-red-600 text-white font-black text-xs rounded-full uppercase tracking-wider shadow-sm">
+                      -{discountPercent}% ENDİRİM
                     </span>
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Stock Badge */}
-              <div className="text-right">
-                <span className="text-xs font-bold text-muted-foreground block uppercase tracking-wider mb-1">
-                  Status
-                </span>
-                {isOutOfStock ? (
-                  <span className="text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
-                    Müvəqqəti Bitib (Sifarişlə)
+            {/* 5. Vertical Variant Card Selector Component */}
+            {dbVariants.length > 0 && (
+              <div className="my-4 space-y-2">
+                <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <span className="text-muted-foreground font-semibold">Versiya:</span>
+                  <span className="font-extrabold text-primary">
+                    {selectedVariant?.name || selectedVariant?.title_az || selectedVariant?.sku || product.title}
                   </span>
-                ) : (
-                  <span className="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
-                    Anbarda Sürətli Çatdırılma
-                  </span>
-                )}
+                </div>
+                <div className={`flex flex-col gap-2.5 ${dbVariants.length >= 6 ? 'max-h-[380px] overflow-y-auto pr-1' : ''}`}>
+                  {dbVariants.map((v: any) => {
+                    const isSelected = String(selectedVariant?.id) === String(v.id) || (v.slug && v.slug === product.slug);
+                    const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
+                    const vComparePrice = v.compare_at_price_azn ? Number(v.compare_at_price_azn) : null;
+                    const vTitle = v.name || v.title_az || v.sku || 'Versiya';
+                    const vImg = sanitizeImageUrl(v.image_url || product?.image_url, String(v.id));
+
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => handleVariantSelect(v)}
+                        className={`w-full min-h-[52px] p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                          isSelected
+                            ? 'border-2 border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20'
+                            : 'border-border bg-card hover:border-primary/50 hover:bg-accent/50'
+                        }`}
+                      >
+                        {/* LEFT: Variant Thumbnail Image + Bold Variant Name */}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={vImg}
+                            alt={vTitle}
+                            className="w-16 h-16 object-cover rounded-lg border border-border shrink-0 bg-background"
+                          />
+                          <span className="font-bold text-sm text-foreground line-clamp-2 leading-snug">
+                            {vTitle}
+                          </span>
+                        </div>
+
+                        {/* RIGHT: Formatted Price + Strikethrough old price if discounted + Checkmark icon */}
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <div className="text-right">
+                            <div className="font-extrabold text-sm text-foreground whitespace-nowrap">
+                              {formatPrice(vPrice)}
+                            </div>
+                            {vComparePrice && vComparePrice > vPrice && (
+                              <div className="text-xs text-muted-foreground line-through whitespace-nowrap">
+                                {formatPrice(vComparePrice)}
+                              </div>
+                            )}
+                          </div>
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                            isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-transparent'
+                          }`}>
+                            <Check className="w-3.5 h-3.5 font-bold stroke-[3]" />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+            )}
+
+            {/* 6. Stock Status Indicator */}
+            <div className="flex items-center gap-2.5 my-3 p-3.5 bg-muted/20 border border-border/60 rounded-xl">
+              <span className={`w-3 h-3 rounded-full shrink-0 ${isOutOfStock ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+              <span className={`text-xs md:text-sm font-bold ${isOutOfStock ? 'text-red-600' : 'text-emerald-600'}`}>
+                {isOutOfStock ? 'Bitib (Müvəqqəti yoxdur)' : `Stokda var (${effectiveStock} ədəd)`}
+              </span>
             </div>
 
             {/* Safe & Optional Custom Add-ons List (Strictly Null-Safe, NO Hardcoded Setup) */}

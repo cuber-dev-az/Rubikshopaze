@@ -126,13 +126,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               id: String(p.id),
               slug: p.slug,
               group_slug: p.group_slug,
+              variant_name: String(p.variant_name || p.title_az || p.name_az || p.title || p.name || p.sku || 'Versiya'),
               name: String(p.variant_name || p.title_az || p.name_az || p.title || p.name || p.sku || 'Versiya'),
+              title_az: String(p.title_az || p.title || p.name_az || p.name || ''),
               price_azn: Number(p.price_azn ?? p.price ?? 0),
-              compare_at_price_azn: p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price ? Number(p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) : undefined,
+              compare_at_price_azn: (p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) ? Number(p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) : undefined,
               stock_quantity: Number(p.stock_quantity ?? p.stock ?? 0),
+              description_az: String(p.description_az || p[`description_${locale}`] || p.description || p.subtitle || ''),
               description: String(p[`description_${locale}`] || p.description_az || p.description || p.subtitle || ''),
-              image_url: p.image_url,
-              sku: p.sku,
+              image_url: sanitizeImageUrl(p.image_url, String(p.id)),
+              sku: p.sku || `SKU-${String(p.id).substring(0, 4)}`,
               is_current: String(p.id) === String(dbProduct.id) || p.slug === dbProduct.slug
             }));
           }
