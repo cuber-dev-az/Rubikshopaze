@@ -97,8 +97,41 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         ? dbProduct.variants
         : ((Array.isArray(dbProduct.product_variants) && dbProduct.product_variants.length > 0) ? dbProduct.product_variants : []);
 
+      let siblingProducts: any[] = [];
+      const groupSlugToQuery = dbProduct.group_slug || (activeVariants.length > 0 ? dbProduct.slug : null);
+      if (groupSlugToQuery) {
+        try {
+          const { data: sibRows } = await supabase
+            .from('products')
+            .select('*, brands(name), categories(name_az, slug)')
+            .or(`group_slug.eq.${groupSlugToQuery},slug.eq.${groupSlugToQuery}`)
+            .eq('is_active', true);
+
+          if (sibRows && sibRows.length > 0) {
+            siblingProducts = sibRows.map((s: any) => ({
+              id: s.id,
+              slug: s.slug,
+              group_slug: s.group_slug || groupSlugToQuery,
+              sku: s.sku || `SKU-${s.id.substring(0, 4)}`,
+              variant_name: s.variant_name || s.title_az || s.name_az || s.title || s.name || s.sku,
+              title: s[`title_${locale}`] || s[`name_${locale}`] || s.title_az || s.name_az || s.title || s.name,
+              price_azn: Number(s.price ?? s.price_azn ?? 0),
+              original_price: s.discount_price ?? s.compare_at_price_azn ?? s.compare_at_price,
+              stock_quantity: Number(s.stock_quantity || 0),
+              image_url: sanitizeImageUrl(s.image_url, s.id),
+              gallery_images: s.gallery_images || s.images || null,
+              is_current: s.id === dbProduct.id || s.slug === dbProduct.slug
+            }));
+          }
+        } catch (e) {
+          console.error('Error fetching sibling products:', e);
+        }
+      }
+
       activeProduct = {
         id: dbProduct.id,
+        slug: dbProduct.slug,
+        group_slug: dbProduct.group_slug,
         title: String(titleVal),
         price_azn: priceVal,
         original_price: origPriceVal ? Number(origPriceVal) : undefined,
@@ -256,6 +289,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       <div className="min-h-screen bg-background">
         <ProductDetailClientContent
           product={activeProduct}
+          siblingProducts={siblingProducts}
           relatedProducts={relatedList}
           locale={locale}
           dict={dict}

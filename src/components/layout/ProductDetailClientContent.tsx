@@ -168,6 +168,7 @@ interface ProductDetailClientContentProps {
   locale: string;
   dict: ApplicationDictionary;
   initialReviews?: any[];
+  siblingProducts?: any[];
 }
 
 export function ProductDetailClientContent(props: ProductDetailClientContentProps) {
@@ -180,6 +181,7 @@ export function ProductDetailClientContent(props: ProductDetailClientContentProp
 
 function ProductDetailClientContentInner({
   product,
+  siblingProducts = [],
   relatedProducts,
   locale,
   dict,
@@ -190,8 +192,26 @@ function ProductDetailClientContentInner({
   const pathname = usePathname();
   const addItem = useCartStore((state) => state.addItem);
 
-  // 1. Universal Database-driven variants setup safely from product_variants or variants
+  // 1. Universal Database-driven variants setup (supporting Grouped Sibling Products & Legacy variants)
   const dbVariants = React.useMemo(() => {
+    if (siblingProducts && Array.isArray(siblingProducts) && siblingProducts.length > 0) {
+      return siblingProducts.map((s: any, index: number) => ({
+        id: String(s.id || s.slug || `sib_${index}`),
+        sku: s.sku || `SKU-${index + 1}`,
+        slug: s.slug,
+        group_slug: s.group_slug,
+        name: s.variant_name || s.title || s.title_az || s.name_az || `Versiya ${index + 1}`,
+        title_az: s.title || s.title_az,
+        price: Number(s.price_azn ?? s.price ?? product?.price_azn ?? 0),
+        price_azn: Number(s.price_azn ?? s.price ?? product?.price_azn ?? 0),
+        compare_at_price_azn: s.original_price ?? s.compare_at_price_azn ?? s.discount_price,
+        stock: Number(s.stock_quantity ?? 0),
+        stock_quantity: Number(s.stock_quantity ?? 0),
+        image_url: s.image_url || product?.image_url,
+        gallery_images: Array.isArray(s.gallery_images) ? s.gallery_images : [],
+        is_sibling: true
+      }));
+    }
     const rawVariants = product?.product_variants || product?.variants || [];
     if (Array.isArray(rawVariants) && rawVariants.length > 0) {
       return rawVariants.map((v: any, index: number) => ({
@@ -213,7 +233,7 @@ function ProductDetailClientContentInner({
       }));
     }
     return [];
-  }, [product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url]);
+  }, [siblingProducts, product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url]);
 
   // Read searchParam `variant` or `version` or `sku`
   const variantParam = searchParams ? (searchParams.get('variant') || searchParams.get('version') || searchParams.get('sku')) : null;
@@ -270,7 +290,9 @@ function ProductDetailClientContentInner({
       setActiveImage(vImg);
     }
 
-    if (typeof window !== 'undefined') {
+    if (v.is_sibling && v.slug) {
+      router.push(`/${locale}/product/${v.slug}`);
+    } else if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       if (v.sku) {
         url.searchParams.set('variant', v.sku);

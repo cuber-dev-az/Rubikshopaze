@@ -1646,6 +1646,8 @@ export async function createProduct(payload: any) {
       description_en: payload.description_en,
       description_ru: payload.description_ru,
       slug: finalSlug,
+      group_slug: payload.group_slug || null,
+      variant_name: payload.variant_name || null,
       price_azn: basePrice,
       compare_at_price_azn: payload.compare_at_price_azn,
       brand_id: payload.brand_id,
@@ -2188,6 +2190,10 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
               .select('id, name, slug')
               .single();
 
+            if (brandErr) {
+              console.error('BRAND INSERT ERROR (bulkImportProductsAction):', brandErr);
+            }
+
             if (!brandErr && newBrand) {
               brandId = newBrand.id;
               if (allBrands) {
@@ -2239,6 +2245,8 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           name_en: item.name_en || nameAz,
           name_ru: item.name_ru || nameAz,
           slug: targetSlug,
+          group_slug: item.group_slug || targetSlug,
+          variant_name: item.variant_name || null,
           description_az: item.description_az || null,
           description_en: item.description_en || null,
           description_ru: item.description_ru || null,
@@ -2265,6 +2273,10 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           .select('id, slug')
           .single();
 
+        if (prodError) {
+          console.error('PRIMARY PRODUCT UPSERT ERROR (bulkImportProductsAction):', prodError);
+        }
+
         // Fallback for title_az/price_azn schema if primary column schema differs
         if (prodError && (prodError.message?.includes('column') || prodError.code === 'PGRST204')) {
           const fallbackInsertObj: any = {
@@ -2272,6 +2284,8 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
             title_en: item.name_en || nameAz,
             title_ru: item.name_ru || nameAz,
             slug: targetSlug,
+            group_slug: item.group_slug || targetSlug,
+            variant_name: item.variant_name || null,
             description_az: item.description_az || null,
             description_en: item.description_en || null,
             description_ru: item.description_ru || null,
@@ -2299,6 +2313,9 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
 
           newProd = fallbackRes.data;
           prodError = fallbackRes.error;
+          if (prodError) {
+            console.error('FALLBACK PRODUCT UPSERT ERROR (bulkImportProductsAction):', prodError);
+          }
         }
 
         if (prodError) {
@@ -2314,19 +2331,65 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
             product_id: newProd.id,
             category_id: cId,
           }));
-          await supabase.from('product_categories').insert(mappings);
+          const { error: pcErr } = await supabase.from('product_categories').insert(mappings);
+          if (pcErr) {
+            console.error('PRODUCT_CATEGORIES INSERT ERROR (bulkImportProductsAction):', pcErr);
+          }
         }
 
-        // Map variants if provided
+        // Map variants if provided: 1) Grouped Sibling Products in 'products' table, 2) Legacy variants/product_variants tables
         if (newProd?.id && item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
-          // Delete existing variants for product from both tables
+          const itemGroupSlug = item.group_slug || targetSlug;
+
+          // Insert each variant as a standalone grouped sibling product directly into `products` table
+          for (let vIdx = 0; vIdx < item.variants.length; vIdx++) {
+            const v = item.variants[vIdx];
+            const vName = v.variant_name || v.title_az || v.title || v.name_az || v.name || v.sku || `Variant ${vIdx + 1}`;
+            const vSlugRaw = v.slug || `${itemGroupSlug}-${toAzSlug(vName)}`;
+            const vPrice = Number(v.price_azn ?? v.price ?? priceVal);
+            const vDiscount = v.discount_price ?? v.compare_at_price ?? v.compare_at_price_azn ?? discount_price;
+            const vStock = Number(v.stock_quantity ?? v.stock ?? stock_quantity);
+            const vImage = v.image_url || v.image || item.image_url || null;
+
+            const siblingInsertObj: any = {
+              title_az: `${nameAz} (${vName})`,
+              name_az: `${nameAz} (${vName})`,
+              slug: vSlugRaw,
+              group_slug: itemGroupSlug,
+              variant_name: vName,
+              description_az: item.description_az || null,
+              price: vPrice,
+              price_azn: vPrice,
+              discount_price: vDiscount,
+              compare_at_price_azn: vDiscount,
+              stock_quantity: vStock,
+              brand_id: brandId,
+              category_id: categoryId,
+              image_url: vImage,
+              sku: v.sku || `${targetSlug}-${vIdx + 1}`,
+              is_magnetic: Boolean(v.is_magnetic ?? item.is_magnetic),
+              product_type: item.product_type || null,
+              status: item.status === 'published' ? 'publish' : (item.status || 'publish'),
+              is_active: true
+            };
+
+            const { error: siblingErr } = await adminSupabase
+              .from('products')
+              .upsert(siblingInsertObj, { onConflict: 'slug' });
+
+            if (siblingErr) {
+              console.error('SIBLING PRODUCT UPSERT ERROR (bulkImportProductsAction):', siblingErr);
+            }
+          }
+
+          // Delete existing variants for product from both legacy tables
           const { error: vDelErr } = await adminSupabase.from('variants').delete().eq('product_id', newProd.id);
-          if (vDelErr) console.error('VARIANTS DELETE ERROR (importJsonProducts):', vDelErr);
+          if (vDelErr) console.error('VARIANTS DELETE ERROR (bulkImportProductsAction):', vDelErr);
           try {
             const { error: pvDelErr } = await adminSupabase.from('product_variants').delete().eq('product_id', newProd.id);
-            if (pvDelErr) console.error('PRODUCT_VARIANTS DELETE ERROR (importJsonProducts):', pvDelErr);
+            if (pvDelErr) console.error('PRODUCT_VARIANTS DELETE ERROR (bulkImportProductsAction):', pvDelErr);
           } catch (e: any) {
-            console.error('PRODUCT_VARIANTS DELETE EXCEPTION (importJsonProducts):', e?.message || e);
+            console.error('PRODUCT_VARIANTS DELETE EXCEPTION (bulkImportProductsAction):', e?.message || e);
           }
 
           const basePrice = Number(item.price_azn || item.price || 0);
@@ -2334,12 +2397,12 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
 
           if (variantsToInsert.length > 0) {
             const { error: vInsErr } = await adminSupabase.from('variants').insert(variantsToInsert);
-            if (vInsErr) console.error('VARIANTS INSERT ERROR (importJsonProducts):', vInsErr);
+            if (vInsErr) console.error('VARIANTS INSERT ERROR (bulkImportProductsAction):', vInsErr);
             try {
               const { error: pvInsErr } = await adminSupabase.from('product_variants').insert(variantsToInsert);
-              if (pvInsErr) console.error('PRODUCT_VARIANTS INSERT ERROR (importJsonProducts):', pvInsErr);
+              if (pvInsErr) console.error('PRODUCT_VARIANTS INSERT ERROR (bulkImportProductsAction):', pvInsErr);
             } catch (e: any) {
-              console.error('PRODUCT_VARIANTS INSERT EXCEPTION (importJsonProducts):', e?.message || e);
+              console.error('PRODUCT_VARIANTS INSERT EXCEPTION (bulkImportProductsAction):', e?.message || e);
             }
           }
 
