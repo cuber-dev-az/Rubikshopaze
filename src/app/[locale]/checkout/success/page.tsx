@@ -52,7 +52,7 @@ function SuccessContent() {
   const customerName = searchParams.get('name') || 'Dəyərli Müştəri';
 
   const formattedOrderId = React.useMemo(() => {
-    return orderId.substring(0, 8).toUpperCase();
+    return String(orderId).substring(0, 8).toUpperCase();
   }, [orderId]);
 
   const currentDate = React.useMemo(() => {

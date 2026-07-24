@@ -138,7 +138,7 @@ export default function OrderDetailClient({ orderId }: { orderId: string }) {
           </Link>
           <div>
             <h2 className="text-2xl font-black text-white uppercase tracking-wider flex items-center gap-2">
-              <ShoppingBag className="w-6 h-6 text-amber-500" /> Sifariş: #{order.id.substring(0, 8).toUpperCase()}
+              <ShoppingBag className="w-6 h-6 text-amber-500" /> Sifariş: #{String(order.id).substring(0, 8).toUpperCase()}
             </h2>
             <p className="text-sm text-slate-400 mt-1">{formattedDate} • {order.customer_name} tərəfindən yaradılıb</p>
           </div>

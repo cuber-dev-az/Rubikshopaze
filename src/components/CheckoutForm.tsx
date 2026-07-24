@@ -354,7 +354,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
       const response = await submitOrderAtomic(payload);
 
       if (response.success && response.orderId) {
-        const formattedOrderId = response.orderId.substring(0, 8).toUpperCase();
+        const formattedOrderId = String(response.orderId).substring(0, 8).toUpperCase();
         
         let message = `🔴 *RUBIKSHOP.AZ - ${tMsg.title} (#${formattedOrderId})* 🔴\n\n`;
         message += `👤 *${tMsg.customer}:* ${name.trim()}\n`;

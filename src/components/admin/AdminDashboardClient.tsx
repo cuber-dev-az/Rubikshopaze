@@ -637,7 +637,7 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
                 <tr key={order.id} className="hover:bg-slate-800/20 transition-colors group">
                   <td className="px-6 py-4">
                     <span className="font-bold text-white inline-flex items-center gap-1.5">
-                      <ShoppingBag className="w-4 h-4 text-slate-500" /> {order.id.substring(0,8).toUpperCase()}
+                      <ShoppingBag className="w-4 h-4 text-slate-500" /> {String(order.id).substring(0,8).toUpperCase()}
                     </span>
                     <div className="font-mono text-xs text-slate-500 mt-1">{new Date(order.created_at).toLocaleString('az-AZ')}</div>
                   </td>

@@ -58,6 +58,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
 
   // 1. Fetch matching product safely using getProductBySlug
   let activeProduct = null;
+  let siblingProducts: any[] = [];
   try {
     const titleColumn = `title_${locale}`;
     const descColumn = `description_${locale}`;
@@ -97,30 +98,49 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         ? dbProduct.variants
         : ((Array.isArray(dbProduct.product_variants) && dbProduct.product_variants.length > 0) ? dbProduct.product_variants : []);
 
-      let siblingProducts: any[] = [];
+      siblingProducts = [];
       const groupSlugToQuery = dbProduct.group_slug || (activeVariants.length > 0 ? dbProduct.slug : null);
-      if (groupSlugToQuery) {
+      if (groupSlugToQuery && typeof groupSlugToQuery === 'string' && groupSlugToQuery.trim()) {
         try {
-          const { data: sibRows } = await supabase
-            .from('products')
-            .select('*, brands(name), categories(name_az, slug)')
-            .or(`group_slug.eq.${groupSlugToQuery},slug.eq.${groupSlugToQuery}`)
-            .eq('is_active', true);
+          const cleanGroupSlug = groupSlugToQuery.trim();
+          let sibRows: any[] | null = null;
+          
+          try {
+            const { data, error } = await supabase
+              .from('products')
+              .select('*, brands(name), categories(name_az, slug)')
+              .or(`group_slug.eq.${cleanGroupSlug},slug.eq.${cleanGroupSlug}`)
+              .eq('is_active', true);
+            if (!error && data) {
+              sibRows = data;
+            }
+          } catch {
+            sibRows = null;
+          }
 
-          if (sibRows && sibRows.length > 0) {
+          if (!sibRows || sibRows.length === 0) {
+            const { data: fallbackData } = await supabase
+              .from('products')
+              .select('*, brands(name), categories(name_az, slug)')
+              .eq('group_slug', cleanGroupSlug)
+              .eq('is_active', true);
+            sibRows = fallbackData;
+          }
+
+          if (sibRows && Array.isArray(sibRows) && sibRows.length > 0) {
             siblingProducts = sibRows.map((s: any) => ({
               id: s.id,
               slug: s.slug,
-              group_slug: s.group_slug || groupSlugToQuery,
-              sku: s.sku || `SKU-${s.id.substring(0, 4)}`,
+              group_slug: s.group_slug || cleanGroupSlug,
+              sku: s.sku || `SKU-${String(s.id).substring(0, 4)}`,
               variant_name: s.variant_name || s.title_az || s.name_az || s.title || s.name || s.sku,
               title: s[`title_${locale}`] || s[`name_${locale}`] || s.title_az || s.name_az || s.title || s.name,
               price_azn: Number(s.price ?? s.price_azn ?? 0),
               original_price: s.discount_price ?? s.compare_at_price_azn ?? s.compare_at_price,
               stock_quantity: Number(s.stock_quantity || 0),
-              image_url: sanitizeImageUrl(s.image_url, s.id),
+              image_url: sanitizeImageUrl(s.image_url, String(s.id)),
               gallery_images: s.gallery_images || s.images || null,
-              is_current: s.id === dbProduct.id || s.slug === dbProduct.slug
+              is_current: String(s.id) === String(dbProduct.id) || s.slug === dbProduct.slug
             }));
           }
         } catch (e) {

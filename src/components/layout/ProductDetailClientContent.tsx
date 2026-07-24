@@ -495,8 +495,8 @@ function ProductDetailClientContentInner({
   }
 
   const currentSku = selectedVariant 
-    ? (selectedVariant.sku || (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000')))
-    : (product?.sku || (product?.id ? `RS-${product.id.substring(0, 4).toUpperCase()}` : 'RS-0000'));
+    ? (selectedVariant.sku || (product?.sku || (product?.id ? `RS-${String(product.id).substring(0, 4).toUpperCase()}` : 'RS-0000')))
+    : (product?.sku || (product?.id ? `RS-${String(product.id).substring(0, 4).toUpperCase()}` : 'RS-0000'));
 
   // Frequently Bought Together Bundle State
   const [bundleChecked2, setBundleChecked2] = React.useState(true);

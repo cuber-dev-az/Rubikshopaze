@@ -644,7 +644,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-black text-foreground font-mono">#{order.id.substring(0, 8).toUpperCase()}</span>
+                              <span className="text-xs font-black text-foreground font-mono">#{String(order.id).substring(0, 8).toUpperCase()}</span>
                               <span className="text-[10px] text-muted-foreground">• {order.created_at}</span>
                             </div>
                             <p className="text-[11px] text-muted-foreground mt-1 font-medium leading-relaxed">
