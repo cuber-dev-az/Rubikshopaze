@@ -138,6 +138,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               price_azn: Number(s.price ?? s.price_azn ?? 0),
               original_price: s.discount_price ?? s.compare_at_price_azn ?? s.compare_at_price,
               stock_quantity: Number(s.stock_quantity || 0),
+              description: s[`description_${locale}`] || s.description_az || s.description || s.subtitle || '',
               image_url: sanitizeImageUrl(s.image_url, String(s.id)),
               gallery_images: s.gallery_images || s.images || null,
               is_current: String(s.id) === String(dbProduct.id) || s.slug === dbProduct.slug
@@ -146,6 +147,51 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         } catch (e) {
           console.error('Error fetching sibling products:', e);
         }
+      }
+
+      let versionOptions: any[] = [];
+      if (siblingProducts && siblingProducts.length > 0) {
+        versionOptions = siblingProducts.map((s: any) => ({
+          id: String(s.id),
+          slug: s.slug,
+          group_slug: s.group_slug,
+          name: String(s.variant_name || s.title || s.sku || 'Versiya'),
+          price_azn: Number(s.price_azn ?? 0),
+          compare_at_price_azn: s.original_price ? Number(s.original_price) : undefined,
+          stock_quantity: Number(s.stock_quantity ?? 0),
+          description: String(s.description || ''),
+          image_url: s.image_url,
+          sku: s.sku,
+          is_current: Boolean(s.is_current)
+        }));
+      } else if (activeVariants && activeVariants.length > 0) {
+        versionOptions = activeVariants.map((v: any, idx: number) => ({
+          id: String(v.id || `var_${idx}`),
+          slug: v.slug || dbProduct.slug,
+          group_slug: dbProduct.group_slug,
+          name: String(v.variant_name || v.name || v.title_az || v.name_az || v.title || v.sku || `Versiya ${idx + 1}`),
+          price_azn: Number(v.price_azn ?? v.price ?? dbProduct.price ?? 0),
+          compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price,
+          stock_quantity: Number(v.stock_quantity ?? v.stock ?? dbProduct.stock_quantity ?? 0),
+          description: String(v.description_az || v.description || v.subtitle || ''),
+          image_url: v.image_url || dbProduct.image_url,
+          sku: v.sku || dbProduct.sku || `SKU-${idx + 1}`,
+          is_current: v.slug ? v.slug === dbProduct.slug : idx === 0
+        }));
+      } else {
+        versionOptions = [{
+          id: String(dbProduct.id),
+          slug: dbProduct.slug,
+          group_slug: dbProduct.group_slug,
+          name: String(dbProduct.variant_name || dbProduct.title_az || dbProduct.name_az || dbProduct.title || dbProduct.name || 'Standart'),
+          price_azn: Number(dbProduct.price ?? dbProduct.price_azn ?? 0),
+          compare_at_price_azn: dbProduct.discount_price ?? dbProduct.compare_at_price,
+          stock_quantity: Number(dbProduct.stock_quantity || 0),
+          description: String(dbProduct.description_az || dbProduct.description || ''),
+          image_url: sanitizeImageUrl(dbProduct.image_url, String(dbProduct.id)),
+          sku: dbProduct.sku || `RS-${String(dbProduct.id).substring(0, 4).toUpperCase()}`,
+          is_current: true
+        }];
       }
 
       activeProduct = {
@@ -310,6 +356,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         <ProductDetailClientContent
           product={activeProduct}
           siblingProducts={siblingProducts}
+          versionOptions={versionOptions}
           relatedProducts={relatedList}
           locale={locale}
           dict={dict}

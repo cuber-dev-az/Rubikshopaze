@@ -23,6 +23,8 @@ import {
   Award,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Home,
   MessageSquare,
   Minus,
@@ -169,6 +171,7 @@ interface ProductDetailClientContentProps {
   dict: ApplicationDictionary;
   initialReviews?: any[];
   siblingProducts?: any[];
+  versionOptions?: any[];
 }
 
 export function ProductDetailClientContent(props: ProductDetailClientContentProps) {
@@ -182,6 +185,7 @@ export function ProductDetailClientContent(props: ProductDetailClientContentProp
 function ProductDetailClientContentInner({
   product,
   siblingProducts = [],
+  versionOptions = [],
   relatedProducts,
   locale,
   dict,
@@ -192,8 +196,43 @@ function ProductDetailClientContentInner({
   const pathname = usePathname();
   const addItem = useCartStore((state) => state.addItem);
 
+  // SpeedCubeShop Rich Dropdown Ref & Open State
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsVersionDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // 1. Universal Database-driven variants setup (supporting Grouped Sibling Products & Legacy variants)
   const dbVariants = React.useMemo(() => {
+    if (versionOptions && Array.isArray(versionOptions) && versionOptions.length > 0) {
+      return versionOptions.map((v: any) => ({
+        id: String(v.id),
+        sku: v.sku || `SKU-${v.id}`,
+        slug: v.slug,
+        group_slug: v.group_slug,
+        name: String(v.name || v.variant_name || v.title || v.sku || 'Versiya'),
+        title_az: v.name || v.title,
+        price: Number(v.price_azn ?? v.price ?? product?.price_azn ?? 0),
+        price_azn: Number(v.price_azn ?? v.price ?? product?.price_azn ?? 0),
+        compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? v.original_price,
+        stock: Number(v.stock_quantity ?? v.stock ?? 0),
+        stock_quantity: Number(v.stock_quantity ?? v.stock ?? 0),
+        description: String(v.description || v.description_az || v.subtitle || ''),
+        image_url: v.image_url || product?.image_url,
+        gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : [],
+        is_sibling: Boolean(v.slug && v.slug !== product?.slug)
+      }));
+    }
     if (siblingProducts && Array.isArray(siblingProducts) && siblingProducts.length > 0) {
       return siblingProducts.map((s: any, index: number) => ({
         id: String(s.id || s.slug || `sib_${index}`),
@@ -207,6 +246,7 @@ function ProductDetailClientContentInner({
         compare_at_price_azn: s.original_price ?? s.compare_at_price_azn ?? s.discount_price,
         stock: Number(s.stock_quantity ?? 0),
         stock_quantity: Number(s.stock_quantity ?? 0),
+        description: String(s.description || s.description_az || s.subtitle || ''),
         image_url: s.image_url || product?.image_url,
         gallery_images: Array.isArray(s.gallery_images) ? s.gallery_images : [],
         is_sibling: true
@@ -227,13 +267,14 @@ function ProductDetailClientContentInner({
         compare_at_price_azn: v.compare_at_price_azn || v.discount_price || v.original_price,
         stock: v.stock !== undefined ? Number(v.stock) : Number(v.stock_quantity || product?.stock_quantity || 0),
         stock_quantity: v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(v.stock || product?.stock_quantity || 0),
+        description: String(v.description || v.description_az || v.subtitle || ''),
         image_url: v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product?.image_url,
         gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : []),
         specs: v.specs || {}
       }));
     }
     return [];
-  }, [siblingProducts, product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url]);
+  }, [versionOptions, siblingProducts, product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url, product?.slug, product?.id]);
 
   // Read searchParam `variant` or `version` or `sku`
   const variantParam = searchParams ? (searchParams.get('variant') || searchParams.get('version') || searchParams.get('sku')) : null;
@@ -258,7 +299,7 @@ function ProductDetailClientContentInner({
     if (initialVariantId && initialVariantId !== selectedVariantId) {
       setSelectedVariantId(initialVariantId);
     }
-  }, [initialVariantId]);
+  }, [initialVariantId, selectedVariantId]);
 
   const selectedVariant = React.useMemo(() => {
     if (dbVariants.length === 0) return null;
@@ -1030,6 +1071,100 @@ function ProductDetailClientContentInner({
               </div>
             </div>
 
+            {/* SpeedCubeShop 1:1 Replica Rich Dropdown Version Selector */}
+            {dbVariants.length > 1 && (
+              <div className="space-y-2 relative" ref={dropdownRef}>
+                {/* 1. Label: "Versiya: [Aktiv Versiya Adı]" */}
+                <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <span className="text-muted-foreground font-semibold">Versiya:</span>
+                  <span className="font-extrabold text-rubik-brand">
+                    {selectedVariant?.name || selectedVariant?.title_az || selectedVariant?.sku || product.title}
+                  </span>
+                </div>
+
+                {/* 2. Interactive Dropdown Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsVersionDropdownOpen((prev) => !prev)}
+                  className="w-full text-left px-4 py-3 bg-card border-2 border-rubik-brand/70 hover:border-rubik-brand rounded-xl shadow-soft-xs transition-all flex items-center justify-between gap-3 focus:outline-none focus:ring-2 focus:ring-rubik-brand/20 cursor-pointer"
+                >
+                  <span className="font-extrabold text-sm text-foreground truncate">
+                    {selectedVariant?.name || selectedVariant?.title_az || selectedVariant?.sku || product.title}
+                  </span>
+                  <ChevronDown
+                    className={`h-5 w-5 text-rubik-brand shrink-0 transition-transform duration-200 ${
+                      isVersionDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+
+                {/* 3. Expandable Option Menu Dropdown */}
+                <AnimatePresence>
+                  {isVersionDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6, scale: 0.99 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.99 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute z-50 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-[380px] overflow-y-auto divide-y divide-border/60"
+                    >
+                      {dbVariants.map((v: any) => {
+                        const isSelected =
+                          String(selectedVariant?.id) === String(v.id) ||
+                          v.slug === product.slug;
+                        const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
+                        const vTitle = v.name || v.title_az || v.sku || 'Versiya';
+                        const vDesc = v.description || v.description_az || v.subtitle || '';
+
+                        return (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              handleVariantSelect(v);
+                              setIsVersionDropdownOpen(false);
+                            }}
+                            className={`w-full text-left p-3.5 transition-colors cursor-pointer flex items-start gap-3 ${
+                              isSelected
+                                ? 'bg-blue-50/80 dark:bg-blue-950/40 text-foreground'
+                                : 'hover:bg-muted/50 text-foreground'
+                            }`}
+                          >
+                            {/* Left Checkmark Icon */}
+                            <div className="mt-0.5 shrink-0 w-5 flex items-center justify-center">
+                              {isSelected ? (
+                                <Check className="h-4 w-4 text-blue-600 dark:text-blue-400 font-bold" />
+                              ) : (
+                                <div className="w-4 h-4" />
+                              )}
+                            </div>
+
+                            {/* Main Option Details */}
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-extrabold text-xs md:text-sm text-foreground leading-snug">
+                                  {vTitle}
+                                </span>
+                                <span className="font-extrabold text-xs md:text-sm text-muted-foreground whitespace-nowrap font-mono">
+                                  {vPrice.toFixed(2)} AZN
+                                </span>
+                              </div>
+
+                              {vDesc && (
+                                <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-3 leading-relaxed font-normal">
+                                  {vDesc}
+                                </p>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             {/* Price Segment */}
             <div className="bg-muted/40 border border-border/60 p-5 rounded-2xl flex items-baseline justify-between">
               <div className="space-y-1">
@@ -1064,65 +1199,6 @@ function ProductDetailClientContentInner({
                 )}
               </div>
             </div>
-
-            {/* Dynamic & SpeedCubeShop-style Interactive Variant Selector */}
-            {dbVariants.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-foreground block uppercase tracking-wider flex items-center gap-1.5">
-                    VERSİYA SEÇİN / SELECT VERSION
-                  </span>
-                  {selectedVariant && (
-                    <span className="text-xs font-bold text-rubik-brand">
-                      {selectedVariant.name || selectedVariant.title_az || selectedVariant.sku}
-                    </span>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {dbVariants.map((v: any) => {
-                    const vStock = Number(v.stock_quantity ?? v.stock ?? 0);
-                    const isVSelected = String(selectedVariantId) === String(v.id);
-                    const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
-                    const vTitle = v.name || v.title_az || v.name_az || v.title || v.sku || 'Variant';
-                    const vImg = v.image_url || (Array.isArray(v.gallery_images) && v.gallery_images[0]) || (Array.isArray(v.images) && v.images[0]);
-
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => handleVariantSelect(v)}
-                        className={`p-3.5 text-left border rounded-2xl transition-all cursor-pointer flex flex-col justify-between min-h-[4.8rem] relative overflow-hidden ${
-                          isVSelected
-                            ? 'border-rubik-brand bg-rubik-brand text-white shadow-soft-sm ring-2 ring-rubik-brand/20'
-                            : 'border-border bg-card text-foreground hover:border-foreground/30'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {vImg && (
-                            <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-background/20 shrink-0 border border-white/20">
-                              <Image src={sanitizeImageUrl(vImg, v.id)} alt={vTitle} fill className="object-contain p-0.5" />
-                            </div>
-                          )}
-                          <span className="font-extrabold text-xs md:text-sm truncate flex-1">
-                            {vTitle}
-                          </span>
-                          {isVSelected && <Check className="h-4 w-4 text-white shrink-0" />}
-                        </div>
-
-                        <div className="flex items-center justify-between text-[11px] mt-2 pt-1 border-t border-current/10">
-                          <span className={isVSelected ? 'text-white/80 font-medium' : 'text-muted-foreground'}>
-                            {vStock > 0 ? `Stok: ${vStock} ədəd` : 'Bitib (Sifarişlə)'}
-                          </span>
-                          <span className="font-black font-mono">
-                            {vPrice.toFixed(2)} AZN
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
 
             {/* Safe & Optional Custom Add-ons List (Strictly Null-Safe, NO Hardcoded Setup) */}
             {product?.add_ons && Array.isArray(product.add_ons) && product.add_ons.length > 0 && addOnsList.length > 0 && (
