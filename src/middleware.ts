@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`
   );
 
-  if (!pathnameHasLocale && !pathname.startsWith('/api') && !pathname.includes('.')) {
+  if (!pathnameHasLocale && !pathname.startsWith('/api') && !pathname.startsWith('/_') && !pathname.includes('.')) {
     const locale = getLocale(request);
     request.nextUrl.pathname = `/${locale}${pathname}`;
     return NextResponse.redirect(request.nextUrl);

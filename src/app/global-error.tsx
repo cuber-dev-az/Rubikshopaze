@@ -10,22 +10,20 @@ export default function GlobalError({
   reset: () => void;
 }) {
   React.useEffect(() => {
-    console.error('Global Error Caught:', error);
+    console.error('Global error caught:', error);
   }, [error]);
 
   return (
     <html lang="az">
-      <body>
-        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground">
-          <h1 className="text-3xl font-black mb-4">Sistem Xətası</h1>
-          <p className="text-muted-foreground mb-6">Gözlənilməz bir xəta baş verdi.</p>
-          <button
-            onClick={() => reset()}
-            className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors cursor-pointer"
-          >
-            Yenidən cəhd et
-          </button>
-        </div>
+      <body className="bg-background text-foreground flex flex-col items-center justify-center min-h-screen p-6 text-center">
+        <h2 className="text-2xl font-black mb-2">Sistem Xətası</h2>
+        <p className="text-sm text-muted-foreground mb-6 max-w-md">Səhifə yüklənərkən xəta baş verdi. Zəhmət olmasa səhifəni yeniləyin.</p>
+        <button
+          onClick={() => reset()}
+          className="px-6 py-2.5 bg-rubik-brand text-white font-bold rounded-xl shadow-md transition-colors cursor-pointer"
+        >
+          Yenidən Cəhd Et
+        </button>
       </body>
     </html>
   );

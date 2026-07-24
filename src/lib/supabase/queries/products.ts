@@ -40,75 +40,52 @@ export async function getProductById(id: string) {
   const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanId);
 
   try {
-    const selectQuery = '*, group_slug, variant_name, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
-    
     let data: any = null;
-    try {
-      const res = await supabase
-        .from('products')
-        .select(selectQuery)
-        .eq('id', cleanId)
-        .maybeSingle();
-      data = res.data;
-    } catch {
-      const fallbackRes = await supabase
-        .from('products')
-        .select('*, brands(*), variants(*)')
-        .eq('id', cleanId)
-        .maybeSingle();
-      data = fallbackRes.data;
-    }
 
-    if (!data && !isUuid) {
-      try {
-        const slugRes = await supabase
-          .from('products')
-          .select(selectQuery)
-          .eq('slug', cleanId)
-          .maybeSingle();
-        data = slugRes.data;
-      } catch {
-        const fallbackSlugRes = await supabase
-          .from('products')
-          .select('*, brands(*), variants(*)')
-          .eq('slug', cleanId)
-          .maybeSingle();
-        data = fallbackSlugRes.data;
-      }
+    if (isUuid) {
+      const { data: idData, error: idErr } = await supabase
+        .from('products')
+        .select('*, brands(*), categories(*)')
+        .eq('id', cleanId)
+        .maybeSingle();
+      if (!idErr && idData) data = idData;
     }
 
     if (!data) {
-      const simpleRes = await supabase
+      const { data: slugData, error: slugErr } = await supabase
+        .from('products')
+        .select('*, brands(*), categories(*)')
+        .eq('slug', cleanId)
+        .maybeSingle();
+      if (!slugErr && slugData) data = slugData;
+    }
+
+    if (!data) {
+      const { data: simpleData } = await supabase
         .from('products')
         .select('*')
-        .eq('id', cleanId)
+        .or(`id.eq.${isUuid ? cleanId : '00000000-0000-0000-0000-000000000000'},slug.eq.${cleanId}`)
         .maybeSingle();
-      data = simpleRes.data;
+      if (simpleData) data = simpleData;
     }
 
     if (data) {
-      let rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
-        ? data.variants
-        : ((Array.isArray(data.product_variants) && data.product_variants.length > 0) ? data.product_variants : []);
-
-      if (rawVars.length === 0 && data.id) {
-        try {
-          const { data: directVars } = await supabase
-            .from('variants')
-            .select('*')
-            .eq('product_id', data.id);
-          if (directVars && directVars.length > 0) {
-            rawVars = directVars;
-          } else {
-            const { data: directPVars } = await supabase
-              .from('product_variants')
-              .select('*')
-              .eq('product_id', data.id);
-            if (directPVars && directPVars.length > 0) {
-              rawVars = directPVars;
-            }
-          }
-        } catch (e) {}
+      let rawVars: any[] = [];
+      const { data: directVars } = await supabase
+        .from('variants')
+        .select('*')
+        .eq('product_id', data.id);
+      
+      if (directVars && directVars.length > 0) {
+        rawVars = directVars;
+      } else {
+        const { data: directPVars } = await supabase
+          .from('product_variants')
+          .select('*')
+          .eq('product_id', data.id);
+        if (directPVars && directPVars.length > 0) {
+          rawVars = directPVars;
+        }
       }
 
       const normalizedVars = rawVars.map((v: any) => ({
@@ -140,84 +117,61 @@ export async function getProductBySlug(slug: string) {
   const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanSlug);
 
   try {
-    const selectQuery = '*, group_slug, variant_name, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
-    
     let data: any = null;
-    try {
-      const res = await supabase
-        .from('products')
-        .select(selectQuery)
-        .eq('slug', cleanSlug)
-        .maybeSingle();
-      data = res.data;
-    } catch {
-      const fallbackRes = await supabase
-        .from('products')
-        .select('*, brands(*), variants(*)')
-        .eq('slug', cleanSlug)
-        .maybeSingle();
-      data = fallbackRes.data;
-    }
 
-    if (!data && isUuid) {
-      try {
-        const idRes = await supabase
-          .from('products')
-          .select(selectQuery)
-          .eq('id', cleanSlug)
-          .maybeSingle();
-        data = idRes.data;
-      } catch {
-        const fallbackIdRes = await supabase
-          .from('products')
-          .select('*, brands(*), variants(*)')
-          .eq('id', cleanSlug)
-          .maybeSingle();
-        data = fallbackIdRes.data;
-      }
+    const { data: resData, error: resError } = await supabase
+      .from('products')
+      .select('*, brands(*), categories(*)')
+      .eq('slug', cleanSlug)
+      .maybeSingle();
+
+    if (!resError && resData) {
+      data = resData;
+    } else if (isUuid) {
+      const { data: idData, error: idError } = await supabase
+        .from('products')
+        .select('*, brands(*), categories(*)')
+        .eq('id', cleanSlug)
+        .maybeSingle();
+      if (!idError && idData) data = idData;
     }
 
     if (!data) {
-      const simpleSlugRes = await supabase
+      const { data: simpleSlugData } = await supabase
         .from('products')
         .select('*')
         .eq('slug', cleanSlug)
         .maybeSingle();
-      data = simpleSlugRes.data;
 
-      if (!data && isUuid) {
-        const simpleIdRes = await supabase
+      if (simpleSlugData) {
+        data = simpleSlugData;
+      } else if (isUuid) {
+        const { data: simpleIdData } = await supabase
           .from('products')
           .select('*')
           .eq('id', cleanSlug)
           .maybeSingle();
-        data = simpleIdRes.data;
+        if (simpleIdData) data = simpleIdData;
       }
     }
 
     if (data) {
-      let rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
-        ? data.variants
-        : ((Array.isArray(data.product_variants) && data.product_variants.length > 0) ? data.product_variants : []);
+      let rawVars: any[] = [];
+      const { data: directVars } = await supabase
+        .from('variants')
+        .select('*')
+        .eq('product_id', data.id);
 
-      if (rawVars.length === 0 && data.id) {
-        try {
-          const { data: directVars } = await supabase
-            .from('variants')
-            .select('*')
-            .eq('product_id', data.id);
-          if (directVars && directVars.length > 0) {
-            rawVars = directVars;
-          } else {
-            const { data: directPVars } = await supabase
-              .from('product_variants')
-              .select('*')
-              .eq('product_id', data.id);
-            if (directPVars && directPVars.length > 0) {
-              rawVars = directPVars;
-            }
-          }
-        } catch (e) {}
+      if (directVars && directVars.length > 0) {
+        rawVars = directVars;
+      } else {
+        const { data: directPVars } = await supabase
+          .from('product_variants')
+          .select('*')
+          .eq('product_id', data.id);
+        if (directPVars && directPVars.length > 0) {
+          rawVars = directPVars;
+        }
       }
 
       const normalizedVars = rawVars.map((v: any) => ({
@@ -293,7 +247,7 @@ export async function getSiblingProductsByGroupSlug(groupSlug: string) {
   try {
     let { data, error } = await supabase
       .from('products')
-      .select('*, group_slug, variant_name, brands(*), categories(name_az, slug)')
+      .select('*, group_slug, variant_name, brands(*), categories(*)')
       .eq('group_slug', groupSlug)
       .eq('is_active', true)
       .eq('status', 'published');
@@ -301,7 +255,7 @@ export async function getSiblingProductsByGroupSlug(groupSlug: string) {
     if (error || !data || data.length === 0) {
       const fallback = await supabase
         .from('products')
-        .select('*, group_slug, variant_name, brands(*), categories(name_az, slug)')
+        .select('*, group_slug, variant_name, brands(*), categories(*)')
         .eq('group_slug', groupSlug)
         .eq('is_active', true);
       data = fallback.data;

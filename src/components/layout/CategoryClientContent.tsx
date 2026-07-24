@@ -83,7 +83,15 @@ const getBrandName = (p: any): string => {
   return '';
 };
 
-export function CategoryClientContent({
+export function CategoryClientContent(props: CategoryClientContentProps) {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <CategoryClientContentInner {...props} />
+    </React.Suspense>
+  );
+}
+
+function CategoryClientContentInner({
   initialProducts,
   categoryItem,
   locale,

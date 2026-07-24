@@ -177,7 +177,9 @@ interface ProductDetailClientContentProps {
 export function ProductDetailClientContent(props: ProductDetailClientContentProps) {
   return (
     <ErrorBoundary>
-      <ProductDetailClientContentInner {...props} />
+      <React.Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <ProductDetailClientContentInner {...props} />
+      </React.Suspense>
     </ErrorBoundary>
   );
 }
