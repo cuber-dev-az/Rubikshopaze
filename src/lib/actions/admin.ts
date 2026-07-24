@@ -2,7 +2,7 @@
 
 'use server';
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 // =========================================================================
@@ -1623,6 +1623,16 @@ function mapVariantsPayload(variants: any[], basePrice: number, productId?: stri
 export async function createProduct(payload: any) {
   try {
     const supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('İcazəsiz giriş (Unauthorized)');
+    }
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
+      throw new Error('Bu əməliyyat üçün admin/manager icazəsi lazımdır');
+    }
+
+    const adminSupabase = createAdminSupabaseClient();
     const rawSlug = payload.slug || payload.title_az || payload.title_en || 'product';
     const finalSlug = await resolveUniqueSlug(supabase, rawSlug);
     const safeGallery = formatGalleryImages(payload.gallery_images);
@@ -1682,10 +1692,10 @@ export async function createProduct(payload: any) {
 
     const variantsToInsert = mapVariantsPayload(payload.variants || [], basePrice, product.id, product.slug);
     if (variantsToInsert.length > 0) {
-      const { error: vErr } = await supabase.from('variants').insert(variantsToInsert);
+      const { error: vErr } = await adminSupabase.from('variants').insert(variantsToInsert);
       if (vErr) console.error('VARIANTS INSERT ERROR (createProduct):', vErr);
       try {
-        const { error: pvErr } = await supabase.from('product_variants').insert(variantsToInsert);
+        const { error: pvErr } = await adminSupabase.from('product_variants').insert(variantsToInsert);
         if (pvErr) console.error('PRODUCT_VARIANTS INSERT ERROR (createProduct):', pvErr);
       } catch (e: any) {
         console.error('PRODUCT_VARIANTS EXCEPTION (createProduct):', e?.message || e);
@@ -1703,6 +1713,16 @@ export async function createProduct(payload: any) {
 export async function updateProduct(id: string, payload: any) {
   try {
     const supabase = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error('İcazəsiz giriş (Unauthorized)');
+    }
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
+      throw new Error('Bu əməliyyat üçün admin/manager icazəsi lazımdır');
+    }
+
+    const adminSupabase = createAdminSupabaseClient();
     const {
       id: _id,
       created_at: _created_at,
@@ -1767,10 +1787,10 @@ export async function updateProduct(id: string, payload: any) {
     }
 
     if (variants !== undefined && Array.isArray(variants)) {
-      const { error: vDelErr } = await supabase.from('variants').delete().eq('product_id', id);
+      const { error: vDelErr } = await adminSupabase.from('variants').delete().eq('product_id', id);
       if (vDelErr) console.error('VARIANTS DELETE ERROR (updateProduct):', vDelErr);
       try {
-        const { error: pvDelErr } = await supabase.from('product_variants').delete().eq('product_id', id);
+        const { error: pvDelErr } = await adminSupabase.from('product_variants').delete().eq('product_id', id);
         if (pvDelErr) console.error('PRODUCT_VARIANTS DELETE ERROR (updateProduct):', pvDelErr);
       } catch (e: any) {
         console.error('PRODUCT_VARIANTS DELETE EXCEPTION (updateProduct):', e?.message || e);
@@ -1778,10 +1798,10 @@ export async function updateProduct(id: string, payload: any) {
 
       const variantsToInsert = mapVariantsPayload(variants, basePrice, id, product.slug);
       if (variantsToInsert.length > 0) {
-        const { error: vInsErr } = await supabase.from('variants').insert(variantsToInsert);
+        const { error: vInsErr } = await adminSupabase.from('variants').insert(variantsToInsert);
         if (vInsErr) console.error('VARIANTS INSERT ERROR (updateProduct):', vInsErr);
         try {
-          const { error: pvInsErr } = await supabase.from('product_variants').insert(variantsToInsert);
+          const { error: pvInsErr } = await adminSupabase.from('product_variants').insert(variantsToInsert);
           if (pvInsErr) console.error('PRODUCT_VARIANTS INSERT ERROR (updateProduct):', pvInsErr);
         } catch (e: any) {
           console.error('PRODUCT_VARIANTS INSERT EXCEPTION (updateProduct):', e?.message || e);
@@ -2047,6 +2067,13 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
       result.errors.push('İcazəsiz giriş (Unauthorized)');
       return result;
     }
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
+      result.errors.push('Bu əməliyyat üçün admin/manager icazəsi lazımdır');
+      return result;
+    }
+
+    const adminSupabase = createAdminSupabaseClient();
 
     if (!Array.isArray(products) || products.length === 0) {
       result.errors.push('Daxil edilən məlumat massiv (array) deyil və ya boşdur.');
@@ -2293,10 +2320,10 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
         // Map variants if provided
         if (newProd?.id && item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
           // Delete existing variants for product from both tables
-          const { error: vDelErr } = await supabase.from('variants').delete().eq('product_id', newProd.id);
+          const { error: vDelErr } = await adminSupabase.from('variants').delete().eq('product_id', newProd.id);
           if (vDelErr) console.error('VARIANTS DELETE ERROR (importJsonProducts):', vDelErr);
           try {
-            const { error: pvDelErr } = await supabase.from('product_variants').delete().eq('product_id', newProd.id);
+            const { error: pvDelErr } = await adminSupabase.from('product_variants').delete().eq('product_id', newProd.id);
             if (pvDelErr) console.error('PRODUCT_VARIANTS DELETE ERROR (importJsonProducts):', pvDelErr);
           } catch (e: any) {
             console.error('PRODUCT_VARIANTS DELETE EXCEPTION (importJsonProducts):', e?.message || e);
@@ -2306,10 +2333,10 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           const variantsToInsert = mapVariantsPayload(item.variants, basePrice, newProd.id, newProd.slug);
 
           if (variantsToInsert.length > 0) {
-            const { error: vInsErr } = await supabase.from('variants').insert(variantsToInsert);
+            const { error: vInsErr } = await adminSupabase.from('variants').insert(variantsToInsert);
             if (vInsErr) console.error('VARIANTS INSERT ERROR (importJsonProducts):', vInsErr);
             try {
-              const { error: pvInsErr } = await supabase.from('product_variants').insert(variantsToInsert);
+              const { error: pvInsErr } = await adminSupabase.from('product_variants').insert(variantsToInsert);
               if (pvInsErr) console.error('PRODUCT_VARIANTS INSERT ERROR (importJsonProducts):', pvInsErr);
             } catch (e: any) {
               console.error('PRODUCT_VARIANTS INSERT EXCEPTION (importJsonProducts):', e?.message || e);
