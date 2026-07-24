@@ -12,7 +12,6 @@ import {
   Trash2, 
   Settings, 
   Tag, 
-  Layers, 
   Globe, 
   Eye, 
   Calendar,
@@ -38,7 +37,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const locale = (params?.locale as string) || 'az';
   const [activeTab, setActiveTab] = useState('core');
   
-  // Form State Placeholders
+  // Form State
   const [title_az, setTitle_az] = useState(isNew ? '' : 'GAN 14 MagLev flagship 3x3');
   const [title_en, setTitle_en] = useState(isNew ? '' : 'GAN 14 MagLev flagship 3x3');
   const [title_ru, setTitle_ru] = useState(isNew ? '' : 'GAN 14 MagLev флагманский 3x3');
@@ -48,6 +47,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [price_azn, setPrice_azn] = useState(isNew ? '' : '145.00');
   const [compareAtPrice_azn, setCompareAtPrice_azn] = useState(isNew ? '' : '155.00');
   const [slug, setSlug] = useState(isNew ? '' : 'gan-14-maglev-flagship-3x3');
+  const [groupSlug, setGroupSlug] = useState(isNew ? '' : '');
+  const [variantName, setVariantName] = useState(isNew ? '' : '');
   const [productType, setProductType] = useState('standard');
   const [status, setStatus] = useState('draft');
   const [imageUrl, setImageUrl] = useState('');
@@ -56,27 +57,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [stock_quantity, setStock_quantity] = useState<number>(0);
   const [isFeatured, setIsFeatured] = useState(false);
   const [tags, setTags] = useState('gan, flagship, maglev');
-  const initialVariants = isNew 
-    ? [
-        { id: 1, sku: 'GAN14-ML-UV', name: 'UV Coated', price: '145.00', stock: 10 },
-        { id: 2, sku: 'GAN14-ML-FROSTED', name: 'Frosted', price: '135.00', stock: 24 }
-      ]
-    : [];
-
-  const [variants, setVariants] = useState<any[]>(initialVariants);
-  const [selectedMediaTarget, setSelectedMediaTarget] = useState<string>(
-    initialVariants.length > 0 ? String(initialVariants[0].id) : ''
-  );
-
-  // Sync selectedMediaTarget strictly with first available variant
-  React.useEffect(() => {
-    if (variants && variants.length > 0) {
-      const targetExists = variants.some(v => String(v.id) === String(selectedMediaTarget) || (v.sku && String(v.sku) === String(selectedMediaTarget)));
-      if (!targetExists || selectedMediaTarget === 'product' || selectedMediaTarget === 'general' || !selectedMediaTarget) {
-        setSelectedMediaTarget(String(variants[0].sku || variants[0].id));
-      }
-    }
-  }, [variants, selectedMediaTarget]);
 
   const [loading, setLoading] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
@@ -97,6 +77,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [size_mm, setSize_mm] = useState('');
   const [difficultyLevel, setDifficultyLevel] = useState('başlanğıc');
   const [addOns, setAddOns] = useState<any[]>([]);
+
+  const [showProductDeleteConfirm, setShowProductDeleteConfirm] = useState(false);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
 
   // Fetch metadata on mount
   React.useEffect(() => {
@@ -143,6 +126,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setCompareAtPrice_azn(rawComparePrice !== undefined && rawComparePrice !== null ? String(rawComparePrice) : '');
             
             setSlug(prod.slug || '');
+            setGroupSlug(prod.group_slug || '');
+            setVariantName(prod.variant_name || '');
             setStatus(prod.status || (prod.is_active ? 'publish' : 'draft'));
             setImageUrl(prod.image_url || prod.image || '');
             
@@ -193,59 +178,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
               }
             }
             setAddOns(parsedAddOns);
-
-            let rawVariants: any[] = [];
-            if (Array.isArray(prod.variants) && prod.variants.length > 0) {
-              rawVariants = prod.variants;
-            } else if (Array.isArray(prod.product_variants) && prod.product_variants.length > 0) {
-              rawVariants = prod.product_variants;
-            } else if (typeof prod.variants === 'string') {
-              try {
-                const p = JSON.parse(prod.variants);
-                if (Array.isArray(p)) rawVariants = p;
-              } catch {
-                rawVariants = [];
-              }
-            }
-
-            setVariants(rawVariants.map((v: any, index: number) => {
-              let vGallery: string[] = [];
-              if (Array.isArray(v.gallery_images)) {
-                vGallery = v.gallery_images;
-              } else if (Array.isArray(v.images)) {
-                vGallery = v.images;
-              } else if (typeof v.gallery_images === 'string') {
-                try {
-                  const parsed = JSON.parse(v.gallery_images);
-                  if (Array.isArray(parsed)) vGallery = parsed;
-                  else if (v.gallery_images) vGallery = [v.gallery_images];
-                } catch {
-                  vGallery = v.gallery_images.split(',').map((s: string) => s.trim()).filter(Boolean);
-                }
-              }
-
-              const vPrice = v.price_azn ?? v.price ?? '';
-              const vStock = v.stock_quantity ?? v.stock ?? 0;
-
-              return {
-                id: v.id || `var_${index + 1}_${Date.now()}`,
-                sku: v.sku || '',
-                name: v.name || v.title_az || v.name_az || '',
-                name_az: v.name_az || v.title_az || v.name || '',
-                name_en: v.name_en || v.title_en || v.name || '',
-                name_ru: v.name_ru || v.title_ru || v.name || '',
-                title_az: v.title_az || v.name_az || v.name || '',
-                title_en: v.title_en || v.name_en || v.name || '',
-                title_ru: v.title_ru || v.name_ru || v.name || '',
-                price: vPrice !== undefined && vPrice !== null ? String(vPrice) : '',
-                discount_price: v.discount_price ?? v.compare_at_price_azn ?? '',
-                compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? '',
-                stock: Number(vStock) || 0,
-                weight_g: v.weight_g ?? '',
-                image_url: v.image_url || v.image || '',
-                gallery_images: vGallery
-              };
-            }));
           } else {
             setErrorMsg(res.error || 'Məhsul yüklənərkən xəta baş verdi');
           }
@@ -258,29 +190,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
       loadProduct();
     }
   }, [isNew, productId]);
-
-  const handleAddVariant = () => {
-    const nextId = variants.length > 0 ? Math.max(...variants.map(v => typeof v.id === 'number' ? v.id : 0)) + 1 : 1;
-    setVariants([...variants, { id: nextId, sku: '', name: '', price: '', stock: 0 }]);
-  };
-
-  const [variantToDelete, setVariantToDelete] = useState<number | string | null>(null);
-  const [isDeletingVariant, setIsDeletingVariant] = useState(false);
-  const [showProductDeleteConfirm, setShowProductDeleteConfirm] = useState(false);
-  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
-
-  const handleDeleteVariantClick = (id: number | string) => {
-    setVariantToDelete(id);
-  };
-
-  const handleConfirmDeleteVariant = async () => {
-    if (variantToDelete === null) return;
-    setIsDeletingVariant(true);
-    await new Promise(resolve => setTimeout(resolve, 350));
-    setVariants(variants.filter(v => v.id !== variantToDelete));
-    setVariantToDelete(null);
-    setIsDeletingVariant(false);
-  };
 
   const handleConfirmDeleteProduct = async () => {
     if (!productId) return;
@@ -303,10 +212,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
     }
   };
 
-  const handleUpdateVariant = (id: number | string, field: string, value: any) => {
-    setVariants(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v));
-  };
-
   const handleSubmit = async () => {
     setLoading(true);
     setErrorMsg('');
@@ -320,32 +225,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
       // Normalize decimal (accepts "8,90" or "8.90"), keep two decimals
       const parsedPrice = parseFloat(String(price_azn).replace(',', '.'));
       const priceNumber = !isNaN(parsedPrice) && isFinite(parsedPrice) ? Math.round(parsedPrice * 100) / 100 : 0;
-
-      const payloadVariants = variants.map(v => {
-        const parsedVariantPrice = parseFloat(String(v.price).replace(',', '.'));
-        const roundedPrice = !isNaN(parsedVariantPrice) && isFinite(parsedVariantPrice) ? Math.round(parsedVariantPrice * 100) / 100 : priceNumber;
-        const vName = v.name || v.name_az || v.title_az || '';
-        return {
-          id: v.id,
-          sku: v.sku || '',
-          name: vName,
-          name_az: (v as any).name_az || vName,
-          name_en: (v as any).name_en || vName,
-          name_ru: (v as any).name_ru || vName,
-          title_az: (v as any).title_az || vName,
-          title_en: (v as any).title_en || vName,
-          title_ru: (v as any).title_ru || vName,
-          price: roundedPrice,
-          price_azn: roundedPrice,
-          discount_price: (v as any).discount_price !== undefined ? Number((v as any).discount_price) : undefined,
-          compare_at_price_azn: (v as any).compare_at_price_azn !== undefined ? Number((v as any).compare_at_price_azn) : undefined,
-          stock: Number(v.stock) || 0,
-          stock_quantity: Number(v.stock) || 0,
-          weight_g: (v as any).weight_g !== undefined ? Number((v as any).weight_g) : undefined,
-          image_url: v.image_url ? String(v.image_url).trim() : '',
-          gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images.map((g: string) => String(g).trim()).filter(Boolean) : []
-        };
-      });
 
       const payloadAddOns = addOns.map(a => ({
         id: a.id || `addon_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -371,6 +250,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         description_en,
         description_ru,
         slug: slug || title_az.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
+        group_slug: groupSlug || undefined,
+        variant_name: variantName || undefined,
         price_azn: priceNumber,
         compare_at_price_azn: comparePriceNumber || undefined,
         is_active: status === 'publish',
@@ -378,7 +259,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         image_url: imageUrl || undefined,
         video_url: videoUrl || undefined,
         stock_quantity: Number(stock_quantity) || 0,
-        variants: payloadVariants,
         add_ons: payloadAddOns,
         category_ids: selectedCategoryId ? [selectedCategoryId] : [],
         brand_id: selectedBrandId || undefined,
@@ -424,10 +304,18 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const tabs = [
     { id: 'core', label: 'Əsas Məlumatlar', icon: Settings },
     { id: 'media', label: 'Şəkil Meneceri', icon: ImageIcon },
-    { id: 'variants', label: 'Variantlar', icon: Layers },
     { id: 'addons', label: 'Əlavə Xidmətlər', icon: Tag },
     { id: 'seo', label: 'SEO & Meta', icon: Globe },
   ];
+
+  if (loadingProduct) {
+    return (
+      <div className="p-12 text-center text-slate-400">
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        Məhsul məlumatları yüklənir...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -546,6 +434,36 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                     className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
                     placeholder="moyu-rs3m-2020"
                   />
+                </div>
+
+                {/* Grouped Sibling Products Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-950/60 border border-slate-800 rounded-2xl">
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">
+                      Qrup Slug (group_slug)
+                    </label>
+                    <input 
+                      type="text" 
+                      value={groupSlug}
+                      onChange={(e) => setGroupSlug(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors font-mono text-sm"
+                      placeholder="moyu-rs3m-v5-3x3"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">Eyni məhsul ailəsinin versiyalarını birləşdirən ortaq slug</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">
+                      Versiya Adı (variant_name)
+                    </label>
+                    <input 
+                      type="text" 
+                      value={variantName}
+                      onChange={(e) => setVariantName(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-sm"
+                      placeholder="MagLev + Robot Stend Qutulu"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">Məhsul səhifəsində versiya sevim knopkasında görünən ad</p>
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
@@ -725,324 +643,143 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
           )}
 
           {/* Tab Content: Media */}
-          {activeTab === 'media' && (() => {
-            const selectedVariantObj = variants.find(v => String(v.id) === String(selectedMediaTarget) || (v.sku && String(v.sku) === String(selectedMediaTarget))) || variants[0] || null;
+          {activeTab === 'media' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-5">
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-amber-500" /> Əsas Məhsul Şəkli
+                </h3>
 
-            const activeTargetImageUrl = selectedVariantObj?.image_url || '';
-
-            const setActiveTargetImageUrl = (newVal: string) => {
-              if (selectedVariantObj) {
-                handleUpdateVariant(selectedVariantObj.id, 'image_url', newVal);
-                if (variants.indexOf(selectedVariantObj) === 0 || !imageUrl) {
-                  setImageUrl(newVal);
-                }
-              }
-            };
-
-            const activeTargetGalleryImages: string[] = Array.isArray(selectedVariantObj?.gallery_images)
-              ? selectedVariantObj.gallery_images
-              : [];
-
-            const setActiveTargetGalleryImages = (newArr: string[]) => {
-              if (selectedVariantObj) {
-                handleUpdateVariant(selectedVariantObj.id, 'gallery_images', newArr);
-                if (variants.indexOf(selectedVariantObj) === 0 || galleryImages.length === 0) {
-                  setGalleryImages(newArr);
-                }
-              }
-            };
-
-            return (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* Target Scope Selection Bar */}
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-soft-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-black text-amber-500 uppercase tracking-wider mb-1">
-                      Şəkil İdarəetmə Hədəfi (Scope)
-                    </label>
-                    <p className="text-xs text-slate-400">
-                      Konkret variant üçün xüsusi şəkillər seçin
-                    </p>
-                  </div>
-                  <select
-                    value={selectedMediaTarget}
-                    onChange={(e) => setSelectedMediaTarget(e.target.value)}
-                    className="w-full sm:w-auto bg-slate-950 border border-slate-700 text-amber-400 font-extrabold text-xs sm:text-sm rounded-2xl px-4 py-2.5 outline-none focus:border-amber-500 cursor-pointer shadow-inner"
-                  >
-                    {variants.map((v, i) => (
-                      <option key={v.id || i} value={String(v.id)}>
-                        Variant: {v.name || `Variant ${i + 1}`} ({v.sku || 'SKU yoxdur'})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-5">
-                  {/* Context Banner */}
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Hədəf: Konkret Variant</span>
-                      <span className="text-[10px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-black uppercase">Variant Şəkli</span>
-                    </div>
-                    <h4 className="text-sm font-extrabold text-white">
-                      Variant: {selectedVariantObj?.name || 'Variant'} <span className="font-mono text-slate-400 text-xs">({selectedVariantObj?.sku || 'SKU yoxdur'})</span>
-                    </h4>
-                  </div>
-
-                  <h3 className="text-base font-black text-white flex items-center gap-2 pt-2">
-                    <ImageIcon className="w-5 h-5 text-amber-500" /> 
-                    {selectedVariantObj?.name ? `Variant (${selectedVariantObj.name}) Əsas Şəkli` : 'Variant Əsas Şəkli'}
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <input 
-                        type="url" 
-                        className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm"
-                        placeholder="https://... (Şəkil URL-i daxil edin)"
-                        value={activeTargetImageUrl}
-                        onChange={e => setActiveTargetImageUrl(e.target.value)}
-                      />
-                    </div>
-
-                    {activeTargetImageUrl ? (
-                      <div className="mt-4">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Önizləmə</p>
-                        <div className="relative w-48 aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
-                          <Image 
-                            src={activeTargetImageUrl} 
-                            alt="Önizləmə" 
-                            fill 
-                            className="object-cover" 
-                            unoptimized={true}
-                            referrerPolicy="no-referrer"
-                          />
-                          <div className="absolute top-2 left-2 px-2 py-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded uppercase tracking-wider shadow-md">
-                            Variant Əsas
-                          </div>
-                          <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button 
-                              type="button"
-                              onClick={() => setActiveTargetImageUrl('')}
-                              className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-slate-800 bg-slate-950/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
-                        <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3">
-                          <ImageIcon className="w-6 h-6 text-slate-400" />
-                        </div>
-                        <p className="text-xs font-bold text-white mb-1">Şəkil URL-i daxil edilməyib</p>
-                        <p className="text-[11px] text-slate-500">
-                          Bu variant üçün şəkil daxil edin.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ƏLAVƏ QALEREYA ŞƏKİLLƏRİ */}
-                  <div className="pt-6 border-t border-slate-800 space-y-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <div>
-                        <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider">
-                          {selectedVariantObj?.name ? `Variant (${selectedVariantObj.name}) Qalereya Şəkilləri` : 'Variant Qalereya Şəkilləri'}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-0.5">Məhsul detalları səhifəsində mini karusel şəkilləri</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setActiveTargetGalleryImages([...activeTargetGalleryImages, ''])}
-                        className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 hover:text-amber-400 font-bold text-xs rounded-xl transition-colors border border-slate-700 shrink-0"
-                      >
-                        <Plus className="w-4 h-4" /> + Əlavə Şəkil
-                      </button>
-                    </div>
-
-                    {activeTargetGalleryImages.length === 0 ? (
-                      <div className="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl text-center text-xs text-slate-500">
-                        Əlavə qalereya şəkli yoxdur.
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {activeTargetGalleryImages.map((imgUrl, index) => (
-                          <div key={index} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3">
-                            <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
-                              {imgUrl ? (
-                                <Image
-                                  src={imgUrl}
-                                  alt={`Qalereya ${index + 1}`}
-                                  fill
-                                  className="object-cover"
-                                  unoptimized={true}
-                                  referrerPolicy="no-referrer"
-                                />
-                              ) : (
-                                <ImageIcon className="w-5 h-5 text-slate-600" />
-                              )}
-                            </div>
-                            <input
-                              type="url"
-                              value={imgUrl}
-                              onChange={(e) => {
-                                const updated = [...activeTargetGalleryImages];
-                                updated[index] = e.target.value;
-                                setActiveTargetGalleryImages(updated);
-                              }}
-                              placeholder="Əlavə şəkil URL-i daxil edin (https://...)"
-                              className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition-colors"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setActiveTargetGalleryImages(activeTargetGalleryImages.filter((_, i) => i !== index))}
-                              className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
-                              title="Şəkli Sil"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-4">
-                  <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    <Video className="w-5 h-5 text-blue-400" /> Video Meneceri
-                  </h3>
-                  <div>
-                    <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">YouTube Video Linki</label>
                     <input 
                       type="url" 
-                      className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
-                      placeholder="https://youtube.com/watch?v=..."
-                      value={videoUrl}
-                      onChange={e => setVideoUrl(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm"
+                      placeholder="https://... (Şəkil URL-i daxil edin)"
+                      value={imageUrl}
+                      onChange={e => setImageUrl(e.target.value)}
                     />
                   </div>
-                </div>
-              </div>
-            );
-          })()}
 
-          {/* Tab Content: Variants */}
-          {activeTab === 'variants' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-black text-white">Variantlar Mühərriki</h3>
-                  <p className="text-xs text-slate-400 mt-1">Hər variant üçün ad, SKU, qiymət, stok və xüsusi şəkil təyin edin.</p>
-                </div>
-                <button 
-                  onClick={handleAddVariant}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-medium text-sm rounded-xl transition-colors border border-slate-700"
-                >
-                  <Plus className="w-4 h-4" /> Yeni Variant
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {variants.map((v, i) => (
-                  <div key={v.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-4">
-                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                      <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-4 gap-4">
-                        <div className="sm:col-span-1">
-                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Variant Adı</label>
-                          <input 
-                            type="text" 
-                            value={v.name || ''} 
-                            onChange={(e) => handleUpdateVariant(v.id, 'name', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500" 
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">SKU</label>
-                          <input 
-                            type="text" 
-                            value={v.sku || ''} 
-                            onChange={(e) => handleUpdateVariant(v.id, 'sku', e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 font-mono focus:outline-none focus:border-amber-500" 
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Qiymət (AZN)</label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            step="0.01"
-                            value={String(v.price)}
-                            onChange={(e) => {
-                              const val = e.target.value.replace(',', '.');
-                              if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-                                handleUpdateVariant(v.id, 'price', val);
-                              }
-                            }}
-                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
-                          />
-                        </div>
-                        <div className="sm:col-span-1">
-                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Stok</label>
-                          <input 
-                            type="number" 
-                            value={v.stock !== undefined ? String(v.stock) : ''} 
-                            onChange={(e) => handleUpdateVariant(v.id, 'stock', parseInt(e.target.value) || 0)}
-                            className="w-full bg-slate-900 border border-slate-800 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500" 
-                          />
-                        </div>
-                      </div>
-                      <div className="pt-2 sm:pt-4 self-end sm:self-center">
-                        <button 
-                          onClick={() => handleDeleteVariantClick(v.id)}
-                          className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-                          title="Variantı Sil"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Variant Specific Image quick input */}
-                    <div className="pt-3 border-t border-slate-900/80 flex flex-col sm:flex-row items-center gap-3">
-                      <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
-                        {v.image_url ? (
-                          <Image
-                            src={v.image_url}
-                            alt={v.name || 'Variant'}
-                            fill
-                            className="object-cover"
-                            unoptimized={true}
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <ImageIcon className="w-4 h-4 text-slate-600" />
-                        )}
-                      </div>
-                      <div className="flex-1 w-full">
-                        <input
-                          type="url"
-                          placeholder="Variant xüsusi şəkil URL-i (https://... - boş olarsa məhsul əsas şəkli istifadə ediləcək)"
-                          value={v.image_url || ''}
-                          onChange={(e) => handleUpdateVariant(v.id, 'image_url', e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-800 text-white text-xs rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500"
+                  {imageUrl ? (
+                    <div className="mt-4">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Önizləmə</p>
+                      <div className="relative w-48 aspect-square rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 group">
+                        <Image 
+                          src={imageUrl} 
+                          alt="Önizləmə" 
+                          fill 
+                          className="object-cover" 
+                          unoptimized={true}
+                          referrerPolicy="no-referrer"
                         />
+                        <div className="absolute top-2 left-2 px-2 py-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded uppercase tracking-wider shadow-md">
+                          Əsas Şəkil
+                        </div>
+                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button 
+                            type="button"
+                            onClick={() => setImageUrl('')}
+                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedMediaTarget(String(v.id));
-                          setActiveTab('media');
-                        }}
-                        className="text-xs text-amber-500 hover:text-amber-400 font-bold bg-amber-500/10 px-3 py-2 rounded-lg transition-colors shrink-0"
-                      >
-                        Şəkil Menecerində Aç
-                      </button>
                     </div>
+                  ) : (
+                    <div className="border-2 border-dashed border-slate-800 bg-slate-950/50 rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+                      <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3">
+                        <ImageIcon className="w-6 h-6 text-slate-400" />
+                      </div>
+                      <p className="text-xs font-bold text-white mb-1">Şəkil URL-i daxil edilməyib</p>
+                      <p className="text-[11px] text-slate-500">
+                        Məhsulun əsas şəkil URL-ini daxil edin.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* QALEREYA ŞƏKİLLƏRİ */}
+                <div className="pt-6 border-t border-slate-800 space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                      <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider">
+                        Qalereya Şəkilləri
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-0.5">Məhsul detalları səhifəsində mini karusel şəkilləri</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryImages([...galleryImages, ''])}
+                      className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 hover:text-amber-400 font-bold text-xs rounded-xl transition-colors border border-slate-700 shrink-0"
+                    >
+                      <Plus className="w-4 h-4" /> + Əlavə Şəkil
+                    </button>
                   </div>
-                ))}
+
+                  {galleryImages.length === 0 ? (
+                    <div className="p-4 bg-slate-950/50 border border-slate-800 rounded-2xl text-center text-xs text-slate-500">
+                      Əlavə qalereya şəkli yoxdur.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {galleryImages.map((imgUrl, index) => (
+                        <div key={index} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3">
+                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
+                            {imgUrl ? (
+                              <Image
+                                src={imgUrl}
+                                alt={`Qalereya ${index + 1}`}
+                                fill
+                                className="object-cover"
+                                unoptimized={true}
+                                referrerPolicy="no-referrer"
+                              />
+                            ) : (
+                              <ImageIcon className="w-5 h-5 text-slate-600" />
+                            )}
+                          </div>
+                          <input
+                            type="url"
+                            value={imgUrl}
+                            onChange={(e) => {
+                              const updated = [...galleryImages];
+                              updated[index] = e.target.value;
+                              setGalleryImages(updated);
+                            }}
+                            placeholder="Əlavə şəkil URL-i daxil edin (https://...)"
+                            className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setGalleryImages(galleryImages.filter((_, i) => i !== index))}
+                            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
+                            title="Şəkli Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Video className="w-5 h-5 text-blue-400" /> Video Meneceri
+                </h3>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">YouTube Video Linki</label>
+                  <input 
+                    type="url" 
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
+                    placeholder="https://youtube.com/watch?v=..."
+                    value={videoUrl}
+                    onChange={e => setVideoUrl(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -1320,47 +1057,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
         </div>
       </div>
-
-      {/* VARIANT DELETE CONFIRMATION MODAL */}
-      {variantToDelete !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-fade-in">
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Trash2 className="w-8 h-8" />
-              </div>
-              <h3 className="text-xl font-black text-white uppercase tracking-wider mb-2">Variantı silmək</h3>
-              <p className="text-sm text-slate-400 mb-6">Bu elementi silmək istədiyinizə əminsiniz?</p>
-              
-              <div className="flex justify-center gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => setVariantToDelete(null)} 
-                  disabled={isDeletingVariant}
-                  className="px-5 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors disabled:opacity-50"
-                >
-                  Ləğv Et
-                </button>
-                <button 
-                  type="button" 
-                  onClick={handleConfirmDeleteVariant} 
-                  disabled={isDeletingVariant}
-                  className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isDeletingVariant ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                      Silinir...
-                    </>
-                  ) : (
-                    'Sil'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* PRODUCT DELETE CONFIRMATION MODAL */}
       {showProductDeleteConfirm && (
