@@ -1072,7 +1072,7 @@ function ProductDetailClientContentInner({
             </div>
 
             {/* SpeedCubeShop 1:1 Replica Rich Dropdown Version Selector */}
-            {dbVariants.length > 1 && (
+            {dbVariants.length > 1 ? (
               <div className="space-y-2 relative" ref={dropdownRef}>
                 {/* 1. Label: "Versiya: [Aktiv Versiya Adı]" */}
                 <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
@@ -1111,7 +1111,7 @@ function ProductDetailClientContentInner({
                       {dbVariants.map((v: any) => {
                         const isSelected =
                           String(selectedVariant?.id) === String(v.id) ||
-                          v.slug === product.slug;
+                          (v.slug && v.slug === product.slug);
                         const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
                         const vTitle = v.name || v.title_az || v.sku || 'Versiya';
                         const vDesc = v.description || v.description_az || v.subtitle || '';
@@ -1163,7 +1163,24 @@ function ProductDetailClientContentInner({
                   )}
                 </AnimatePresence>
               </div>
-            )}
+            ) : dbVariants.length === 1 && dbVariants[0]?.name ? (
+              <div className="space-y-1.5">
+                <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
+                  <span className="text-muted-foreground font-semibold">Versiya:</span>
+                  <span className="font-extrabold text-rubik-brand">
+                    {dbVariants[0].name}
+                  </span>
+                </div>
+                <div className="px-4 py-2.5 bg-muted/30 border border-border/70 rounded-xl text-xs md:text-sm font-bold text-foreground flex items-center justify-between">
+                  <span>{dbVariants[0].name}</span>
+                  {dbVariants[0].description && (
+                    <span className="text-muted-foreground text-xs font-normal truncate max-w-[220px]">
+                      {dbVariants[0].description}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             {/* Price Segment */}
             <div className="bg-muted/40 border border-border/60 p-5 rounded-2xl flex items-baseline justify-between">

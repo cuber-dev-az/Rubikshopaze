@@ -3,7 +3,7 @@ import { ProductDetailClientContent } from '@/components/layout/ProductDetailCli
 import { supabase } from '@/lib/supabase/client';
 import { getProductReviews } from '@/lib/actions/reviews';
 import { sanitizeImageUrl } from '@/lib/image';
-import { getProductBySlug } from '@/lib/supabase/queries/products';
+import { getProductBySlug, getSiblingProductsByGroupSlug } from '@/lib/supabase/queries/products';
 import Link from 'next/link';
 
 export const revalidate = 60;
@@ -100,49 +100,40 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         : ((Array.isArray(dbProduct.product_variants) && dbProduct.product_variants.length > 0) ? dbProduct.product_variants : []);
 
       siblingProducts = [];
-      const groupSlugToQuery = dbProduct.group_slug || (activeVariants.length > 0 ? dbProduct.slug : null);
-      if (groupSlugToQuery && typeof groupSlugToQuery === 'string' && groupSlugToQuery.trim()) {
+      versionOptions = [];
+
+      if (dbProduct.group_slug && typeof dbProduct.group_slug === 'string' && dbProduct.group_slug.trim()) {
         try {
-          const cleanGroupSlug = groupSlugToQuery.trim();
-          let sibRows: any[] | null = null;
-          
-          try {
-            const { data, error } = await supabase
-              .from('products')
-              .select('*, brands(name), categories(name_az, slug)')
-              .or(`group_slug.eq.${cleanGroupSlug},slug.eq.${cleanGroupSlug}`)
-              .eq('is_active', true);
-            if (!error && data) {
-              sibRows = data;
-            }
-          } catch {
-            sibRows = null;
-          }
-
-          if (!sibRows || sibRows.length === 0) {
-            const { data: fallbackData } = await supabase
-              .from('products')
-              .select('*, brands(name), categories(name_az, slug)')
-              .eq('group_slug', cleanGroupSlug)
-              .eq('is_active', true);
-            sibRows = fallbackData;
-          }
-
-          if (sibRows && Array.isArray(sibRows) && sibRows.length > 0) {
-            siblingProducts = sibRows.map((s: any) => ({
+          const sibs = await getSiblingProductsByGroupSlug(dbProduct.group_slug.trim());
+          if (sibs && Array.isArray(sibs) && sibs.length > 0) {
+            siblingProducts = sibs.map((s: any) => ({
               id: s.id,
               slug: s.slug,
-              group_slug: s.group_slug || cleanGroupSlug,
+              group_slug: s.group_slug || dbProduct.group_slug,
               sku: s.sku || `SKU-${String(s.id).substring(0, 4)}`,
               variant_name: s.variant_name || s.title_az || s.name_az || s.title || s.name || s.sku,
               title: s[`title_${locale}`] || s[`name_${locale}`] || s.title_az || s.name_az || s.title || s.name,
-              price_azn: Number(s.price ?? s.price_azn ?? 0),
+              price_azn: Number(s.price_azn ?? s.price ?? 0),
               original_price: s.discount_price ?? s.compare_at_price_azn ?? s.compare_at_price,
-              stock_quantity: Number(s.stock_quantity || 0),
+              stock_quantity: Number(s.stock_quantity ?? s.stock ?? 0),
               description: s[`description_${locale}`] || s.description_az || s.description || s.subtitle || '',
               image_url: sanitizeImageUrl(s.image_url, String(s.id)),
               gallery_images: s.gallery_images || s.images || null,
               is_current: String(s.id) === String(dbProduct.id) || s.slug === dbProduct.slug
+            }));
+
+            versionOptions = sibs.map((p: any) => ({
+              id: String(p.id),
+              slug: p.slug,
+              group_slug: p.group_slug,
+              name: String(p.variant_name || p.title_az || p.name_az || p.title || p.name || p.sku || 'Versiya'),
+              price_azn: Number(p.price_azn ?? p.price ?? 0),
+              compare_at_price_azn: p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price ? Number(p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) : undefined,
+              stock_quantity: Number(p.stock_quantity ?? p.stock ?? 0),
+              description: String(p[`description_${locale}`] || p.description_az || p.description || p.subtitle || ''),
+              image_url: p.image_url,
+              sku: p.sku,
+              is_current: String(p.id) === String(dbProduct.id) || p.slug === dbProduct.slug
             }));
           }
         } catch (e) {
@@ -150,49 +141,37 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         }
       }
 
-      versionOptions = [];
-      if (siblingProducts && siblingProducts.length > 0) {
-        versionOptions = siblingProducts.map((s: any) => ({
-          id: String(s.id),
-          slug: s.slug,
-          group_slug: s.group_slug,
-          name: String(s.variant_name || s.title || s.sku || 'Versiya'),
-          price_azn: Number(s.price_azn ?? 0),
-          compare_at_price_azn: s.original_price ? Number(s.original_price) : undefined,
-          stock_quantity: Number(s.stock_quantity ?? 0),
-          description: String(s.description || ''),
-          image_url: s.image_url,
-          sku: s.sku,
-          is_current: Boolean(s.is_current)
-        }));
-      } else if (activeVariants && activeVariants.length > 0) {
-        versionOptions = activeVariants.map((v: any, idx: number) => ({
-          id: String(v.id || `var_${idx}`),
-          slug: v.slug || dbProduct.slug,
-          group_slug: dbProduct.group_slug,
-          name: String(v.variant_name || v.name || v.title_az || v.name_az || v.title || v.sku || `Versiya ${idx + 1}`),
-          price_azn: Number(v.price_azn ?? v.price ?? dbProduct.price ?? 0),
-          compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price,
-          stock_quantity: Number(v.stock_quantity ?? v.stock ?? dbProduct.stock_quantity ?? 0),
-          description: String(v.description_az || v.description || v.subtitle || ''),
-          image_url: v.image_url || dbProduct.image_url,
-          sku: v.sku || dbProduct.sku || `SKU-${idx + 1}`,
-          is_current: v.slug ? v.slug === dbProduct.slug : idx === 0
-        }));
-      } else {
-        versionOptions = [{
-          id: String(dbProduct.id),
-          slug: dbProduct.slug,
-          group_slug: dbProduct.group_slug,
-          name: String(dbProduct.variant_name || dbProduct.title_az || dbProduct.name_az || dbProduct.title || dbProduct.name || 'Standart'),
-          price_azn: Number(dbProduct.price ?? dbProduct.price_azn ?? 0),
-          compare_at_price_azn: dbProduct.discount_price ?? dbProduct.compare_at_price,
-          stock_quantity: Number(dbProduct.stock_quantity || 0),
-          description: String(dbProduct.description_az || dbProduct.description || ''),
-          image_url: sanitizeImageUrl(dbProduct.image_url, String(dbProduct.id)),
-          sku: dbProduct.sku || `RS-${String(dbProduct.id).substring(0, 4).toUpperCase()}`,
-          is_current: true
-        }];
+      // FALLBACK: If siblingProducts is empty OR group_slug is null, check if activeProduct.variants or product_variants contains array items
+      if (versionOptions.length === 0) {
+        if (activeVariants && Array.isArray(activeVariants) && activeVariants.length > 0) {
+          versionOptions = activeVariants.map((v: any, idx: number) => ({
+            id: String(v.id || `var_${idx}`),
+            slug: v.slug || dbProduct.slug,
+            group_slug: dbProduct.group_slug,
+            name: String(v.variant_name || v.name || v.title_az || v.name_az || v.title || v.sku || `Versiya ${idx + 1}`),
+            price_azn: Number(v.price_azn ?? v.price ?? dbProduct.price_azn ?? dbProduct.price ?? 0),
+            compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price ? Number(v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price) : undefined,
+            stock_quantity: Number(v.stock_quantity ?? v.stock ?? dbProduct.stock_quantity ?? 0),
+            description: String(v.description_az || v.description || v.subtitle || ''),
+            image_url: v.image_url || dbProduct.image_url,
+            sku: v.sku || dbProduct.sku || `SKU-${idx + 1}`,
+            is_current: v.slug ? v.slug === dbProduct.slug : idx === 0
+          }));
+        } else {
+          versionOptions = [{
+            id: String(dbProduct.id),
+            slug: dbProduct.slug,
+            group_slug: dbProduct.group_slug,
+            name: String(dbProduct.variant_name || dbProduct.title_az || dbProduct.name_az || dbProduct.title || dbProduct.name || 'Standart'),
+            price_azn: Number(dbProduct.price_azn ?? dbProduct.price ?? 0),
+            compare_at_price_azn: dbProduct.discount_price ?? dbProduct.compare_at_price_azn ?? dbProduct.compare_at_price ? Number(dbProduct.discount_price ?? dbProduct.compare_at_price_azn ?? dbProduct.compare_at_price) : undefined,
+            stock_quantity: Number(dbProduct.stock_quantity ?? dbProduct.stock ?? 0),
+            description: String(dbProduct.description_az || dbProduct.description || ''),
+            image_url: sanitizeImageUrl(dbProduct.image_url, String(dbProduct.id)),
+            sku: dbProduct.sku || `RS-${String(dbProduct.id).substring(0, 4).toUpperCase()}`,
+            is_current: true
+          }];
+        }
       }
 
       activeProduct = {

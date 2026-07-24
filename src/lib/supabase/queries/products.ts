@@ -40,7 +40,7 @@ export async function getProductById(id: string) {
   const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanId);
 
   try {
-    const selectQuery = '*, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
+    const selectQuery = '*, group_slug, variant_name, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
     
     let data: any = null;
     try {
@@ -140,7 +140,7 @@ export async function getProductBySlug(slug: string) {
   const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(cleanSlug);
 
   try {
-    const selectQuery = '*, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
+    const selectQuery = '*, group_slug, variant_name, brands(*), product_variants(*), variants(*), categories(name_az, slug)';
     
     let data: any = null;
     try {
@@ -281,6 +281,34 @@ export async function getActiveProducts() {
     return uniqueProducts as RawProduct[];
   } catch (err) {
     console.error('getActiveProducts exception:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch all sibling products sharing a group_slug.
+ */
+export async function getSiblingProductsByGroupSlug(groupSlug: string) {
+  if (!groupSlug || typeof groupSlug !== 'string') return [];
+  try {
+    let { data, error } = await supabase
+      .from('products')
+      .select('*, group_slug, variant_name, brands(*), categories(name_az, slug)')
+      .eq('group_slug', groupSlug)
+      .eq('is_active', true)
+      .eq('status', 'published');
+
+    if (error || !data || data.length === 0) {
+      const fallback = await supabase
+        .from('products')
+        .select('*, group_slug, variant_name, brands(*), categories(name_az, slug)')
+        .eq('group_slug', groupSlug)
+        .eq('is_active', true);
+      data = fallback.data;
+    }
+    return data || [];
+  } catch (err) {
+    console.error('getSiblingProductsByGroupSlug exception:', err);
     return [];
   }
 }
