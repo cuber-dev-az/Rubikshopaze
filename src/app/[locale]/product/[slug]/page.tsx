@@ -142,7 +142,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       }
 
       // FALLBACK: If siblingProducts is empty OR group_slug is null, check if activeProduct.variants or product_variants contains array items
-      if (versionOptions.length === 0) {
+      if (versionOptions.length <= 1) {
         if (activeVariants && Array.isArray(activeVariants) && activeVariants.length > 0) {
           versionOptions = activeVariants.map((v: any, idx: number) => ({
             id: String(v.id || `var_${idx}`),
@@ -157,7 +157,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             sku: v.sku || dbProduct.sku || `SKU-${idx + 1}`,
             is_current: v.slug ? v.slug === dbProduct.slug : idx === 0
           }));
-        } else {
+        } else if (versionOptions.length === 0) {
           versionOptions = [{
             id: String(dbProduct.id),
             slug: dbProduct.slug,

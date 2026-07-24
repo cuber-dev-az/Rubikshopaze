@@ -1109,9 +1109,7 @@ function ProductDetailClientContentInner({
                       className="absolute z-50 left-0 right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-[380px] overflow-y-auto divide-y divide-border/60"
                     >
                       {dbVariants.map((v: any) => {
-                        const isSelected =
-                          String(selectedVariant?.id) === String(v.id) ||
-                          (v.slug && v.slug === product.slug);
+                        const isSelected = String(selectedVariant?.id) === String(v.id);
                         const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
                         const vTitle = v.name || v.title_az || v.sku || 'Versiya';
                         const vDesc = v.description || v.description_az || v.subtitle || '';
