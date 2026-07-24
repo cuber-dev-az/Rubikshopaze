@@ -87,9 +87,29 @@ export async function getProductById(id: string) {
     }
 
     if (data) {
-      const rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
+      let rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
         ? data.variants
         : ((Array.isArray(data.product_variants) && data.product_variants.length > 0) ? data.product_variants : []);
+
+      if (rawVars.length === 0 && data.id) {
+        try {
+          const { data: directVars } = await supabase
+            .from('variants')
+            .select('*')
+            .eq('product_id', data.id);
+          if (directVars && directVars.length > 0) {
+            rawVars = directVars;
+          } else {
+            const { data: directPVars } = await supabase
+              .from('product_variants')
+              .select('*')
+              .eq('product_id', data.id);
+            if (directPVars && directPVars.length > 0) {
+              rawVars = directPVars;
+            }
+          }
+        } catch (e) {}
+      }
 
       const normalizedVars = rawVars.map((v: any) => ({
         ...v,
@@ -176,9 +196,29 @@ export async function getProductBySlug(slug: string) {
     }
 
     if (data) {
-      const rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
+      let rawVars = (Array.isArray(data.variants) && data.variants.length > 0)
         ? data.variants
         : ((Array.isArray(data.product_variants) && data.product_variants.length > 0) ? data.product_variants : []);
+
+      if (rawVars.length === 0 && data.id) {
+        try {
+          const { data: directVars } = await supabase
+            .from('variants')
+            .select('*')
+            .eq('product_id', data.id);
+          if (directVars && directVars.length > 0) {
+            rawVars = directVars;
+          } else {
+            const { data: directPVars } = await supabase
+              .from('product_variants')
+              .select('*')
+              .eq('product_id', data.id);
+            if (directPVars && directPVars.length > 0) {
+              rawVars = directPVars;
+            }
+          }
+        } catch (e) {}
+      }
 
       const normalizedVars = rawVars.map((v: any) => ({
         ...v,

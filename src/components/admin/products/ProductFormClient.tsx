@@ -231,8 +231,17 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 id: v.id || `var_${index + 1}_${Date.now()}`,
                 sku: v.sku || '',
                 name: v.name || v.title_az || v.name_az || '',
+                name_az: v.name_az || v.title_az || v.name || '',
+                name_en: v.name_en || v.title_en || v.name || '',
+                name_ru: v.name_ru || v.title_ru || v.name || '',
+                title_az: v.title_az || v.name_az || v.name || '',
+                title_en: v.title_en || v.name_en || v.name || '',
+                title_ru: v.title_ru || v.name_ru || v.name || '',
                 price: vPrice !== undefined && vPrice !== null ? String(vPrice) : '',
+                discount_price: v.discount_price ?? v.compare_at_price_azn ?? '',
+                compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? '',
                 stock: Number(vStock) || 0,
+                weight_g: v.weight_g ?? '',
                 image_url: v.image_url || v.image || '',
                 gallery_images: vGallery
               };
@@ -314,13 +323,25 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
       const payloadVariants = variants.map(v => {
         const parsedVariantPrice = parseFloat(String(v.price).replace(',', '.'));
-        const roundedPrice = !isNaN(parsedVariantPrice) && isFinite(parsedVariantPrice) ? Math.round(parsedVariantPrice * 100) / 100 : 0;
+        const roundedPrice = !isNaN(parsedVariantPrice) && isFinite(parsedVariantPrice) ? Math.round(parsedVariantPrice * 100) / 100 : priceNumber;
+        const vName = v.name || v.name_az || v.title_az || '';
         return {
           id: v.id,
           sku: v.sku || '',
-          name: v.name || '',
+          name: vName,
+          name_az: (v as any).name_az || vName,
+          name_en: (v as any).name_en || vName,
+          name_ru: (v as any).name_ru || vName,
+          title_az: (v as any).title_az || vName,
+          title_en: (v as any).title_en || vName,
+          title_ru: (v as any).title_ru || vName,
           price: roundedPrice,
+          price_azn: roundedPrice,
+          discount_price: (v as any).discount_price !== undefined ? Number((v as any).discount_price) : undefined,
+          compare_at_price_azn: (v as any).compare_at_price_azn !== undefined ? Number((v as any).compare_at_price_azn) : undefined,
           stock: Number(v.stock) || 0,
+          stock_quantity: Number(v.stock) || 0,
+          weight_g: (v as any).weight_g !== undefined ? Number((v as any).weight_g) : undefined,
           image_url: v.image_url ? String(v.image_url).trim() : '',
           gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images.map((g: string) => String(g).trim()).filter(Boolean) : []
         };

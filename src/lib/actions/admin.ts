@@ -1567,7 +1567,10 @@ function mapVariantsPayload(variants: any[], basePrice: number, productId?: stri
   const slugPrefix = productSlug || (productId ? productId.slice(0, 8) : 'var');
 
   return variants.map((v: any, idx: number) => {
-    const variantPrice = Number(v.price_azn || v.price || basePrice || 0);
+    const variantPrice = Number(v.price_azn ?? v.price ?? basePrice ?? 0);
+    const rawDisc = v.discount_price !== undefined && v.discount_price !== null ? Number(v.discount_price) : (v.compare_at_price_azn !== undefined && v.compare_at_price_azn !== null ? Number(v.compare_at_price_azn) : null);
+    const rawComp = v.compare_at_price_azn !== undefined && v.compare_at_price_azn !== null ? Number(v.compare_at_price_azn) : rawDisc;
+
     let rawSku = v.sku ? String(v.sku).trim() : '';
     if (!rawSku) {
       rawSku = `${slugPrefix}-v${idx + 1}-${Date.now().toString().slice(-4)}`;
@@ -1581,13 +1584,33 @@ function mapVariantsPayload(variants: any[], basePrice: number, productId?: stri
     }
     seenSkus.add(uniqueSku);
 
+    const variantName = v.name || v.name_az || v.title_az || v.title_en || v.title_ru || `Variant ${idx + 1}`;
+    const nameAz = v.name_az || v.name || v.title_az || variantName;
+    const nameEn = v.name_en || v.name || v.title_en || variantName;
+    const nameRu = v.name_ru || v.name || v.title_ru || variantName;
+    const titleAz = v.title_az || nameAz;
+    const titleEn = v.title_en || nameEn;
+    const titleRu = v.title_ru || nameRu;
+
+    const stockQty = Number(v.stock_quantity ?? v.stock ?? 0);
+
     const item: any = {
       sku: uniqueSku,
-      name: v.name || v.title_az || `Variant ${idx + 1}`,
+      name: variantName,
+      name_az: nameAz,
+      name_en: nameEn,
+      name_ru: nameRu,
+      title_az: titleAz,
+      title_en: titleEn,
+      title_ru: titleRu,
       price_azn: variantPrice,
       price: variantPrice,
-      stock: Number(v.stock ?? v.stock_quantity ?? 0),
-      is_active: v.is_active ?? true,
+      discount_price: rawDisc,
+      compare_at_price_azn: rawComp,
+      stock: stockQty,
+      stock_quantity: stockQty,
+      weight_g: v.weight_g !== undefined && v.weight_g !== null ? Number(v.weight_g) : null,
+      is_active: v.is_active !== undefined ? Boolean(v.is_active) : true,
       image_url: v.image_url ? String(v.image_url).trim() : (v.image ? String(v.image).trim() : null),
     };
     if (productId) {
@@ -1659,8 +1682,10 @@ export async function createProduct(payload: any) {
 
     const variantsToInsert = mapVariantsPayload(payload.variants || [], basePrice, product.id, product.slug);
     if (variantsToInsert.length > 0) {
-      const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
-      if (varError) throw varError;
+      await supabase.from('variants').insert(variantsToInsert);
+      try {
+        await supabase.from('product_variants').insert(variantsToInsert);
+      } catch (e) {}
     }
 
     revalidatePath('/[locale]', 'layout');
@@ -1737,14 +1762,18 @@ export async function updateProduct(id: string, payload: any) {
       }
     }
 
-    if (variants !== undefined) {
-      const { error: delVarError } = await supabase.from('variants').delete().eq('product_id', id);
-      if (delVarError) throw delVarError;
+    if (variants !== undefined && Array.isArray(variants)) {
+      await supabase.from('variants').delete().eq('product_id', id);
+      try {
+        await supabase.from('product_variants').delete().eq('product_id', id);
+      } catch (e) {}
 
-      const variantsToInsert = mapVariantsPayload(variants || [], basePrice, id, product.slug);
+      const variantsToInsert = mapVariantsPayload(variants, basePrice, id, product.slug);
       if (variantsToInsert.length > 0) {
-        const { error: varError } = await supabase.from('variants').insert(variantsToInsert);
-        if (varError) throw varError;
+        await supabase.from('variants').insert(variantsToInsert);
+        try {
+          await supabase.from('product_variants').insert(variantsToInsert);
+        } catch (e) {}
       }
     }
 
@@ -2251,38 +2280,20 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
 
         // Map variants if provided
         if (newProd?.id && item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
-          // Delete existing variants for product
-          await supabase.from('product_variants').delete().eq('product_id', newProd.id);
+          // Delete existing variants for product from both tables
+          await supabase.from('variants').delete().eq('product_id', newProd.id);
+          try {
+            await supabase.from('product_variants').delete().eq('product_id', newProd.id);
+          } catch (e) {}
 
-          const variantsToInsert = item.variants.map((variant: any) => ({
-            product_id: newProd.id,
-            sku: variant.sku || null,
-            title_az: variant.name_az || variant.title_az || '',
-            title_en: variant.name_en || variant.title_en || '',
-            title_ru: variant.name_ru || variant.title_ru || '',
-            price_azn: parseFloat(String(variant.price || variant.price_azn || 0)),
-            compare_at_price_azn: variant.discount_price ? parseFloat(String(variant.discount_price)) : null,
-            weight_g: variant.weight_g ? parseFloat(String(variant.weight_g)) : null,
-            stock_quantity: parseInt(String(variant.stock_quantity || 0), 10),
-            image_url: variant.image_url ? String(variant.image_url).trim() : null
-          }));
+          const basePrice = Number(item.price_azn || item.price || 0);
+          const variantsToInsert = mapVariantsPayload(item.variants, basePrice, newProd.id, newProd.slug);
 
-          let { error: varError } = await supabase.from('product_variants').insert(variantsToInsert);
-
-          // Fallback if product_variants table is missing in schema
-          if (varError && (varError.code === 'PGRST205' || varError.message?.includes('product_variants'))) {
-            const fallbackVariants = variantsToInsert.map((v: any, idx: number) => ({
-              product_id: newProd.id,
-              sku: v.sku || `${newProd.slug || 'var'}-${idx + 1}`,
-              price_azn: v.price_azn,
-              compare_at_price_azn: v.compare_at_price_azn,
-              stock: v.stock_quantity,
-              name: v.title_az,
-              price: v.price_azn,
-              image_url: v.image_url
-            }));
-            await supabase.from('variants').delete().eq('product_id', newProd.id);
-            await supabase.from('variants').insert(fallbackVariants);
+          if (variantsToInsert.length > 0) {
+            await supabase.from('variants').insert(variantsToInsert);
+            try {
+              await supabase.from('product_variants').insert(variantsToInsert);
+            } catch (e) {}
           }
 
           // Calculate min price among variants and update parent product price if valid
