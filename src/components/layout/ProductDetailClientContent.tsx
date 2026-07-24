@@ -331,7 +331,7 @@ function ProductDetailClientContentInner({
       setActiveImage(vImg);
     }
 
-    if (v.is_sibling && v.slug) {
+    if ((v.is_sibling || (v.slug && v.slug !== product?.slug)) && v.slug) {
       router.push(`/${locale}/product/${v.slug}`);
     } else if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
