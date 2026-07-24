@@ -59,6 +59,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   // 1. Fetch matching product safely using getProductBySlug
   let activeProduct = null;
   let siblingProducts: any[] = [];
+  let versionOptions: any[] = [];
   try {
     const titleColumn = `title_${locale}`;
     const descColumn = `description_${locale}`;
@@ -149,7 +150,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         }
       }
 
-      let versionOptions: any[] = [];
+      versionOptions = [];
       if (siblingProducts && siblingProducts.length > 0) {
         versionOptions = siblingProducts.map((s: any) => ({
           id: String(s.id),

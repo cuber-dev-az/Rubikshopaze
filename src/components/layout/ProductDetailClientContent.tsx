@@ -274,7 +274,7 @@ function ProductDetailClientContentInner({
       }));
     }
     return [];
-  }, [versionOptions, siblingProducts, product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url, product?.slug, product?.id]);
+  }, [versionOptions, siblingProducts, product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url, product?.slug]);
 
   // Read searchParam `variant` or `version` or `sku`
   const variantParam = searchParams ? (searchParams.get('variant') || searchParams.get('version') || searchParams.get('sku')) : null;
