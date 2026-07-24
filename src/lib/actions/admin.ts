@@ -1682,10 +1682,14 @@ export async function createProduct(payload: any) {
 
     const variantsToInsert = mapVariantsPayload(payload.variants || [], basePrice, product.id, product.slug);
     if (variantsToInsert.length > 0) {
-      await supabase.from('variants').insert(variantsToInsert);
+      const { error: vErr } = await supabase.from('variants').insert(variantsToInsert);
+      if (vErr) console.error('VARIANTS INSERT ERROR (createProduct):', vErr);
       try {
-        await supabase.from('product_variants').insert(variantsToInsert);
-      } catch (e) {}
+        const { error: pvErr } = await supabase.from('product_variants').insert(variantsToInsert);
+        if (pvErr) console.error('PRODUCT_VARIANTS INSERT ERROR (createProduct):', pvErr);
+      } catch (e: any) {
+        console.error('PRODUCT_VARIANTS EXCEPTION (createProduct):', e?.message || e);
+      }
     }
 
     revalidatePath('/[locale]', 'layout');
@@ -1763,17 +1767,25 @@ export async function updateProduct(id: string, payload: any) {
     }
 
     if (variants !== undefined && Array.isArray(variants)) {
-      await supabase.from('variants').delete().eq('product_id', id);
+      const { error: vDelErr } = await supabase.from('variants').delete().eq('product_id', id);
+      if (vDelErr) console.error('VARIANTS DELETE ERROR (updateProduct):', vDelErr);
       try {
-        await supabase.from('product_variants').delete().eq('product_id', id);
-      } catch (e) {}
+        const { error: pvDelErr } = await supabase.from('product_variants').delete().eq('product_id', id);
+        if (pvDelErr) console.error('PRODUCT_VARIANTS DELETE ERROR (updateProduct):', pvDelErr);
+      } catch (e: any) {
+        console.error('PRODUCT_VARIANTS DELETE EXCEPTION (updateProduct):', e?.message || e);
+      }
 
       const variantsToInsert = mapVariantsPayload(variants, basePrice, id, product.slug);
       if (variantsToInsert.length > 0) {
-        await supabase.from('variants').insert(variantsToInsert);
+        const { error: vInsErr } = await supabase.from('variants').insert(variantsToInsert);
+        if (vInsErr) console.error('VARIANTS INSERT ERROR (updateProduct):', vInsErr);
         try {
-          await supabase.from('product_variants').insert(variantsToInsert);
-        } catch (e) {}
+          const { error: pvInsErr } = await supabase.from('product_variants').insert(variantsToInsert);
+          if (pvInsErr) console.error('PRODUCT_VARIANTS INSERT ERROR (updateProduct):', pvInsErr);
+        } catch (e: any) {
+          console.error('PRODUCT_VARIANTS INSERT EXCEPTION (updateProduct):', e?.message || e);
+        }
       }
     }
 
@@ -2281,19 +2293,27 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
         // Map variants if provided
         if (newProd?.id && item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
           // Delete existing variants for product from both tables
-          await supabase.from('variants').delete().eq('product_id', newProd.id);
+          const { error: vDelErr } = await supabase.from('variants').delete().eq('product_id', newProd.id);
+          if (vDelErr) console.error('VARIANTS DELETE ERROR (importJsonProducts):', vDelErr);
           try {
-            await supabase.from('product_variants').delete().eq('product_id', newProd.id);
-          } catch (e) {}
+            const { error: pvDelErr } = await supabase.from('product_variants').delete().eq('product_id', newProd.id);
+            if (pvDelErr) console.error('PRODUCT_VARIANTS DELETE ERROR (importJsonProducts):', pvDelErr);
+          } catch (e: any) {
+            console.error('PRODUCT_VARIANTS DELETE EXCEPTION (importJsonProducts):', e?.message || e);
+          }
 
           const basePrice = Number(item.price_azn || item.price || 0);
           const variantsToInsert = mapVariantsPayload(item.variants, basePrice, newProd.id, newProd.slug);
 
           if (variantsToInsert.length > 0) {
-            await supabase.from('variants').insert(variantsToInsert);
+            const { error: vInsErr } = await supabase.from('variants').insert(variantsToInsert);
+            if (vInsErr) console.error('VARIANTS INSERT ERROR (importJsonProducts):', vInsErr);
             try {
-              await supabase.from('product_variants').insert(variantsToInsert);
-            } catch (e) {}
+              const { error: pvInsErr } = await supabase.from('product_variants').insert(variantsToInsert);
+              if (pvInsErr) console.error('PRODUCT_VARIANTS INSERT ERROR (importJsonProducts):', pvInsErr);
+            } catch (e: any) {
+              console.error('PRODUCT_VARIANTS INSERT EXCEPTION (importJsonProducts):', e?.message || e);
+            }
           }
 
           // Calculate min price among variants and update parent product price if valid
