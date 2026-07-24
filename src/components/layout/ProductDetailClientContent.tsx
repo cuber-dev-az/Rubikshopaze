@@ -296,8 +296,11 @@ function ProductDetailClientContentInner({
       );
       if (match) return match.id;
     }
+    const slugMatch = dbVariants.find((v: any) => v.slug && String(v.slug).toLowerCase() === String(product?.slug).toLowerCase());
+    if (slugMatch) return slugMatch.id;
+
     return dbVariants[0].id;
-  }, [dbVariants, variantParam]);
+  }, [dbVariants, variantParam, product?.slug]);
 
   const [selectedVariantId, setSelectedVariantId] = React.useState<string | null>(initialVariantId);
 
@@ -1112,7 +1115,7 @@ function ProductDetailClientContentInner({
                 </div>
                 <div className={`flex flex-col gap-2.5 ${dbVariants.length >= 6 ? 'max-h-[380px] overflow-y-auto pr-1' : ''}`}>
                   {dbVariants.map((v: any) => {
-                    const isSelected = String(selectedVariant?.id) === String(v.id) || (v.slug && v.slug === product.slug);
+                    const isSelected = String(selectedVariant?.id) === String(v.id);
                     const vPrice = Number(v.price_azn ?? v.price ?? basePrice);
                     const vComparePrice = v.compare_at_price_azn ? Number(v.compare_at_price_azn) : null;
                     const vTitle = v.name || v.title_az || v.sku || 'Versiya';
