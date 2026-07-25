@@ -122,51 +122,89 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
       siblingProducts = [];
       versionOptions = [];
 
+      let sibs: any[] = [];
+
+      // Stage 1: Try fetching by group_slug
       if (dbProduct.group_slug && typeof dbProduct.group_slug === 'string' && dbProduct.group_slug.trim()) {
         try {
-          const sibs = await getSiblingProductsByGroupSlug(dbProduct.group_slug.trim());
-          if (sibs && Array.isArray(sibs) && sibs.length > 0) {
-            siblingProducts = sibs.map((s: any) => ({
-              id: s.id,
-              slug: s.slug,
-              group_slug: s.group_slug || dbProduct.group_slug,
-              sku: s.sku || `SKU-${String(s.id).substring(0, 4)}`,
-              variant_name: s.variant_name || s.title_az || s.name_az || s.title || s.name || s.sku,
-              title: s[`title_${locale}`] || s[`name_${locale}`] || s.title_az || s.name_az || s.title || s.name,
-              price_azn: Number(s.price_azn ?? s.price ?? 0),
-              original_price: s.discount_price ?? s.compare_at_price_azn ?? s.compare_at_price,
-              stock_quantity: Number(s.stock_quantity ?? s.stock ?? 0),
-              description: s[`description_${locale}`] || s.description_az || s.description || s.subtitle || '',
-              image_url: sanitizeImageUrl(s.image_url, String(s.id)),
-              gallery_images: s.gallery_images || s.images || null,
-              is_current: String(s.id) === String(dbProduct.id) || s.slug === dbProduct.slug
-            }));
-
-            versionOptions = sibs.map((p: any) => ({
-              id: String(p.id),
-              slug: p.slug,
-              group_slug: p.group_slug,
-              variant_name: String(p.variant_name || ''),
-              variant_name_az: p.variant_name_az,
-              variant_name_en: p.variant_name_en,
-              variant_name_ru: p.variant_name_ru,
-              name: getLocalizedVariantName(p, locale),
-              title_az: String(p.title_az || p.title || p.name_az || p.name || ''),
-              price_azn: Number(p.price_azn ?? p.price ?? 0),
-              compare_at_price_azn: (p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) ? Number(p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) : undefined,
-              stock_quantity: Number(p.stock_quantity ?? p.stock ?? 0),
-              description: getLocalizedDescription(p, locale),
-              description_az: String(p.description_az || p[`description_${locale}`] || p.description || p.subtitle || ''),
-              image_url: sanitizeImageUrl(p.image_url, String(p.id)),
-              sku: p.sku || `SKU-${String(p.id).substring(0, 4)}`,
-              tags: p.tags,
-              keywords: p.keywords,
-              is_current: String(p.id) === String(dbProduct.id) || p.slug === dbProduct.slug
-            }));
-          }
+          const res = await getSiblingProductsByGroupSlug(dbProduct.group_slug.trim());
+          if (res && res.length > 0) sibs = res;
         } catch (e) {
-          console.error('Error fetching sibling products:', e);
+          console.error('Error fetching sibling products by group_slug:', e);
         }
+      }
+
+      // Stage 2: Try fetching by family_slug or product_family if <= 1 sibling
+      if ((!sibs || sibs.length <= 1) && (dbProduct.family_slug || dbProduct.product_family)) {
+        const fam = dbProduct.family_slug || dbProduct.product_family;
+        try {
+          const famSibs = await getProductFamilySiblings(fam);
+          if (famSibs && famSibs.length > 1) sibs = famSibs;
+        } catch (e) {
+          console.error('Error fetching family siblings:', e);
+        }
+      }
+
+      // Stage 3: Try fetching by base title prefix if <= 1 sibling
+      if (!sibs || sibs.length <= 1) {
+        const rawTitle = dbProduct.title_az || dbProduct.name_az || dbProduct.title || dbProduct.name || '';
+        const baseTitle = rawTitle.split('(')[0].trim();
+        if (baseTitle && baseTitle.length >= 4) {
+          try {
+            const { data: titleSibs } = await supabase
+              .from('products')
+              .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, price_azn, price, compare_at_price_azn, discount_price, stock_quantity, stock, description_az, description_en, description_ru, sku, image_url, tags, keywords, brands(*), categories(*)')
+              .or(`title_az.ilike.${baseTitle}%,name_az.ilike.${baseTitle}%,title.ilike.${baseTitle}%,name.ilike.${baseTitle}%`)
+              .eq('is_active', true)
+              .order('price_azn', { ascending: true });
+
+            if (titleSibs && titleSibs.length > 1) {
+              sibs = titleSibs;
+            }
+          } catch (e) {
+            console.error('Error fetching titleSibs:', e);
+          }
+        }
+      }
+
+      if (sibs && Array.isArray(sibs) && sibs.length > 0) {
+        siblingProducts = sibs.map((s: any) => ({
+          id: s.id,
+          slug: s.slug,
+          group_slug: s.group_slug || dbProduct.group_slug,
+          sku: s.sku || `SKU-${String(s.id).substring(0, 4)}`,
+          variant_name: s.variant_name || s.title_az || s.name_az || s.title || s.name || s.sku,
+          title: s[`title_${locale}`] || s[`name_${locale}`] || s.title_az || s.name_az || s.title || s.name,
+          price_azn: Number(s.price_azn ?? s.price ?? 0),
+          original_price: s.discount_price ?? s.compare_at_price_azn ?? s.compare_at_price,
+          stock_quantity: Number(s.stock_quantity ?? s.stock ?? 0),
+          description: s[`description_${locale}`] || s.description_az || s.description || s.subtitle || '',
+          image_url: sanitizeImageUrl(s.image_url, String(s.id)),
+          gallery_images: s.gallery_images || s.images || null,
+          is_current: String(s.id) === String(dbProduct.id) || s.slug === dbProduct.slug
+        }));
+
+        versionOptions = sibs.map((p: any) => ({
+          id: String(p.id),
+          slug: p.slug,
+          group_slug: p.group_slug,
+          variant_name: String(p.variant_name || ''),
+          variant_name_az: p.variant_name_az,
+          variant_name_en: p.variant_name_en,
+          variant_name_ru: p.variant_name_ru,
+          name: getLocalizedVariantName(p, locale),
+          title_az: String(p.title_az || p.title || p.name_az || p.name || ''),
+          price_azn: Number(p.price_azn ?? p.price ?? 0),
+          compare_at_price_azn: (p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) ? Number(p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) : undefined,
+          stock_quantity: Number(p.stock_quantity ?? p.stock ?? 0),
+          description: getLocalizedDescription(p, locale),
+          description_az: String(p.description_az || p[`description_${locale}`] || p.description || p.subtitle || ''),
+          image_url: sanitizeImageUrl(p.image_url, String(p.id)),
+          sku: p.sku || `SKU-${String(p.id).substring(0, 4)}`,
+          tags: p.tags,
+          keywords: p.keywords,
+          is_current: String(p.id) === String(dbProduct.id) || p.slug === dbProduct.slug
+        }));
       }
 
       // FALLBACK: If siblingProducts is empty OR group_slug is null, check if activeProduct.variants or product_variants contains array items
