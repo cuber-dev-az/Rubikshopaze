@@ -921,7 +921,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 <div className="p-8 bg-slate-950/50 border border-slate-800 rounded-2xl text-center space-y-2">
                   <p className="text-sm font-bold text-slate-300">Heç bir dinamik spesifikasiya əlavə edilməyib</p>
                   <p className="text-xs text-slate-500">
-                    "Atribut Əlavə Et" düyməsini klikləyərək və ya Speedcube Şablonunu seçərək cədvəl sətirlərini yarada bilərsiniz.
+                    &quot;Atribut Əlavə Et&quot; düyməsini klikləyərək və ya Speedcube Şablonunu seçərək cədvəl sətirlərini yarada bilərsiniz.
                   </p>
                 </div>
               ) : (

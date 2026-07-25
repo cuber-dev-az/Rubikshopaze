@@ -1666,6 +1666,10 @@ export async function createProduct(payload: any) {
       is_magnetic: payload.is_magnetic ?? false,
       size_mm: payload.size_mm,
       difficulty_level: payload.difficulty_level ?? 'başlanğıc',
+      specs: payload.specs || payload.specs_az || null,
+      specs_az: payload.specs_az || payload.specs || null,
+      specs_en: payload.specs_en || null,
+      specs_ru: payload.specs_ru || null,
     };
 
     let { data: product, error: prodError } = await supabase
@@ -2239,6 +2243,11 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
         const parsedStock = parseInt(String(rawStock).replace(/[^0-9]/g, ''), 10);
         const stock_quantity = isNaN(parsedStock) ? 0 : parsedStock;
 
+        const specsAz = item.specs_az || item.specs || null;
+        const specsEn = item.specs_en || null;
+        const specsRu = item.specs_ru || null;
+        const specsObj = item.specs || item.specs_az || null;
+
         // Construct primary upsert payload
         const primaryInsertObj: any = {
           name_az: nameAz,
@@ -2257,14 +2266,18 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
           brand_id: brandId,
           image_url: item.image_url || null,
           tags: Array.isArray(item.tags) ? item.tags : [],
-          product_type: item.product_type || null,
+          product_type: item.product_type || 'speedcube',
           size_mm: item.size_mm ? parseFloat(String(item.size_mm).replace(/[^0-9.]/g, '')) : null,
           weight_g: item.weight_g ? parseFloat(String(item.weight_g).replace(/[^0-9.]/g, '')) : null,
           difficulty_level: item.difficulty_level || null,
           is_magnetic: Boolean(item.is_magnetic),
           status: item.status || 'published',
           meta_title: meta_title,
-          meta_description: meta_description
+          meta_description: meta_description,
+          specs: specsObj,
+          specs_az: specsAz,
+          specs_en: specsEn,
+          specs_ru: specsRu
         };
 
         let { data: newProd, error: prodError } = await supabase
@@ -2295,14 +2308,18 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
             brand_id: brandId,
             image_url: item.image_url || null,
             tags: Array.isArray(item.tags) ? item.tags : [],
-            product_type: item.product_type || null,
+            product_type: item.product_type || 'speedcube',
             size_mm: item.size_mm ? parseFloat(String(item.size_mm).replace(/[^0-9.]/g, '')) : null,
             weight_g: item.weight_g ? parseFloat(String(item.weight_g).replace(/[^0-9.]/g, '')) : null,
             difficulty_level: item.difficulty_level || null,
             is_magnetic: Boolean(item.is_magnetic),
             status: item.status === 'published' ? 'publish' : (item.status || 'publish'),
             seo_title: meta_title,
-            seo_description: meta_description
+            seo_description: meta_description,
+            specs: specsObj,
+            specs_az: specsAz,
+            specs_en: specsEn,
+            specs_ru: specsRu
           };
 
           const fallbackRes = await supabase
@@ -2351,6 +2368,11 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
             const vStock = Number(v.stock_quantity ?? v.stock ?? stock_quantity);
             const vImage = v.image_url || v.image || item.image_url || null;
 
+            const siblingSpecsAz = v.specs_az || v.specs || specsAz;
+            const siblingSpecsEn = v.specs_en || specsEn;
+            const siblingSpecsRu = v.specs_ru || specsRu;
+            const siblingSpecsObj = v.specs || v.specs_az || specsObj;
+
             const siblingInsertObj: any = {
               title_az: `${nameAz} (${vName})`,
               name_az: `${nameAz} (${vName})`,
@@ -2368,9 +2390,13 @@ export async function bulkImportProductsAction(products: any[]): Promise<BulkImp
               image_url: vImage,
               sku: v.sku || `${targetSlug}-${vIdx + 1}`,
               is_magnetic: Boolean(v.is_magnetic ?? item.is_magnetic),
-              product_type: item.product_type || null,
+              product_type: v.product_type || item.product_type || 'speedcube',
               status: item.status === 'published' ? 'publish' : (item.status || 'publish'),
-              is_active: true
+              is_active: true,
+              specs: siblingSpecsObj,
+              specs_az: siblingSpecsAz,
+              specs_en: siblingSpecsEn,
+              specs_ru: siblingSpecsRu
             };
 
             const { error: siblingErr } = await adminSupabase
