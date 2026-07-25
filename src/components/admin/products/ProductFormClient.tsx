@@ -60,6 +60,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [videoUrl, setVideoUrl] = useState('');
   const [stock_quantity, setStock_quantity] = useState<number>(0);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [allowPreorder, setAllowPreorder] = useState(false);
+  const [preorderLeadTime, setPreorderLeadTime] = useState('14-28 iş günü');
   const [tags, setTags] = useState('gan, flagship, maglev');
 
   const [loading, setLoading] = useState(false);
@@ -249,6 +251,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setSeoDesc(prod.seo_description || '');
             setWeight_g(prod.weight_g !== undefined && prod.weight_g !== null ? String(prod.weight_g) : '');
             setIsMagnetic(prod.is_magnetic || false);
+            setAllowPreorder(Boolean(prod.allow_preorder));
+            setPreorderLeadTime(prod.preorder_lead_time || '14-28 iş günü');
             setSize_mm(prod.size_mm !== undefined && prod.size_mm !== null ? String(prod.size_mm) : '');
             setDifficultyLevel(prod.difficulty_level || 'başlanğıc');
 
@@ -389,6 +393,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         image_url: imageUrl || undefined,
         video_url: videoUrl || undefined,
         stock_quantity: Number(stock_quantity) || 0,
+        allow_preorder: allowPreorder,
+        preorder_lead_time: preorderLeadTime || '14-28 iş günü',
         add_ons: payloadAddOns,
         category_ids: selectedCategoryId ? [selectedCategoryId] : [],
         brand_id: selectedBrandId || undefined,
@@ -681,6 +687,38 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
                       placeholder="Məs.: 10"
                     />
+                  </div>
+
+                  {/* Pre-Order Toggle Box */}
+                  <div className="p-4 bg-slate-950/80 border border-amber-500/30 rounded-2xl space-y-3 md:col-span-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-black text-amber-400 uppercase tracking-wider block">Öncədən Sifariş (Pre-Order)</span>
+                        <p className="text-[11px] text-slate-400 mt-0.5">Stok bitdikdə məhsul avtomatik ön sifariş düyməsi ilə satışa davam edəcəkdir</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={allowPreorder}
+                          onChange={(e) => setAllowPreorder(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                      </label>
+                    </div>
+
+                    {allowPreorder && (
+                      <div className="pt-2 border-t border-slate-800/80">
+                        <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5">Çatdırılma Müddəti (Səhifədə göstəriləcək)</label>
+                        <input
+                          type="text"
+                          value={preorderLeadTime}
+                          onChange={(e) => setPreorderLeadTime(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 text-white rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500 transition-colors"
+                          placeholder="Məs.: 14-28 iş günü"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div>

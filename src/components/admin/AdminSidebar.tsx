@@ -39,7 +39,9 @@ import {
   ChevronRight,
   LogOut,
   User,
-  Sparkles
+  Sparkles,
+  Clock,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface SidebarItem {
@@ -123,6 +125,8 @@ export default function AdminSidebar({
           icon: ShoppingBag,
           subItems: [
             { label: 'Sifarişlər', href: `/${locale}/admin/orders`, icon: FileText },
+            { label: 'Ön Sifarişlər', href: `/${locale}/admin/preorders`, icon: Clock },
+            { label: 'Təchizatçı Hesabatı (Çin)', href: `/${locale}/admin/preorders/supplier-report`, icon: FileSpreadsheet },
             { label: 'Müştərilər', href: `/${locale}/admin/customers`, icon: Users },
             { label: 'İnventar', href: `/${locale}/admin/inventory`, icon: Boxes },
             { label: 'Anbarlar', href: `/${locale}/admin/warehouses`, icon: Warehouse },
