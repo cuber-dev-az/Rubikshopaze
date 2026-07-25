@@ -50,6 +50,26 @@ function getSmartCategory(dbProduct: any) {
   return { name: 'Sürət Kubları', slug: '3x3' };
 }
 
+function getLocalizedVariantName(p: any, loc: string): string {
+  if (loc === 'en') {
+    return p.variant_name_en || p.name_en || p.variant_name || p.title_en || p.name || 'Version';
+  }
+  if (loc === 'ru') {
+    return p.variant_name_ru || p.name_ru || p.variant_name || p.title_ru || p.name || 'Версия';
+  }
+  return p.variant_name_az || p.variant_name || p.name_az || p.title_az || p.title || p.name || 'Versiya';
+}
+
+function getLocalizedDescription(p: any, loc: string): string {
+  if (loc === 'en') {
+    return p.description_en || p.description_az || p.description || '';
+  }
+  if (loc === 'ru') {
+    return p.description_ru || p.description_az || p.description || '';
+  }
+  return p.description_az || p.description_en || p.description_ru || p.description || '';
+}
+
 export default async function ProductDetailPage({ params }: ProductPageProps) {
   const { locale, slug } = await params;
   const dict = await getDictionary(locale);
@@ -126,16 +146,21 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               id: String(p.id),
               slug: p.slug,
               group_slug: p.group_slug,
-              variant_name: String(p.variant_name || p.title_az || p.name_az || p.title || p.name || p.sku || 'Versiya'),
-              name: String(p.variant_name || p.title_az || p.name_az || p.title || p.name || p.sku || 'Versiya'),
+              variant_name: String(p.variant_name || ''),
+              variant_name_az: p.variant_name_az,
+              variant_name_en: p.variant_name_en,
+              variant_name_ru: p.variant_name_ru,
+              name: getLocalizedVariantName(p, locale),
               title_az: String(p.title_az || p.title || p.name_az || p.name || ''),
               price_azn: Number(p.price_azn ?? p.price ?? 0),
               compare_at_price_azn: (p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) ? Number(p.compare_at_price_azn ?? p.discount_price ?? p.compare_at_price) : undefined,
               stock_quantity: Number(p.stock_quantity ?? p.stock ?? 0),
+              description: getLocalizedDescription(p, locale),
               description_az: String(p.description_az || p[`description_${locale}`] || p.description || p.subtitle || ''),
-              description: String(p[`description_${locale}`] || p.description_az || p.description || p.subtitle || ''),
               image_url: sanitizeImageUrl(p.image_url, String(p.id)),
               sku: p.sku || `SKU-${String(p.id).substring(0, 4)}`,
+              tags: p.tags,
+              keywords: p.keywords,
               is_current: String(p.id) === String(dbProduct.id) || p.slug === dbProduct.slug
             }));
           }
@@ -151,13 +176,19 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             id: String(v.id || `var_${idx}`),
             slug: v.slug || dbProduct.slug,
             group_slug: dbProduct.group_slug,
-            name: String(v.variant_name || v.name || v.title_az || v.name_az || v.title || v.sku || `Versiya ${idx + 1}`),
+            variant_name: String(v.variant_name || ''),
+            variant_name_az: v.variant_name_az,
+            variant_name_en: v.variant_name_en,
+            variant_name_ru: v.variant_name_ru,
+            name: getLocalizedVariantName(v, locale),
             price_azn: Number(v.price_azn ?? v.price ?? dbProduct.price_azn ?? dbProduct.price ?? 0),
             compare_at_price_azn: v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price ? Number(v.compare_at_price_azn ?? v.discount_price ?? v.compare_at_price) : undefined,
             stock_quantity: Number(v.stock_quantity ?? v.stock ?? dbProduct.stock_quantity ?? 0),
-            description: String(v.description_az || v.description || v.subtitle || ''),
+            description: getLocalizedDescription(v, locale),
             image_url: v.image_url || dbProduct.image_url,
             sku: v.sku || dbProduct.sku || `SKU-${idx + 1}`,
+            tags: v.tags || dbProduct.tags,
+            keywords: v.keywords || dbProduct.keywords,
             is_current: v.slug ? v.slug === dbProduct.slug : idx === 0
           }));
         } else if (versionOptions.length === 0) {
@@ -165,13 +196,19 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             id: String(dbProduct.id),
             slug: dbProduct.slug,
             group_slug: dbProduct.group_slug,
-            name: String(dbProduct.variant_name || dbProduct.title_az || dbProduct.name_az || dbProduct.title || dbProduct.name || 'Standart'),
+            variant_name: String(dbProduct.variant_name || ''),
+            variant_name_az: dbProduct.variant_name_az,
+            variant_name_en: dbProduct.variant_name_en,
+            variant_name_ru: dbProduct.variant_name_ru,
+            name: getLocalizedVariantName(dbProduct, locale),
             price_azn: Number(dbProduct.price_azn ?? dbProduct.price ?? 0),
             compare_at_price_azn: dbProduct.discount_price ?? dbProduct.compare_at_price_azn ?? dbProduct.compare_at_price ? Number(dbProduct.discount_price ?? dbProduct.compare_at_price_azn ?? dbProduct.compare_at_price) : undefined,
             stock_quantity: Number(dbProduct.stock_quantity ?? dbProduct.stock ?? 0),
-            description: String(dbProduct.description_az || dbProduct.description || ''),
+            description: getLocalizedDescription(dbProduct, locale),
             image_url: sanitizeImageUrl(dbProduct.image_url, String(dbProduct.id)),
             sku: dbProduct.sku || `RS-${String(dbProduct.id).substring(0, 4).toUpperCase()}`,
+            tags: dbProduct.tags,
+            keywords: dbProduct.keywords,
             is_current: true
           }];
         }

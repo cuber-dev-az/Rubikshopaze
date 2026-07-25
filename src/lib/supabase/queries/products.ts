@@ -45,7 +45,7 @@ export async function getProductById(id: string) {
     if (isUuid) {
       const { data: idData, error: idErr } = await supabase
         .from('products')
-        .select('*, brands(*), categories(*)')
+        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
         .eq('id', cleanId)
         .maybeSingle();
       if (!idErr && idData) data = idData;
@@ -54,7 +54,7 @@ export async function getProductById(id: string) {
     if (!data) {
       const { data: slugData, error: slugErr } = await supabase
         .from('products')
-        .select('*, brands(*), categories(*)')
+        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
         .eq('slug', cleanId)
         .maybeSingle();
       if (!slugErr && slugData) data = slugData;
@@ -63,7 +63,7 @@ export async function getProductById(id: string) {
     if (!data) {
       const { data: simpleData } = await supabase
         .from('products')
-        .select('*')
+        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords')
         .or(`id.eq.${isUuid ? cleanId : '00000000-0000-0000-0000-000000000000'},slug.eq.${cleanId}`)
         .maybeSingle();
       if (simpleData) data = simpleData;
@@ -121,7 +121,7 @@ export async function getProductBySlug(slug: string) {
 
     const { data: resData, error: resError } = await supabase
       .from('products')
-      .select('*, brands(*), categories(*)')
+      .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
       .eq('slug', cleanSlug)
       .maybeSingle();
 
@@ -130,7 +130,7 @@ export async function getProductBySlug(slug: string) {
     } else if (isUuid) {
       const { data: idData, error: idError } = await supabase
         .from('products')
-        .select('*, brands(*), categories(*)')
+        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
         .eq('id', cleanSlug)
         .maybeSingle();
       if (!idError && idData) data = idData;
@@ -139,7 +139,7 @@ export async function getProductBySlug(slug: string) {
     if (!data) {
       const { data: simpleSlugData } = await supabase
         .from('products')
-        .select('*')
+        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords')
         .eq('slug', cleanSlug)
         .maybeSingle();
 
@@ -247,7 +247,7 @@ export async function getSiblingProductsByGroupSlug(groupSlug: string) {
   try {
     let { data, error } = await supabase
       .from('products')
-      .select('*, group_slug, variant_name, brands(*), categories(*)')
+      .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
       .eq('group_slug', groupSlug)
       .eq('is_active', true)
       .eq('status', 'published');
@@ -255,7 +255,7 @@ export async function getSiblingProductsByGroupSlug(groupSlug: string) {
     if (error || !data || data.length === 0) {
       const fallback = await supabase
         .from('products')
-        .select('*, group_slug, variant_name, brands(*), categories(*)')
+        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
         .eq('group_slug', groupSlug)
         .eq('is_active', true);
       data = fallback.data;
