@@ -206,22 +206,11 @@ function ProductDetailClientContentInner({
     }
   };
 
-  React.useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsVersionDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   // 1. Universal Database-driven variants setup (supporting Grouped Sibling Products & Legacy variants)
   const dbVariants = React.useMemo(() => {
+    let list: any[] = [];
     if (versionOptions && Array.isArray(versionOptions) && versionOptions.length > 0) {
-      return versionOptions.map((v: any) => ({
+      list = versionOptions.map((v: any) => ({
         id: String(v.id),
         sku: v.sku || `SKU-${v.id}`,
         slug: v.slug,
@@ -238,9 +227,8 @@ function ProductDetailClientContentInner({
         gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : [],
         is_sibling: Boolean(v.slug && v.slug !== product?.slug)
       }));
-    }
-    if (siblingProducts && Array.isArray(siblingProducts) && siblingProducts.length > 0) {
-      return siblingProducts.map((s: any, index: number) => ({
+    } else if (siblingProducts && Array.isArray(siblingProducts) && siblingProducts.length > 0) {
+      list = siblingProducts.map((s: any, index: number) => ({
         id: String(s.id || s.slug || `sib_${index}`),
         sku: s.sku || `SKU-${index + 1}`,
         slug: s.slug,
@@ -257,29 +245,31 @@ function ProductDetailClientContentInner({
         gallery_images: Array.isArray(s.gallery_images) ? s.gallery_images : [],
         is_sibling: true
       }));
+    } else {
+      const rawVariants = product?.product_variants || product?.variants || [];
+      if (Array.isArray(rawVariants) && rawVariants.length > 0) {
+        list = rawVariants.map((v: any, index: number) => ({
+          id: String(v.id || `var_${index}`),
+          sku: v.sku || `SKU-${index + 1}`,
+          name: v.name || v.title_az || v.title || v.name_az || `Versiya ${index + 1}`,
+          price: v.price !== undefined && v.price !== null && v.price !== ''
+            ? Number(v.price)
+            : (v.price_azn !== undefined ? Number(v.price_azn) : Number(product?.price_azn || product?.price || 0)),
+          price_azn: v.price_azn !== undefined && v.price_azn !== null && v.price_azn !== ''
+            ? Number(v.price_azn)
+            : (v.price !== undefined ? Number(v.price) : Number(product?.price_azn || product?.price || 0)),
+          compare_at_price_azn: v.compare_at_price_azn || v.discount_price || v.original_price,
+          stock: v.stock !== undefined ? Number(v.stock) : Number(v.stock_quantity || product?.stock_quantity || 0),
+          stock_quantity: v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(v.stock || product?.stock_quantity || 0),
+          description: String(v.description || v.description_az || v.subtitle || ''),
+          image_url: v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product?.image_url,
+          gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : []),
+          specs: v.specs || {}
+        }));
+      }
     }
-    const rawVariants = product?.product_variants || product?.variants || [];
-    if (Array.isArray(rawVariants) && rawVariants.length > 0) {
-      return rawVariants.map((v: any, index: number) => ({
-        id: String(v.id || `var_${index}`),
-        sku: v.sku || `SKU-${index + 1}`,
-        name: v.name || v.title_az || v.title || v.name_az || `Versiya ${index + 1}`,
-        price: v.price !== undefined && v.price !== null && v.price !== ''
-          ? Number(v.price)
-          : (v.price_azn !== undefined ? Number(v.price_azn) : Number(product?.price_azn || product?.price || 0)),
-        price_azn: v.price_azn !== undefined && v.price_azn !== null && v.price_azn !== ''
-          ? Number(v.price_azn)
-          : (v.price !== undefined ? Number(v.price) : Number(product?.price_azn || product?.price || 0)),
-        compare_at_price_azn: v.compare_at_price_azn || v.discount_price || v.original_price,
-        stock: v.stock !== undefined ? Number(v.stock) : Number(v.stock_quantity || product?.stock_quantity || 0),
-        stock_quantity: v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(v.stock || product?.stock_quantity || 0),
-        description: String(v.description || v.description_az || v.subtitle || ''),
-        image_url: v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product?.image_url,
-        gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : []),
-        specs: v.specs || {}
-      }));
-    }
-    return [];
+
+    return list.sort((a, b) => (Number(a.price_azn) || 0) - (Number(b.price_azn) || 0));
   }, [versionOptions, siblingProducts, product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url, product?.slug]);
 
   // Read searchParam `variant` or `version` or `sku`
@@ -1108,7 +1098,9 @@ function ProductDetailClientContentInner({
             {dbVariants.length > 0 && (
               <div className="my-4 space-y-2">
                 <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
-                  <span className="text-muted-foreground font-semibold">Versiya:</span>
+                  <span className="text-muted-foreground font-semibold">
+                    {locale === 'en' ? 'Version:' : locale === 'ru' ? 'Версия:' : 'Versiya:'}
+                  </span>
                   <span className="font-extrabold text-primary">
                     {selectedVariant?.name || selectedVariant?.title_az || selectedVariant?.sku || product.title}
                   </span>
@@ -1173,7 +1165,9 @@ function ProductDetailClientContentInner({
             <div className="flex items-center gap-2.5 my-3 p-3.5 bg-muted/20 border border-border/60 rounded-xl">
               <span className={`w-3 h-3 rounded-full shrink-0 ${isOutOfStock ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
               <span className={`text-xs md:text-sm font-bold ${isOutOfStock ? 'text-red-600' : 'text-emerald-600'}`}>
-                {isOutOfStock ? 'Bitib (Müvəqqəti yoxdur)' : `Stokda var (${effectiveStock} ədəd)`}
+                {isOutOfStock
+                  ? (locale === 'en' ? 'Out of Stock' : locale === 'ru' ? 'Нет в наличии' : 'Bitib (Müvəqqəti yoxdur)')
+                  : (locale === 'en' ? `In Stock (${effectiveStock} pcs)` : locale === 'ru' ? `В наличии (${effectiveStock} шт.)` : `Stokda var (${effectiveStock} ədəd)`)}
               </span>
             </div>
 

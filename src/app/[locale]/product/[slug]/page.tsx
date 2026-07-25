@@ -50,14 +50,88 @@ function getSmartCategory(dbProduct: any) {
   return { name: 'Sürət Kubları', slug: '3x3' };
 }
 
+function translateVariantName(raw: string, loc: string): string {
+  if (!raw) return loc === 'en' ? 'Version' : loc === 'ru' ? 'Версия' : 'Versiya';
+
+  let result = raw;
+
+  if (loc === 'en') {
+    const enMap: [RegExp, string][] = [
+      [/İkiqat Tənzimləməli|İkiqat Tənzimlənən/gi, 'Dual-Adjustment'],
+      [/Tənzimləməli|Tənzimlənən/gi, 'Adjustable'],
+      [/Standart Maqnitli|Standart Magnetli/gi, 'Standard Magnetic'],
+      [/Maqnitli|Magnetli/gi, 'Magnetic'],
+      [/Robot Qutu/gi, 'Robot Box'],
+      [/Qutulu/gi, 'With Box'],
+      [/Qutu/gi, 'Box'],
+      [/Dəst/gi, 'Set'],
+      [/Çantalı/gi, 'With Bag'],
+      [/Çanta/gi, 'Bag'],
+      [/Yağlı/gi, 'With Lube'],
+      [/Yağ|Luba/gi, 'Lube'],
+      [/Yalnız Kub|Tək Kub/gi, 'Cube Only'],
+      [/Klassik/gi, 'Classic'],
+      [/Hədiyyəlik/gi, 'Gift Set'],
+      [/İşıqlı/gi, 'Light-up'],
+      [/Öyrədici/gi, 'Educational'],
+      [/Açar Zənciri|Brelok/gi, 'Keychain'],
+      [/Stend/gi, 'Stand'],
+      [/Versiya/gi, 'Version'],
+    ];
+    for (const [pattern, replacement] of enMap) {
+      result = result.replace(pattern, replacement);
+    }
+  } else if (loc === 'ru') {
+    const ruMap: [RegExp, string][] = [
+      [/İkiqat Tənzimləməli|İkiqat Tənzimlənən/gi, 'Двойная регулировка'],
+      [/Tənzimləməli|Tənzimlənən/gi, 'Регулируемый'],
+      [/Standart Maqnitli|Standart Magnetli/gi, 'Стандартный магнитный'],
+      [/Maqnitli|Magnetli/gi, 'Магнитный'],
+      [/Robot Qutu/gi, 'Робот бокс'],
+      [/Qutulu/gi, 'С боксом'],
+      [/Qutu/gi, 'Бокс'],
+      [/Dəst/gi, 'Набор'],
+      [/Çantalı/gi, 'С сумкой'],
+      [/Çanta/gi, 'Сумка'],
+      [/Yağlı/gi, 'Со смазкой'],
+      [/Yağ|Luba/gi, 'Смазка'],
+      [/Yalnız Kub|Tək Kub/gi, 'Только куб'],
+      [/Klassik/gi, 'Классический'],
+      [/Hədiyyəlik/gi, 'Подарочный'],
+      [/İşıqlı/gi, 'С подсветкой'],
+      [/Öyrədici/gi, 'Обучающий'],
+      [/Açar Zənciri|Brelok/gi, 'Брелок'],
+      [/Stend/gi, 'Подставка'],
+      [/Versiya/gi, 'Версия'],
+    ];
+    for (const [pattern, replacement] of ruMap) {
+      result = result.replace(pattern, replacement);
+    }
+  }
+
+  return result;
+}
+
 function getLocalizedVariantName(p: any, loc: string): string {
   if (loc === 'en') {
-    return p.variant_name_en || p.name_en || p.variant_name || p.title_en || p.name || 'Version';
+    if (p.variant_name_en && String(p.variant_name_en).trim()) return String(p.variant_name_en).trim();
+    if (p.name_en && String(p.name_en).trim()) return String(p.name_en).trim();
+    if (p.title_en && String(p.title_en).trim()) return String(p.title_en).trim();
+  } else if (loc === 'ru') {
+    if (p.variant_name_ru && String(p.variant_name_ru).trim()) return String(p.variant_name_ru).trim();
+    if (p.name_ru && String(p.name_ru).trim()) return String(p.name_ru).trim();
+    if (p.title_ru && String(p.title_ru).trim()) return String(p.title_ru).trim();
+  } else {
+    if (p.variant_name_az && String(p.variant_name_az).trim()) return String(p.variant_name_az).trim();
   }
-  if (loc === 'ru') {
-    return p.variant_name_ru || p.name_ru || p.variant_name || p.title_ru || p.name || 'Версия';
+
+  const raw = String(p.variant_name || p.name_az || p.title_az || p.title || p.name || '').trim();
+  if (!raw) return loc === 'en' ? 'Version' : loc === 'ru' ? 'Версия' : 'Versiya';
+
+  if (loc === 'en' || loc === 'ru') {
+    return translateVariantName(raw, loc);
   }
-  return p.variant_name_az || p.variant_name || p.name_az || p.title_az || p.title || p.name || 'Versiya';
+  return raw;
 }
 
 function getLocalizedDescription(p: any, loc: string): string {
@@ -212,6 +286,13 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             is_current: true
           }];
         }
+      }
+
+      if (versionOptions && versionOptions.length > 0) {
+        versionOptions.sort((a: any, b: any) => (Number(a.price_azn) || 0) - (Number(b.price_azn) || 0));
+      }
+      if (siblingProducts && siblingProducts.length > 0) {
+        siblingProducts.sort((a: any, b: any) => (Number(a.price_azn) || 0) - (Number(b.price_azn) || 0));
       }
 
       activeProduct = {
