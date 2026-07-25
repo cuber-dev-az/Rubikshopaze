@@ -23,7 +23,8 @@ import {
   RotateCcw,
   ShieldCheck,
   Zap,
-  Package
+  Package,
+  Clock
 } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
@@ -248,6 +249,20 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                   </h2>
                 </div>
 
+                {items.some(i => i.is_preorder) && (
+                  <div className="mx-6 mt-5 p-4 bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl flex items-start gap-3 text-amber-900 dark:text-amber-300">
+                    <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5 text-xs font-bold leading-relaxed">
+                      <p className="font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                        Səbətinizdə Ön Sifariş Məhsulu Var
+                      </p>
+                      <p>
+                        Ön sifarişlə təmin edilən məhsulların çatdırılması 14-28 iş günü çəkir. WhatsApp üzərindən 100% ön ödəniş tələb olunur.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="p-6 divide-y divide-border/60">
                   {items.map((item) => (
                     <div key={item.id} className="flex flex-col md:flex-row md:items-center gap-4 py-5 first:pt-0 last:pb-0">
@@ -268,11 +283,20 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                         <h3 className="text-xs md:text-sm font-bold text-foreground leading-snug line-clamp-2">
                           {item.title}
                         </h3>
-                        <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground font-medium">
-                          <span>Original Premium</span>
-                          <span>•</span>
-                          <span className="text-rubik-brand">Professional Setup add-on</span>
-                        </div>
+                        {item.is_preorder ? (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                              <Clock className="w-3 h-3" />
+                              Ön Sifariş ({item.preorder_lead_time || '14-28 iş günü'})
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground font-medium">
+                            <span>Original Premium</span>
+                            <span>•</span>
+                            <span className="text-rubik-brand">Professional Setup add-on</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Operations and prices */}

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import type { ApplicationDictionary } from '@/types/application.types';
-import { Heart, Loader2 } from 'lucide-react';
+import { Heart, Loader2, Clock } from 'lucide-react';
 import { toggleWishlist } from '@/lib/actions/wishlist';
 import { sanitizeImageUrl } from '@/lib/image';
 
@@ -26,6 +26,8 @@ interface ProductCardProps {
     discount_percent?: number;
     image_url: string;
     stock_quantity: number;
+    allow_preorder?: boolean;
+    preorder_lead_time?: string;
     brands?: { name?: string };
     brand_name?: string;
     brand?: string;
@@ -38,7 +40,10 @@ interface ProductCardProps {
 
 export function ProductCard({ product, dict }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
-  const isOutOfStock = (product.stock_quantity ?? 0) <= 0;
+  const rawStock = product.stock_quantity ?? 0;
+  const allowPreorderVal = product.allow_preorder !== undefined && product.allow_preorder !== null ? Boolean(product.allow_preorder) : true;
+  const isPreorder = rawStock <= 0 && allowPreorderVal;
+  const isTrulyOutOfStock = rawStock <= 0 && !isPreorder;
   
   const params = useParams();
   const locale = params?.locale || 'az';
@@ -159,13 +164,15 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (isOutOfStock) return;
+    if (isTrulyOutOfStock) return;
     addItem({
       id: product.id,
       title: product.name || product.title || 'Məhsul',
       price_azn: currentPrice,
       quantity: 1,
       image_url: product.image_url,
+      is_preorder: isPreorder,
+      preorder_lead_time: product.preorder_lead_time || '14-28 iş günü',
     });
   };
 
@@ -184,7 +191,12 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       href={productUrl} 
       className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group cursor-pointer block"
     >
-      {hasDiscount && discountPercent > 0 ? (
+      {isPreorder ? (
+        <div className="absolute top-3 left-3 z-20 bg-amber-500 text-slate-950 text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none flex items-center gap-1">
+          <Clock className="w-3.5 h-3.5" />
+          Öncədən Sifariş ({product.preorder_lead_time || '14-28 iş günü'})
+        </div>
+      ) : hasDiscount && discountPercent > 0 ? (
         <div className="absolute top-3 left-3 z-20 bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none">
           -{discountPercent}%
         </div>
@@ -215,7 +227,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           priority={false}
           referrerPolicy="no-referrer"
         />
-        {isOutOfStock && (
+        {isTrulyOutOfStock && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px] z-20 pointer-events-none">
             <span className="text-white font-bold tracking-wider px-3 py-1 bg-rubik-brand rounded-xl">
               {dict.product.out_of_stock}
@@ -246,14 +258,25 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         
         <button
           onClick={handleAddToCart}
-          disabled={isOutOfStock}
-          className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors duration-200 relative z-20 cursor-pointer ${
-            isOutOfStock
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+          disabled={isTrulyOutOfStock}
+          className={`mt-4 w-full py-2.5 rounded-xl text-sm font-black transition-all duration-200 relative z-20 cursor-pointer flex items-center justify-center gap-1.5 ${
+            isTrulyOutOfStock
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed font-semibold'
+              : isPreorder
+              ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-[0.98] shadow-md shadow-amber-500/20'
               : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark active:scale-[0.98]'
           }`}
         >
-          {isOutOfStock ? dict.product.out_of_stock : dict.product.add_to_cart}
+          {isTrulyOutOfStock ? (
+            dict.product.out_of_stock
+          ) : isPreorder ? (
+            <>
+              <Clock className="w-4 h-4" />
+              Öncədən Sifariş Et
+            </>
+          ) : (
+            dict.product.add_to_cart
+          )}
         </button>
       </div>
     </Link>

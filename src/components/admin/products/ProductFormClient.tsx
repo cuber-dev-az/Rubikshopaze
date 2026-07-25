@@ -60,7 +60,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [videoUrl, setVideoUrl] = useState('');
   const [stock_quantity, setStock_quantity] = useState<number>(0);
   const [isFeatured, setIsFeatured] = useState(false);
-  const [allowPreorder, setAllowPreorder] = useState(false);
+  const [allowPreorder, setAllowPreorder] = useState(true);
   const [preorderLeadTime, setPreorderLeadTime] = useState('14-28 iş günü');
   const [tags, setTags] = useState('gan, flagship, maglev');
 
@@ -251,7 +251,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             setSeoDesc(prod.seo_description || '');
             setWeight_g(prod.weight_g !== undefined && prod.weight_g !== null ? String(prod.weight_g) : '');
             setIsMagnetic(prod.is_magnetic || false);
-            setAllowPreorder(Boolean(prod.allow_preorder));
+            setAllowPreorder(prod.allow_preorder !== undefined && prod.allow_preorder !== null ? Boolean(prod.allow_preorder) : true);
             setPreorderLeadTime(prod.preorder_lead_time || '14-28 iş günü');
             setSize_mm(prod.size_mm !== undefined && prod.size_mm !== null ? String(prod.size_mm) : '');
             setDifficultyLevel(prod.difficulty_level || 'başlanğıc');

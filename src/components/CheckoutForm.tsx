@@ -25,7 +25,8 @@ import {
   Lock,
   Wallet,
   Building,
-  Loader2
+  Loader2,
+  Clock
 } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { submitOrderAtomic } from '@/lib/actions/order';
@@ -79,6 +80,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   const { applyCoupon } = useCartStore();
 
   const subtotal = useCartStore((state) => state.items.reduce((total, item) => total + item.price_azn * item.quantity, 0));
+  const hasPreorderItems = React.useMemo(() => items.some(item => item.is_preorder), [items]);
+
+  React.useEffect(() => {
+    if (hasPreorderItems && paymentMethod === 'cod') {
+      setPaymentMethod('bank_transfer');
+    }
+  }, [hasPreorderItems, paymentMethod]);
   const discountAmount = useCartStore((state) => {
     const subtotal = state.items.reduce((total, item) => total + item.price_azn * item.quantity, 0);
     if (state.discountType === 'percentage') return (subtotal * state.discountValue) / 100;
@@ -354,9 +362,11 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
       const response = await submitOrderAtomic(payload);
 
       if (response.success && response.orderId) {
-        const formattedOrderId = String(response.orderId).substring(0, 8).toUpperCase();
+        const rawCode = String(response.orderId).substring(0, 6).toUpperCase();
+        const preorderCode = `RC-2026-${rawCode}`;
         
-        let message = `🔴 *RUBIKSHOP.AZ - ${tMsg.title} (#${formattedOrderId})* 🔴\n\n`;
+        let message = `🔴 *RUBIKSHOP.AZ - ${tMsg.title} (${preorderCode})* 🔴\n\n`;
+        message += `🎫 *Sifariş / Ön Sifariş Kodu:* ${preorderCode}\n`;
         message += `👤 *${tMsg.customer}:* ${name.trim()}\n`;
         message += `📞 *${tMsg.phone}:* ${formattedPhone}\n`;
         message += `📸 *${tMsg.instagram}:* @${instagram.trim() || 'Yoxdur'}\n\n`;
@@ -374,8 +384,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         
         message += `\n📦 *${tMsg.products}:*\n`;
         items.forEach((item) => {
-          message += `• ${item.title} (x${item.quantity}) — ${(item.price_azn * item.quantity).toFixed(2)} AZN\n`;
+          const preNote = item.is_preorder ? ` [ÖN SİFARİŞ - ${item.preorder_lead_time || '14-28 iş günü'}]` : '';
+          message += `• ${item.title}${preNote} (x${item.quantity}) — ${(item.price_azn * item.quantity).toFixed(2)} AZN\n`;
         });
+
+        if (hasPreorderItems) {
+          message += `\n⏳ *ƏSAS QEYD:* Bu sifarişdə ön sifariş məhsulları mövcuddur (Çatdırılma: 14-28 iş günü). WhatsApp üzərindən 100% ön ödəniş tələb olunur.\n`;
+        }
 
         if (appliedCoupon) {
           message += `\n🎫 *${tMsg.coupon}:* ${appliedCoupon} (-${discountAmount.toFixed(2)} AZN)\n`;
@@ -433,6 +448,18 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         {/* Left Form: Steps */}
         <div className="lg:col-span-8 space-y-8">
           
+          {hasPreorderItems && (
+            <div className="p-5 bg-amber-500/10 border-2 border-amber-500/40 rounded-3xl space-y-2 text-amber-900 dark:text-amber-300 shadow-soft-sm">
+              <div className="flex items-center gap-2 font-black text-xs md:text-sm text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                <Clock className="w-5 h-5 text-amber-500 shrink-0" />
+                <span>SƏBƏTDƏ ÖN SİFARİŞ MƏHSULU MÖVCUDDUR</span>
+              </div>
+              <p className="text-xs md:text-sm font-bold leading-relaxed">
+                Səbətinizdə ön sifarişlə təmin edilən məhsullar var. Çatdırılma müddəti <strong>14-28 iş günüdür</strong>. Ön sifarişin rəsmiləşdirilməsi üçün WhatsApp vasitəsilə <strong>100% ön ödəniş</strong> tələb olunur (Qapıda ödəniş seçimi deaktivdir).
+              </p>
+            </div>
+          )}
+
           {/* Guest / Account Choice Step */}
           <div className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-4">
@@ -874,39 +901,61 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                   </p>
                 </div>
                 <span className="block mt-4 text-[9px] font-black text-rubik-brand uppercase tracking-wider">
-                  {t({ az: 'Ən çox seçilən', en: 'Most Popular', ru: 'Самый Популярный' })}
+                  {hasPreorderItems ? t({ az: 'Ön Sifariş üçün Məcburi (100% Ödəniş)', en: 'Required for Pre-orders', ru: 'Обязательно для Предзаказа' }) : t({ az: 'Ən çox seçilən', en: 'Most Popular', ru: 'Самый Популярный' })}
                 </span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('cod')}
-                className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
-                  paymentMethod === 'cod'
-                    ? 'border-rubik-brand bg-rubik-brand/5'
-                    : 'border-border hover:border-foreground/10'
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex justify-between items-start">
-                    <div className="p-1.5 bg-muted rounded-lg text-foreground">
-                      <Wallet className="h-4.5 w-4.5" />
+              {!hasPreorderItems ? (
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('cod')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
+                    paymentMethod === 'cod'
+                      ? 'border-rubik-brand bg-rubik-brand/5'
+                      : 'border-border hover:border-foreground/10'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="p-1.5 bg-muted rounded-lg text-foreground">
+                        <Wallet className="h-4.5 w-4.5" />
+                      </div>
+                      {paymentMethod === 'cod' && (
+                        <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
+                          <Check className="h-3 w-3" />
+                        </span>
+                      )}
                     </div>
-                    {paymentMethod === 'cod' && (
-                      <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
-                        <Check className="h-3 w-3" />
-                      </span>
-                    )}
+                    <h4 className="text-xs font-black text-foreground">{dict.checkout?.payment_cod || "Qapıda Nəğd Ödəniş"}</h4>
+                    <p className="text-[10px] text-muted-foreground leading-normal">
+                      {dict.checkout?.payment_cod_desc || "Məhsulu kuryerdən təslim alarkən yerində nəğd ödəniş edin."}
+                    </p>
                   </div>
-                  <h4 className="text-xs font-black text-foreground">{dict.checkout?.payment_cod || "Qapıda Nəğd Ödəniş"}</h4>
-                  <p className="text-[10px] text-muted-foreground leading-normal">
-                    {dict.checkout?.payment_cod_desc || "Məhsulu kuryerdən təslim alarkən yerində nəğd ödəniş edin."}
-                  </p>
+                  <span className="block mt-4 text-[9px] font-black text-muted-foreground uppercase tracking-wider">
+                    {t({ az: 'Təhlükəsiz limitli', en: 'Secure COD', ru: 'Надежный Наложенный' })}
+                  </span>
+                </button>
+              ) : (
+                <div className="p-4 rounded-2xl border border-dashed border-amber-500/40 bg-amber-500/5 text-left flex flex-col justify-between select-none">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div className="p-1.5 bg-amber-500/20 text-amber-600 rounded-lg">
+                        <Wallet className="h-4.5 w-4.5" />
+                      </div>
+                      <span className="text-[10px] bg-amber-500/20 text-amber-700 font-extrabold px-2 py-0.5 rounded uppercase">
+                        Deaktivdir
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-black text-amber-900 dark:text-amber-300">Qapıda Ödəniş</h4>
+                    <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium leading-snug">
+                      Ön sifariş məhsullarında 100% ön ödəniş tələb olunduğundan qapıda nəğd ödəniş seçimi bu sifariş üçün gizlədilmişdir.
+                    </p>
+                  </div>
+                  <span className="block mt-4 text-[9px] font-black text-amber-600 uppercase tracking-wider">
+                    Ön Sifariş Şərti
+                  </span>
                 </div>
-                <span className="block mt-4 text-[9px] font-black text-muted-foreground uppercase tracking-wider">
-                  {t({ az: 'Təhlükəsiz limitli', en: 'Secure COD', ru: 'Надежный Наложенный' })}
-                </span>
-              </button>
+              )}
             </div>
           </div>
 

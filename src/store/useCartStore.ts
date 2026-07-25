@@ -7,6 +7,8 @@ export interface CartItem {
   price_azn: number;
   quantity: number;
   image_url: string;
+  is_preorder?: boolean;
+  preorder_lead_time?: string;
 }
 
 interface CartState {

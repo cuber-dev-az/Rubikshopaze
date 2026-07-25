@@ -32,7 +32,8 @@ import {
   Search,
   Filter,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Clock
 } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
@@ -947,6 +948,9 @@ function ProductDetailClientContentInner({
   }, [selectedVariant, product?.stock_quantity, product?.stock]);
 
   const isOutOfStock = effectiveStock <= 0;
+  const allowPreorderVal = product?.allow_preorder !== undefined && product?.allow_preorder !== null ? Boolean(product.allow_preorder) : true;
+  const isPreorder = isOutOfStock && allowPreorderVal;
+  const isTrulyOutOfStock = isOutOfStock && !isPreorder;
 
   const specsToDisplay = React.useMemo(() => {
     if (!product) return {};
@@ -1034,9 +1038,11 @@ function ProductDetailClientContentInner({
   }
 
   const handleAddToCart = (redirect = false) => {
-    const currentQty = isOutOfStock 
-      ? 1 
-      : Math.max(1, Math.min(quantity, effectiveStock > 0 ? effectiveStock : 1));
+    const currentQty = isPreorder
+      ? Math.max(1, quantity)
+      : isOutOfStock 
+        ? 1 
+        : Math.max(1, Math.min(quantity, effectiveStock > 0 ? effectiveStock : 1));
 
     const variantTitle = selectedVariant 
       ? (selectedVariant.title_az || selectedVariant.name_az || selectedVariant.title_en || selectedVariant.name || selectedVariant.sku)
@@ -1057,7 +1063,9 @@ function ProductDetailClientContentInner({
       title: `${product.title}${titleAddition}`,
       price_azn: finalPrice,
       quantity: currentQty,
-      image_url: activeImage || product.image_url
+      image_url: activeImage || product.image_url,
+      is_preorder: isPreorder,
+      preorder_lead_time: product?.preorder_lead_time || '14-28 iş günü'
     };
 
     addItem(cartItem);
@@ -1337,13 +1345,32 @@ function ProductDetailClientContentInner({
 
             {/* 6. Stock Status Indicator */}
             <div className="flex items-center gap-2.5 my-3 p-3.5 bg-muted/20 border border-border/60 rounded-xl">
-              <span className={`w-3 h-3 rounded-full shrink-0 ${isOutOfStock ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
-              <span className={`text-xs md:text-sm font-bold ${isOutOfStock ? 'text-red-600' : 'text-emerald-600'}`}>
-                {isOutOfStock
+              <span className={`w-3 h-3 rounded-full shrink-0 ${
+                isPreorder ? 'bg-amber-500 animate-pulse' : isTrulyOutOfStock ? 'bg-red-500' : 'bg-emerald-500'
+              }`} />
+              <span className={`text-xs md:text-sm font-bold ${
+                isPreorder ? 'text-amber-600 dark:text-amber-400' : isTrulyOutOfStock ? 'text-red-600' : 'text-emerald-600'
+              }`}>
+                {isPreorder
+                  ? `Öncədən Sifarişdədir (${product?.preorder_lead_time || '14-28 iş günü'})`
+                  : isTrulyOutOfStock
                   ? (locale === 'en' ? 'Out of Stock' : locale === 'ru' ? 'Нет в наличии' : 'Bitib (Müvəqqəti yoxdur)')
                   : (locale === 'en' ? `In Stock (${effectiveStock} pcs)` : locale === 'ru' ? `В наличии (${effectiveStock} шт.)` : `Stokda var (${effectiveStock} ədəd)`)}
               </span>
             </div>
+
+            {/* Pre-Order Special Warning Box */}
+            {isPreorder && (
+              <div className="p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl space-y-1.5 text-amber-900 dark:text-amber-300">
+                <div className="flex items-center gap-2 font-black text-xs md:text-sm text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+                  <Clock className="w-4.5 h-4.5 text-amber-500 shrink-0" />
+                  <span>Ön Sifariş Məlumatı Və Şərtləri</span>
+                </div>
+                <p className="text-xs md:text-sm font-bold leading-relaxed">
+                  Bu məhsul ön sifarişdədir, {product?.preorder_lead_time || '14-28 iş gününə'} çatdırılır. WhatsApp üzərindən 100% ön ödəniş tələb olunur.
+                </p>
+              </div>
+            )}
 
             {/* Safe & Optional Custom Add-ons List (Strictly Null-Safe, NO Hardcoded Setup) */}
             {product?.add_ons && Array.isArray(product.add_ons) && product.add_ons.length > 0 && addOnsList.length > 0 && (
@@ -1397,7 +1424,7 @@ function ProductDetailClientContentInner({
 
             {/* Dynamic Stock & Delivery Urgency Notice */}
             <div className="pt-1">
-              {isOutOfStock ? (
+              {isPreorder ? null : isTrulyOutOfStock ? (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-3.5 rounded-2xl flex items-center gap-3 text-xs md:text-sm font-semibold">
                   <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
                   <span>Stokda müvəqqəti yoxdur — Məhsul gələndə xəbərdar olmaq üçün bizimlə əlaqə saxlayın.</span>
@@ -1427,7 +1454,9 @@ function ProductDetailClientContentInner({
                     Miqdar
                   </span>
                   <span className="text-[11px] text-muted-foreground font-medium block">
-                    {isOutOfStock ? (
+                    {isPreorder ? (
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">Ön sifariş üçün xüsusi sifariş</span>
+                    ) : isTrulyOutOfStock ? (
                       <span className="text-red-500 font-bold">Stokda yoxdur</span>
                     ) : (
                       <>Anbarda: <strong className="text-foreground font-bold">{effectiveStock} ədəd</strong> var</>
@@ -1439,7 +1468,7 @@ function ProductDetailClientContentInner({
                   <button
                     type="button"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    disabled={quantity <= 1 || isOutOfStock}
+                    disabled={quantity <= 1 || isTrulyOutOfStock}
                     className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
                     aria-label="Decrease quantity"
                   >
@@ -1449,26 +1478,26 @@ function ProductDetailClientContentInner({
                   <input
                     type="number"
                     min={1}
-                    max={effectiveStock > 0 ? effectiveStock : 1}
+                    max={isPreorder ? 99 : (effectiveStock > 0 ? effectiveStock : 1)}
                     value={quantity}
                     onChange={(e) => {
                       const val = parseInt(e.target.value, 10);
                       if (isNaN(val) || val < 1) {
                         setQuantity(1);
-                      } else if (effectiveStock > 0 && val > effectiveStock) {
+                      } else if (!isPreorder && effectiveStock > 0 && val > effectiveStock) {
                         setQuantity(effectiveStock);
                       } else {
                         setQuantity(val);
                       }
                     }}
-                    disabled={isOutOfStock}
+                    disabled={isTrulyOutOfStock}
                     className="w-12 text-center font-black text-sm bg-transparent text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
 
                   <button
                     type="button"
-                    onClick={() => setQuantity((q) => Math.min(effectiveStock > 0 ? effectiveStock : 1, q + 1))}
-                    disabled={quantity >= effectiveStock || isOutOfStock}
+                    onClick={() => setQuantity((q) => isPreorder ? q + 1 : Math.min(effectiveStock > 0 ? effectiveStock : 1, q + 1))}
+                    disabled={(!isPreorder && quantity >= effectiveStock) || isTrulyOutOfStock}
                     className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-foreground hover:bg-muted active:scale-95 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
                     aria-label="Increase quantity"
                   >
@@ -1482,29 +1511,42 @@ function ProductDetailClientContentInner({
                 <button
                   type="button"
                   onClick={() => handleAddToCart(false)}
-                  disabled={isOutOfStock}
+                  disabled={isTrulyOutOfStock}
                   className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    isOutOfStock
+                    isTrulyOutOfStock
                       ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+                      : isPreorder
+                      ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 active:scale-98'
                       : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white hover:shadow-soft-lg active:scale-98'
                   }`}
                 >
-                  <ShoppingBag className="h-5 w-5 shrink-0" />
-                  <span>Səbətə Əlavə Et {quantity > 1 ? `(${quantity})` : ''}</span>
+                  {isPreorder ? (
+                    <>
+                      <Clock className="h-5 w-5 shrink-0" />
+                      <span>Öncədən Sifariş Et {quantity > 1 ? `(${quantity})` : ''}</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="h-5 w-5 shrink-0" />
+                      <span>Səbətə Əlavə Et {quantity > 1 ? `(${quantity})` : ''}</span>
+                    </>
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleAddToCart(true)}
-                  disabled={isOutOfStock}
+                  disabled={isTrulyOutOfStock}
                   className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    isOutOfStock
+                    isTrulyOutOfStock
                       ? 'bg-muted/50 text-muted-foreground cursor-not-allowed border border-border'
+                      : isPreorder
+                      ? 'bg-slate-900 text-amber-400 border border-amber-500/30 hover:bg-slate-800 active:scale-98'
                       : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark hover:shadow-soft-lg active:scale-98'
                   }`}
                 >
-                  <Zap className="h-5 w-5 shrink-0" />
-                  <span>İndi Al (Sifariş et)</span>
+                  <Zap className="h-5 w-5 shrink-0 text-amber-400" />
+                  <span>{isPreorder ? 'İndi Ön Sifariş Et' : 'İndi Al (Sifariş et)'}</span>
                 </button>
               </div>
 

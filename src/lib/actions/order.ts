@@ -36,6 +36,27 @@ export interface OrderPayload {
 
 export async function submitOrderAtomic(payload: OrderPayload) {
   try {
+    // Spam Protection v3: 5-minute rate-limiting check by phone number or email
+    const cleanPhone = payload.customer_phone.trim();
+    const cleanEmail = payload.email?.trim().toLowerCase() || '';
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+    let spamFilter = `customer_phone.eq.${cleanPhone}`;
+    if (cleanEmail) {
+      spamFilter += `,email.eq.${cleanEmail}`;
+    }
+
+    const { data: recentOrders } = await supabaseAdmin
+      .from('orders')
+      .select('id, created_at')
+      .or(spamFilter)
+      .gte('created_at', fiveMinutesAgo)
+      .limit(1);
+
+    if (recentOrders && recentOrders.length > 0) {
+      throw new Error('Spam Qorunması: Eyni telefon nömrəsi və ya email ilə son 5 dəqiqə ərzində təkrar sifariş qeydə alınıb. Zəhmət olmasa 5 dəqiqə gözləyib yenidən cəhd edin.');
+    }
+
     // 0. Validate stock quantity before placing the order
     for (const item of payload.items) {
       let productId = '';

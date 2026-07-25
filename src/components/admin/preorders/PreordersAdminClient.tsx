@@ -32,6 +32,8 @@ import {
   updatePreorderStatusAction,
   updatePreorderNotesAction,
   deletePreorderAction,
+  checkStockAllocationNeedAction,
+  confirmStockAllocationAction,
   PreorderItem
 } from '@/lib/actions/preorders';
 
@@ -55,6 +57,14 @@ export default function PreordersAdminClient({
   const [showCreateModal, setShowCreateModal] = React.useState(false);
   const [showNotesModal, setShowNotesModal] = React.useState<PreorderItem | null>(null);
   const [notesInput, setNotesInput] = React.useState('');
+
+  // Stock Sync Modal State
+  const [showStockSyncModal, setShowStockSyncModal] = React.useState(false);
+  const [syncProductId, setSyncProductId] = React.useState('');
+  const [syncQty, setSyncQty] = React.useState<number>(1);
+  const [syncChecking, setSyncChecking] = React.useState(false);
+  const [syncResult, setSyncResult] = React.useState<any | null>(null);
+  const [syncConfirming, setSyncConfirming] = React.useState(false);
 
   // Create Form State
   const [newProductId, setNewProductId] = React.useState('');
@@ -168,6 +178,45 @@ export default function PreordersAdminClient({
     }
   };
 
+  const handleCheckStockSync = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!syncProductId || syncQty <= 0) return;
+    setSyncChecking(true);
+    setSyncResult(null);
+
+    const res = await checkStockAllocationNeedAction(syncProductId, syncQty);
+    setSyncChecking(false);
+    if (res.success) {
+      setSyncResult(res);
+    } else {
+      alert(res.error || 'Stok yoxlanarkən xəta baş verdi.');
+    }
+  };
+
+  const handleConfirmStockAllocation = async () => {
+    if (!syncProductId || !syncResult || !syncResult.suggestedAllocationCount) return;
+    setSyncConfirming(true);
+
+    const res = await confirmStockAllocationAction({
+      productId: syncProductId,
+      allocatedUnits: syncResult.suggestedAllocationCount,
+      addedStockQty: syncQty
+    });
+
+    setSyncConfirming(false);
+    if (res.success) {
+      setActionSuccess(res.message);
+      setTimeout(() => setActionSuccess(null), 4000);
+      setShowStockSyncModal(false);
+      setSyncResult(null);
+      setSyncProductId('');
+      setSyncQty(1);
+      fetchPreorders();
+    } else {
+      alert(res.error || 'Stok ayırılarkən xəta baş verdi.');
+    }
+  };
+
   const getStatusBadge = (status: string, queuePos?: number | null) => {
     switch (status) {
       case 'pending_payment':
@@ -240,6 +289,17 @@ export default function PreordersAdminClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => {
+              setShowStockSyncModal(true);
+              setSyncResult(null);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-600/20 text-sm cursor-pointer"
+          >
+            <PackageCheck className="w-4 h-4 text-blue-200" />
+            Stok Daxil Et & Növbəyə Ayır
+          </button>
+
           <Link
             href={`/${locale}/admin/preorders/supplier-report`}
             className="flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl transition-all shadow-lg shadow-amber-500/20 text-sm cursor-pointer"
@@ -671,6 +731,126 @@ export default function PreordersAdminClient({
                   Yadda saxla
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal: Stock Arrival / Sync Confirmation */}
+      <AnimatePresence>
+        {showStockSyncModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-slate-900 border border-slate-800 p-6 rounded-3xl max-w-lg w-full shadow-2xl space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-2">
+                  <PackageCheck className="w-6 h-6 text-blue-400" />
+                  <div>
+                    <h3 className="text-base font-black text-white">Anbara Stok Daxil Et & Növbə Sinxronizasiyası</h3>
+                    <p className="text-[11px] text-slate-400">Anbara yeni stok gəldikdə növbədəki ön sifarişçi müştərilərə stok ayırın</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowStockSyncModal(false)}
+                  className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl cursor-pointer"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCheckStockSync} className="space-y-4 text-xs">
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase mb-1.5">Anbara Daxil Olan Məhsul *</label>
+                  <select
+                    value={syncProductId}
+                    onChange={(e) => {
+                      setSyncProductId(e.target.value);
+                      setSyncResult(null);
+                    }}
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">-- Məhsul seçin --</option>
+                    {productsList.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.title_az || p.title_en} (Cari Stok: {p.stock_quantity ?? 0})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-400 font-bold uppercase mb-1.5">Gələn Məhsul Miqdarı (Ədəd) *</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={syncQty}
+                    onChange={(e) => {
+                      setSyncQty(Math.max(1, Number(e.target.value)));
+                      setSyncResult(null);
+                    }}
+                    required
+                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={syncChecking || !syncProductId}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl transition-all shadow-md text-xs cursor-pointer disabled:opacity-50"
+                >
+                  {syncChecking ? 'Növbə Yoxlanılır...' : 'Stok Sinxronizasiyasını Yoxla'}
+                </button>
+              </form>
+
+              {/* Confirmation Prompt Display */}
+              {syncResult && (
+                <div className="pt-4 border-t border-slate-800 space-y-4 animate-fade-in">
+                  {syncResult.hasWaitingPreorders ? (
+                    <div className="p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl space-y-3">
+                      <div className="text-amber-400 font-black text-sm leading-snug">
+                        ⚠️ "Anbara {syncQty} ədəd gəldi. Növbədəki {syncResult.suggestedAllocationCount} nəfər üçün ayrılsın?"
+                      </div>
+                      <p className="text-xs text-amber-200/90 leading-relaxed font-semibold">
+                        Məhsul: <strong>{syncResult.productTitle}</strong>. Təsdiqlənmiş ödənişi olan növbədəki <strong>{syncResult.suggestedAllocationCount}</strong> ön sifarişçinin statusu <code>assigned</code> ediləcək və onlara avtomatik təsdiq e-poçtu göndəriləcəkdir.
+                      </p>
+
+                      <div className="space-y-1.5 pt-1">
+                        <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Növbədəki Müştərilər:</span>
+                        <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                          {syncResult.preorders.map((item: any, idx: number) => (
+                            <div key={item.id} className="p-2 bg-slate-950/80 rounded-xl text-[11px] text-slate-300 flex items-center justify-between border border-slate-800">
+                              <div>
+                                <span className="font-bold text-amber-400">#{idx + 1} {item.customer_name}</span> ({item.preorder_code})
+                              </div>
+                              <span className="font-mono text-slate-400">{item.quantity} ədəd</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-2 flex items-center gap-2">
+                        <button
+                          onClick={handleConfirmStockAllocation}
+                          disabled={syncConfirming}
+                          className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl transition-all shadow-lg shadow-amber-500/20 cursor-pointer disabled:opacity-50"
+                        >
+                          {syncConfirming ? 'İcra olunur...' : `Bəli, Növbədəki ${syncResult.suggestedAllocationCount} Nəfər Üçün Ayır & E-poçt Göndər`}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-400 text-xs font-bold space-y-1">
+                      <p>✅ Növbədə gözləyən təsdiqlənmiş ön sifariş tapılmadı.</p>
+                      <p className="text-slate-400 font-normal">Bu məhsul üçün {syncQty} ədəd stok gəldiyi təqdirdə birbaşa ümumi stoka əlavə oluna bilər.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           </div>
         )}

@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Sparkles, Check, Truck } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ArrowRight, Sparkles, Check, Truck, Clock } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
 import { createClient } from '@/lib/supabase/client';
@@ -145,9 +145,17 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                         {/* Core text */}
                         <div className="flex-1 flex flex-col justify-between min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <h3 className="text-xs font-bold text-foreground hover:text-rubik-brand transition-colors line-clamp-2 leading-snug">
-                              {item.title}
-                            </h3>
+                            <div>
+                              <h3 className="text-xs font-bold text-foreground hover:text-rubik-brand transition-colors line-clamp-2 leading-snug">
+                                {item.title}
+                              </h3>
+                              {item.is_preorder && (
+                                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                                  <Clock className="w-3 h-3" />
+                                  Ön Sifariş ({item.preorder_lead_time || '14-28 iş günü'})
+                                </span>
+                              )}
+                            </div>
                             <button
                               onClick={() => removeItem(item.id)}
                               className="text-muted-foreground hover:text-red-500 p-0.5 rounded-lg hover:bg-muted transition-all cursor-pointer shrink-0"
@@ -196,6 +204,13 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
               {/* Bottom Drawer Summary / CTA Panel */}
               {isMounted && items.length > 0 && (
                 <div className="p-6 border-t border-border bg-muted/30 space-y-4">
+                  {items.some(i => i.is_preorder) && (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 dark:text-amber-300 text-xs font-bold leading-relaxed flex items-start gap-2">
+                      <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <span>Səbətdə ön sifariş məhsulu var. Çatdırılma müddəti: 14-28 iş günü (100% ön ödənişli).</span>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
                       <span>Məhsul sayı</span>

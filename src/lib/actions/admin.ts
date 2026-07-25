@@ -1666,7 +1666,7 @@ export async function createProduct(payload: any) {
       is_magnetic: payload.is_magnetic ?? false,
       size_mm: payload.size_mm,
       difficulty_level: payload.difficulty_level ?? 'başlanğıc',
-      allow_preorder: payload.allow_preorder ?? false,
+      allow_preorder: payload.allow_preorder ?? true,
       preorder_lead_time: payload.preorder_lead_time ?? '14-28 iş günü',
       specs: payload.specs || payload.specs_az || null,
       specs_az: payload.specs_az || payload.specs || null,

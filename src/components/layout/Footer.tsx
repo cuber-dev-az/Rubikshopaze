@@ -122,6 +122,11 @@ export function Footer({ dict, locale }: FooterProps) {
               </li>
             )}
             <li>
+              <Link href={`/${locale}/track-order`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5 font-bold text-rubik-yellow">
+                <span>{t({ az: 'Sifarişimi Yoxla (Track Order)', en: 'Track Order', ru: 'Отследить заказ' })}</span>
+              </Link>
+            </li>
+            <li>
               <Link href={`/${locale}?category=learning-content`} className="hover:text-rubik-brand transition-colors flex items-center gap-1.5">
                 <span>{dict.header?.nav_learning || "Alqoritmlər & Öyrənmə"}</span>
               </Link>
