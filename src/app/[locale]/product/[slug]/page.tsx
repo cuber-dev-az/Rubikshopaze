@@ -213,7 +213,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               description: s[`description_${locale}`] || s.description_az || s.description || s.subtitle || '',
               image_url: sanitizeImageUrl(s.image_url, String(s.id)),
               gallery_images: s.gallery_images || s.images || null,
-              is_current: String(s.id) === String(dbProduct.id) || s.slug === dbProduct.slug
+              is_current: String(s.id) === String(dbProduct.id) || s.slug === dbProduct.slug,
+              specs: s.specs,
+              specs_az: s.specs_az,
+              specs_en: s.specs_en,
+              specs_ru: s.specs_ru
             }));
 
             versionOptions = sibs.map((p: any) => ({
@@ -235,7 +239,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               sku: p.sku || `SKU-${String(p.id).substring(0, 4)}`,
               tags: p.tags,
               keywords: p.keywords,
-              is_current: String(p.id) === String(dbProduct.id) || p.slug === dbProduct.slug
+              is_current: String(p.id) === String(dbProduct.id) || p.slug === dbProduct.slug,
+              specs: p.specs,
+              specs_az: p.specs_az,
+              specs_en: p.specs_en,
+              specs_ru: p.specs_ru
             }));
           }
         } catch (e) {
@@ -263,7 +271,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             sku: v.sku || dbProduct.sku || `SKU-${idx + 1}`,
             tags: v.tags || dbProduct.tags,
             keywords: v.keywords || dbProduct.keywords,
-            is_current: v.slug ? v.slug === dbProduct.slug : idx === 0
+            is_current: v.slug ? v.slug === dbProduct.slug : idx === 0,
+            specs: v.specs,
+            specs_az: v.specs_az,
+            specs_en: v.specs_en,
+            specs_ru: v.specs_ru
           }));
         } else if (versionOptions.length === 0) {
           versionOptions = [{
@@ -283,7 +295,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             sku: dbProduct.sku || `RS-${String(dbProduct.id).substring(0, 4).toUpperCase()}`,
             tags: dbProduct.tags,
             keywords: dbProduct.keywords,
-            is_current: true
+            is_current: true,
+            specs: dbProduct.specs,
+            specs_az: dbProduct.specs_az,
+            specs_en: dbProduct.specs_en,
+            specs_ru: dbProduct.specs_ru
           }];
         }
       }
@@ -322,6 +338,13 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
           tension_system: 'Spring Tension',
           surface_finish: 'Frosted / UV Option'
         },
+        specs_az: dbProduct.specs_az,
+        specs_en: dbProduct.specs_en,
+        specs_ru: dbProduct.specs_ru,
+        comparison_table: dbProduct.comparison_table,
+        comparison_table_az: dbProduct.comparison_table_az,
+        comparison_table_en: dbProduct.comparison_table_en,
+        comparison_table_ru: dbProduct.comparison_table_ru,
         compatibility: 'Dünya Kub Assosiasiyasının (WCA) rəsmi tələbləri ilə tam uyğundur və turnirlərdə istifadə edilə bilər.',
         variants: activeVariants,
         gallery_images: dbProduct.gallery_images || dbProduct.images || null,

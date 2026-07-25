@@ -57,32 +57,33 @@ function SpeedcubeImageFallback({ alt = 'Speedcube', className = '' }: { alt?: s
   );
 }
 
-// Dynamic Comparison Matrix for Flagship Speedcube Series (Strictly Data-Driven)
-function SpeedcubeComparisonMatrix({ product }: { product: any }) {
-  if (product?.comparison_table && typeof product.comparison_table === 'object') {
-    const table = product.comparison_table;
+// Dynamic Comparison Matrix for Flagship Speedcube Series (Strictly Data-Driven Matrix)
+function SpeedcubeComparisonMatrix({ product, variants, locale = 'az' }: { product: any; variants?: any[]; locale?: string }) {
+  // 1. Check if product has a static or database-provided comparison table
+  const compTable = product?.[`comparison_table_${locale}`] || product?.comparison_table || product?.comparison_table_az;
+  if (compTable && typeof compTable === 'object' && Array.isArray(compTable.headers) && Array.isArray(compTable.rows)) {
     return (
-      <div className="mt-8 border border-border rounded-2xl p-5 bg-card shadow-soft-sm space-y-4">
-        <h3 className="font-black text-lg text-foreground flex items-center gap-2">
+      <div className="mt-8 border border-border/80 rounded-2xl p-4 md:p-6 bg-card shadow-soft-sm space-y-4 overflow-hidden">
+        <h3 className="font-extrabold text-base md:text-lg text-foreground flex items-center gap-2">
           <GitCompare className="h-5 w-5 text-rubik-brand" />
-          <span>Məhsul Versiyalarının Müqayisə Cədvəli</span>
+          <span>{locale === 'en' ? 'Version Comparison Matrix' : locale === 'ru' ? 'Сравнительная таблица версий' : 'Məhsul Versiyalarının Müqayisə Cədvəli'}</span>
         </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs md:text-sm">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <table className="w-full text-left text-xs md:text-sm border-collapse min-w-[500px]">
             <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="p-3 font-extrabold text-foreground">Xüsusiyyət</th>
-                {table.headers?.map((h: string, idx: number) => (
-                  <th key={idx} className="p-3 font-extrabold text-rubik-brand text-center">{h}</th>
+              <tr className="border-b border-border bg-muted/40">
+                <th className="p-3 font-bold text-foreground">{locale === 'en' ? 'Feature' : locale === 'ru' ? 'Характеристика' : 'Xüsusiyyət'}</th>
+                {compTable.headers?.map((h: string, idx: number) => (
+                  <th key={idx} className="p-3 font-extrabold text-rubik-brand text-center whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {table.rows?.map((row: any, rIdx: number) => (
-                <tr key={rIdx} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
-                  <td className="p-3 font-bold text-foreground">{row.feature}</td>
+              {compTable.rows?.map((row: any, rIdx: number) => (
+                <tr key={rIdx} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                  <td className="p-3 font-semibold text-foreground whitespace-nowrap">{row.feature}</td>
                   {row.values?.map((val: string, vIdx: number) => (
-                    <td key={vIdx} className="p-3 text-center text-muted-foreground font-medium">{val}</td>
+                    <td key={vIdx} className="p-3 text-center text-muted-foreground font-medium whitespace-nowrap">{val}</td>
                   ))}
                 </tr>
               ))}
@@ -93,7 +94,137 @@ function SpeedcubeComparisonMatrix({ product }: { product: any }) {
     );
   }
 
-  return null;
+  // 2. Build dynamic matrix table from variants (version options / siblings / product variants)
+  const activeVariantsList = Array.isArray(variants) && variants.length >= 1 ? variants : [];
+  if (activeVariantsList.length < 1) {
+    return null;
+  }
+
+  // Extract specs for each variant based on current locale
+  const variantSpecsList = activeVariantsList.map(v => {
+    let rawSpecs: any = {};
+    if (locale === 'en') rawSpecs = v.specs_en || v.specs || v.specs_az || {};
+    else if (locale === 'ru') rawSpecs = v.specs_ru || v.specs || v.specs_az || {};
+    else rawSpecs = v.specs_az || v.specs || v.specs_en || {};
+
+    if (typeof rawSpecs === 'string') {
+      try { rawSpecs = JSON.parse(rawSpecs); } catch { rawSpecs = {}; }
+    }
+    
+    if (Object.keys(rawSpecs || {}).length === 0) {
+      const fallbackSpecs: Record<string, any> = {};
+      if (v.weight_g || v.weight) fallbackSpecs['Weight'] = v.weight_g ? `${v.weight_g}g` : v.weight;
+      if (v.size_mm || v.size) fallbackSpecs['Size'] = v.size_mm ? `${v.size_mm}mm` : v.size;
+      if (v.is_magnetic !== undefined) fallbackSpecs['Magnetic'] = v.is_magnetic ? 'Yes' : 'No';
+      rawSpecs = fallbackSpecs;
+    }
+
+    return {
+      variantName: v.name || v.variant_name || v.title || v.sku || 'Versiya',
+      specs: rawSpecs && typeof rawSpecs === 'object' ? rawSpecs : {}
+    };
+  });
+
+  // Collect all unique feature keys across all variants
+  const allKeysSet = new Set<string>();
+  variantSpecsList.forEach(v => {
+    Object.keys(v.specs).forEach(k => allKeysSet.add(k));
+  });
+
+  if (allKeysSet.size === 0) {
+    return null;
+  }
+
+  // Key translator for UI
+  const translateKey = (k: string) => {
+    const kLower = k.toLowerCase().trim();
+    if (locale === 'en') {
+      if (kLower === 'çəki' || kLower === 'weight_g') return 'Weight';
+      if (kLower === 'ölçü' || kLower === 'size_mm') return 'Size';
+      if (kLower === 'maqnit gücü') return 'Magnetic Strength';
+      if (kLower === 'gərginlik sistemi') return 'Tension System';
+      if (kLower === 'səth örtüyü') return 'Exterior finish';
+      if (kLower === 'daxili növü') return 'Core type';
+      if (kLower === 'maqnit nüvə') return 'Magnetic core';
+      if (kLower === 'daxili plastik rəngi') return 'Internal plastic color';
+      if (kLower === 'ümumi maqnitlər') return 'Total magnets';
+    } else if (locale === 'ru') {
+      if (kLower === 'çəki' || kLower === 'weight' || kLower === 'weight_g') return 'Вес';
+      if (kLower === 'ölçü' || kLower === 'size' || kLower === 'size_mm') return 'Размер';
+      if (kLower === 'maqnit gücü' || kLower === 'magnetic strength') return 'Сила магнитов';
+      if (kLower === 'gərginlik sistemi' || kLower === 'tension system') return 'Система натяжения';
+      if (kLower === 'səth örtüyü' || kLower === 'exterior finish') return 'Внешнее покрытие';
+      if (kLower === 'daxili növü' || kLower === 'core type') return 'Тип крестовины';
+      if (kLower === 'maqnit nüvə' || kLower === 'magnetic core') return 'Магнитное ядро';
+      if (kLower === 'daxili plastik rəngi' || kLower === 'internal plastic color') return 'Цвет внутреннего пластика';
+      if (kLower === 'ümumi maqnitlər' || kLower === 'total magnets') return 'Всего магнитов';
+    } else {
+      if (kLower === 'weight' || kLower === 'weight_g') return 'Çəki';
+      if (kLower === 'size' || kLower === 'size_mm') return 'Ölçü';
+      if (kLower === 'magnetic_strength' || kLower === 'magnetic strength') return 'Maqnit Gücü';
+      if (kLower === 'tension_system' || kLower === 'tension system') return 'Gərginlik Sistemi';
+      if (kLower === 'surface_finish' || kLower === 'exterior finish') return 'Səth Örtüyü';
+      if (kLower === 'core_type' || kLower === 'core type') return 'Daxili Növü';
+      if (kLower === 'magnetic_core' || kLower === 'magnetic core') return 'Maqnit Nüvə';
+      if (kLower === 'internal_plastic_color' || kLower === 'internal plastic color') return 'Daxili Plastik Rəngi';
+      if (kLower === 'total_magnets' || kLower === 'total magnets') return 'Ümumi Maqnitlər';
+    }
+    return k;
+  };
+
+  const translateVal = (val: any) => {
+    if (val === true || val === 'true' || val === 'Yes' || val === 'Bəli' || val === 'Да') {
+      return locale === 'en' ? 'Yes' : locale === 'ru' ? 'Да' : 'Bəli';
+    }
+    if (val === false || val === 'false' || val === 'No' || val === 'Xeyr' || val === '-' || val === '' || val === null || val === undefined) {
+      return '-';
+    }
+    return String(val);
+  };
+
+  const keysArray = Array.from(allKeysSet);
+
+  return (
+    <div className="mt-8 border border-border/80 rounded-2xl p-4 md:p-6 bg-card shadow-soft-sm space-y-4 overflow-hidden">
+      <h3 className="font-extrabold text-base md:text-lg text-foreground flex items-center gap-2">
+        <GitCompare className="h-5 w-5 text-rubik-brand" />
+        <span>{locale === 'en' ? 'Version Comparison Matrix' : locale === 'ru' ? 'Сравнительная таблица версий' : 'Məhsul Versiyalarının Müqayisə Cədvəli'}</span>
+      </h3>
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+        <table className="w-full text-left text-xs md:text-sm border-collapse min-w-[550px]">
+          <thead>
+            <tr className="border-b border-border bg-muted/40">
+              <th className="p-3 font-bold text-foreground">{locale === 'en' ? 'Feature' : locale === 'ru' ? 'Характеристика' : 'Xüsusiyyət'}</th>
+              {variantSpecsList.map((v, idx) => (
+                <th key={idx} className="p-3 font-extrabold text-rubik-brand text-center whitespace-nowrap">{v.variantName}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {keysArray.map((featureKey, rIdx) => {
+              const rowHasValues = variantSpecsList.some(v => v.specs[featureKey] !== undefined && v.specs[featureKey] !== '' && v.specs[featureKey] !== null);
+              if (!rowHasValues) return null;
+
+              return (
+                <tr key={rIdx} className="border-b border-border/40 hover:bg-muted/30 transition-colors">
+                  <td className="p-3 font-semibold text-foreground whitespace-nowrap">{translateKey(featureKey)}</td>
+                  {variantSpecsList.map((v, vIdx) => {
+                    const rawVal = v.specs[featureKey];
+                    const displayVal = translateVal(rawVal);
+                    return (
+                      <td key={vIdx} className="p-3 text-center text-muted-foreground font-medium whitespace-nowrap">
+                        {displayVal}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 class ErrorBoundary extends React.Component<
@@ -225,7 +356,11 @@ function ProductDetailClientContentInner({
         description: String(v.description || v.description_az || v.subtitle || ''),
         image_url: v.image_url || product?.image_url,
         gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : [],
-        is_sibling: Boolean(v.slug && v.slug !== product?.slug)
+        is_sibling: Boolean(v.slug && v.slug !== product?.slug),
+        specs: v.specs || {},
+        specs_az: v.specs_az,
+        specs_en: v.specs_en,
+        specs_ru: v.specs_ru
       }));
     } else if (siblingProducts && Array.isArray(siblingProducts) && siblingProducts.length > 0) {
       list = siblingProducts.map((s: any, index: number) => ({
@@ -243,7 +378,11 @@ function ProductDetailClientContentInner({
         description: String(s.description || s.description_az || s.subtitle || ''),
         image_url: s.image_url || product?.image_url,
         gallery_images: Array.isArray(s.gallery_images) ? s.gallery_images : [],
-        is_sibling: true
+        is_sibling: true,
+        specs: s.specs || {},
+        specs_az: s.specs_az,
+        specs_en: s.specs_en,
+        specs_ru: s.specs_ru
       }));
     } else {
       const rawVariants = product?.product_variants || product?.variants || [];
@@ -264,7 +403,10 @@ function ProductDetailClientContentInner({
           description: String(v.description || v.description_az || v.subtitle || ''),
           image_url: v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product?.image_url,
           gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : []),
-          specs: v.specs || {}
+          specs: v.specs || {},
+          specs_az: v.specs_az,
+          specs_en: v.specs_en,
+          specs_ru: v.specs_ru
         }));
       }
     }
@@ -803,17 +945,24 @@ function ProductDetailClientContentInner({
   const specsToDisplay = React.useMemo(() => {
     if (!product) return {};
     const baseSpecs: Record<string, string> = {};
-    if (product.brand) baseSpecs['Brend'] = product.brand;
+    const brandLabel = locale === 'en' ? 'Brand' : locale === 'ru' ? 'Бренд' : 'Brend';
+    const catLabel = locale === 'en' ? 'Category' : locale === 'ru' ? 'Категория' : 'Kateqoriya';
+    const stockLabel = locale === 'en' ? 'In Stock' : locale === 'ru' ? 'В наличии' : 'Anbardakı Sayı';
+    const unitText = locale === 'en' ? 'pcs' : locale === 'ru' ? 'шт.' : 'ədəd';
+
+    if (product.brand) baseSpecs[brandLabel] = product.brand;
     if (currentSku) baseSpecs['SKU'] = currentSku;
-    if (product.category_slug) baseSpecs['Kateqoriya'] = product.category_slug;
-    if (effectiveStock !== undefined) baseSpecs['Anbardakı Sayı'] = `${effectiveStock} ədəd`;
+    if (product.category_slug) baseSpecs[catLabel] = product.category_slug;
+    if (effectiveStock !== undefined) baseSpecs[stockLabel] = `${effectiveStock} ${unitText}`;
+    
+    let activeSpecs = selectedVariant?.specs_az || selectedVariant?.specs_en || selectedVariant?.specs_ru || selectedVariant?.specs || product?.[`specs_${locale}`] || product?.specs || product?.specs_az || {};
     
     let parsedSpecs: Record<string, string> = {};
-    if (typeof product.specs === 'object' && product.specs !== null) {
-      parsedSpecs = product.specs;
-    } else if (typeof product.specs === 'string') {
+    if (typeof activeSpecs === 'object' && activeSpecs !== null) {
+      parsedSpecs = activeSpecs;
+    } else if (typeof activeSpecs === 'string') {
       try {
-        parsedSpecs = JSON.parse(product.specs);
+        parsedSpecs = JSON.parse(activeSpecs);
       } catch {
         // Ignore parsing error
       }
@@ -824,18 +973,37 @@ function ProductDetailClientContentInner({
     
     Object.entries(mergedSpecs).forEach(([key, val]) => {
       let displayKey = key;
-      if (key === 'weight') displayKey = 'Çəki';
-      else if (key === 'size') displayKey = 'Ölçü';
-      else if (key === 'material') displayKey = 'Material';
-      else if (key === 'core_type') displayKey = 'Daxili Növü';
-      else if (key === 'magnetic_strength') displayKey = 'Maqnit Gücü';
-      else if (key === 'tension_system') displayKey = 'Gərginlik Sistemi';
-      else if (key === 'surface_finish') displayKey = 'Səth Örtüyü';
+      const kLower = key.toLowerCase();
+      if (locale === 'en') {
+        if (kLower === 'weight' || kLower === 'çəki') displayKey = 'Weight';
+        else if (kLower === 'size' || kLower === 'ölçü') displayKey = 'Size';
+        else if (kLower === 'material') displayKey = 'Material';
+        else if (kLower === 'core_type' || kLower === 'daxili növü') displayKey = 'Core Type';
+        else if (kLower === 'magnetic_strength' || kLower === 'maqnit gücü') displayKey = 'Magnetic Strength';
+        else if (kLower === 'tension_system' || kLower === 'gərginlik sistemi') displayKey = 'Tension System';
+        else if (kLower === 'surface_finish' || kLower === 'səth örtüyü') displayKey = 'Surface Finish';
+      } else if (locale === 'ru') {
+        if (kLower === 'weight' || kLower === 'çəki') displayKey = 'Вес';
+        else if (kLower === 'size' || kLower === 'ölçü') displayKey = 'Размер';
+        else if (kLower === 'material') displayKey = 'Материал';
+        else if (kLower === 'core_type' || kLower === 'daxili növü') displayKey = 'Тип крестовины';
+        else if (kLower === 'magnetic_strength' || kLower === 'maqnit gücü') displayKey = 'Сила магнитов';
+        else if (kLower === 'tension_system' || kLower === 'gərginlik sistemi') displayKey = 'Система натяжения';
+        else if (kLower === 'surface_finish' || kLower === 'səth örtüyü') displayKey = 'Покрытие';
+      } else {
+        if (kLower === 'weight') displayKey = 'Çəki';
+        else if (kLower === 'size') displayKey = 'Ölçü';
+        else if (kLower === 'material') displayKey = 'Material';
+        else if (kLower === 'core_type') displayKey = 'Daxili Növü';
+        else if (kLower === 'magnetic_strength') displayKey = 'Maqnit Gücü';
+        else if (kLower === 'tension_system') displayKey = 'Gərginlik Sistemi';
+        else if (kLower === 'surface_finish') displayKey = 'Səth Örtüyü';
+      }
       translatedSpecs[displayKey] = String(val);
     });
     
     return translatedSpecs;
-  }, [product, currentSku, effectiveStock]);
+  }, [product, selectedVariant, currentSku, effectiveStock, locale]);
 
   // Sync quantity if stock changes
   React.useEffect(() => {
@@ -1678,7 +1846,7 @@ function ProductDetailClientContentInner({
                   <p className="whitespace-pre-line">{product.description}</p>
                   
                   {/* Dynamic Version Comparison Matrix */}
-                  <SpeedcubeComparisonMatrix product={product} />
+                  <SpeedcubeComparisonMatrix product={product} variants={dbVariants} locale={locale} />
                 </motion.div>
               )}
 
@@ -1687,7 +1855,7 @@ function ProductDetailClientContentInner({
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 5 }}
-                  className="space-y-4"
+                  className="space-y-6"
                 >
                   <h4 className="text-base font-bold text-foreground">Texniki Spesifikasiyalar</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1698,6 +1866,9 @@ function ProductDetailClientContentInner({
                       </div>
                     ))}
                   </div>
+
+                  {/* Version Specs Comparison Matrix */}
+                  <SpeedcubeComparisonMatrix product={product} variants={dbVariants} locale={locale} />
                 </motion.div>
               )}
 

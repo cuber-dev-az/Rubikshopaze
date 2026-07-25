@@ -15,7 +15,8 @@ import {
   Globe, 
   Eye, 
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Sliders
 } from 'lucide-react';
 import Image from 'next/image';
 import { 
@@ -77,6 +78,12 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [size_mm, setSize_mm] = useState('');
   const [difficultyLevel, setDifficultyLevel] = useState('başlanğıc');
   const [addOns, setAddOns] = useState<any[]>([]);
+  const [specRows, setSpecRows] = useState<Array<{ id: string; key: string; val_az: string; val_en: string; val_ru: string }>>([
+    { id: 'spec_1', key: 'Çəki (Weight)', val_az: '65g', val_en: '65g', val_ru: '65g' },
+    { id: 'spec_2', key: 'Ölçü (Size)', val_az: '55.5mm', val_en: '55.5mm', val_ru: '55.5mm' },
+    { id: 'spec_3', key: 'Maqnit nüvə', val_az: 'Bəli', val_en: 'Yes', val_ru: 'Да' },
+    { id: 'spec_4', key: 'Gərginlik sistemi', val_az: 'MagLev', val_en: 'MagLev', val_ru: 'MagLev' }
+  ]);
 
   const [showProductDeleteConfirm, setShowProductDeleteConfirm] = useState(false);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
@@ -178,6 +185,31 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
               }
             }
             setAddOns(parsedAddOns);
+
+            let sAz = prod.specs_az || prod.specs || {};
+            let sEn = prod.specs_en || {};
+            let sRu = prod.specs_ru || {};
+
+            if (typeof sAz === 'string') { try { sAz = JSON.parse(sAz); } catch { sAz = {}; } }
+            if (typeof sEn === 'string') { try { sEn = JSON.parse(sEn); } catch { sEn = {}; } }
+            if (typeof sRu === 'string') { try { sRu = JSON.parse(sRu); } catch { sRu = {}; } }
+
+            const allKeys = Array.from(new Set([
+              ...Object.keys(sAz || {}),
+              ...Object.keys(sEn || {}),
+              ...Object.keys(sRu || {})
+            ]));
+
+            if (allKeys.length > 0) {
+              const rows = allKeys.map((k, idx) => ({
+                id: `spec_row_${idx}_${Date.now()}`,
+                key: k,
+                val_az: String(sAz[k] ?? ''),
+                val_en: String(sEn[k] ?? ''),
+                val_ru: String(sRu[k] ?? '')
+              }));
+              setSpecRows(rows);
+            }
           } else {
             setErrorMsg(res.error || 'Məhsul yüklənərkən xəta baş verdi');
           }
@@ -242,6 +274,19 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
       const weightNumber = weight_g !== '' ? parseFloat(weight_g) : null;
       const sizeNumber = size_mm !== '' ? parseFloat(size_mm) : null;
 
+      const specs_azObj: Record<string, string> = {};
+      const specs_enObj: Record<string, string> = {};
+      const specs_ruObj: Record<string, string> = {};
+
+      specRows.forEach(row => {
+        const k = row.key.trim();
+        if (k) {
+          if (row.val_az) specs_azObj[k] = row.val_az.trim();
+          if (row.val_en) specs_enObj[k] = row.val_en.trim();
+          if (row.val_ru) specs_ruObj[k] = row.val_ru.trim();
+        }
+      });
+
       const payload = {
         title_az,
         title_en,
@@ -272,6 +317,10 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
         is_magnetic: isMagnetic,
         size_mm: sizeNumber !== null ? sizeNumber : undefined,
         difficulty_level: difficultyLevel,
+        specs: specs_azObj,
+        specs_az: specs_azObj,
+        specs_en: specs_enObj,
+        specs_ru: specs_ruObj,
       };
 
       let res;
@@ -303,6 +352,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
   const tabs = [
     { id: 'core', label: 'Əsas Məlumatlar', icon: Settings },
+    { id: 'specs', label: 'Spesifikasiyalar (Matris)', icon: Sliders },
     { id: 'media', label: 'Şəkil Meneceri', icon: ImageIcon },
     { id: 'addons', label: 'Əlavə Xidmətlər', icon: Tag },
     { id: 'seo', label: 'SEO & Meta', icon: Globe },
@@ -642,7 +692,135 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
             </div>
           )}
 
-          {/* Tab Content: Media */}
+          {/* Tab Content: Specs Matrix */}
+          {activeTab === 'specs' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    <Sliders className="w-5 h-5 text-amber-500" /> Spesifikasiyalar & Variant Matrisi
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Bu məhsul və ya onun variantları üçün istənilən sayda dinamik atribut daxil edin. Məhsul səhifəsindəki <strong>Müqayisə Matrisi</strong> avtomatik olaraq bu atributlardan təşkil olunacaq.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const template = [
+                        { id: `spec_${Date.now()}_1`, key: 'Weight', val_az: '65g', val_en: '65g', val_ru: '65g' },
+                        { id: `spec_${Date.now()}_2`, key: 'Size', val_az: '55.5mm', val_en: '55.5mm', val_ru: '55.5mm' },
+                        { id: `spec_${Date.now()}_3`, key: 'Magnetic core', val_az: 'Bəli', val_en: 'Yes', val_ru: 'Да' },
+                        { id: `spec_${Date.now()}_4`, key: 'Tension system', val_az: 'MagLev', val_en: 'MagLev', val_ru: 'MagLev' },
+                        { id: `spec_${Date.now()}_5`, key: 'Surface finish', val_az: 'UV Coated', val_en: 'UV Coated', val_ru: 'UV Coated' }
+                      ];
+                      setSpecRows(template);
+                    }}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors border border-slate-700"
+                  >
+                    ⚡ Speedcube Şablonu
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSpecRows([...specRows, { id: `spec_${Date.now()}`, key: '', val_az: '', val_en: '', val_ru: '' }])}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl transition-all shadow-md shadow-amber-500/20"
+                  >
+                    <Plus className="w-4 h-4" /> + Atribut Əlavə Et
+                  </button>
+                </div>
+              </div>
+
+              {specRows.length === 0 ? (
+                <div className="p-8 bg-slate-950/50 border border-slate-800 rounded-2xl text-center space-y-2">
+                  <p className="text-sm font-bold text-slate-300">Heç bir dinamik spesifikasiya əlavə edilməyib</p>
+                  <p className="text-xs text-slate-500">
+                    "Atribut Əlavə Et" düyməsini klikləyərək və ya Speedcube Şablonunu seçərək cədvəl sətirlərini yarada bilərsiniz.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {specRows.map((row, index) => (
+                    <div key={row.id || index} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                        <div>
+                          <label className="block text-[10px] font-black text-amber-500 uppercase tracking-wider mb-1">Atribut Adı (Məs: Weight, Size)</label>
+                          <input
+                            type="text"
+                            placeholder="Məs: Magnetic core"
+                            value={row.key}
+                            onChange={(e) => {
+                              const updated = [...specRows];
+                              updated[index] = { ...updated[index], key: e.target.value };
+                              setSpecRows(updated);
+                            }}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-xs font-bold rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Dəyər (AZ)</label>
+                          <input
+                            type="text"
+                            placeholder="Məs: Bəli / MagLev / 65g"
+                            value={row.val_az}
+                            onChange={(e) => {
+                              const updated = [...specRows];
+                              updated[index] = { ...updated[index], val_az: e.target.value };
+                              setSpecRows(updated);
+                            }}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Dəyər (EN)</label>
+                          <input
+                            type="text"
+                            placeholder="Məs: Yes / MagLev / 65g"
+                            value={row.val_en}
+                            onChange={(e) => {
+                              const updated = [...specRows];
+                              updated[index] = { ...updated[index], val_en: e.target.value };
+                              setSpecRows(updated);
+                            }}
+                            className="w-full bg-slate-900 border border-slate-800 text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1">
+                              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Dəyər (RU)</label>
+                              <input
+                                type="text"
+                                placeholder="Məs: Да / MagLev / 65g"
+                                value={row.val_ru}
+                                onChange={(e) => {
+                                  const updated = [...specRows];
+                                  updated[index] = { ...updated[index], val_ru: e.target.value };
+                                  setSpecRows(updated);
+                                }}
+                                className="w-full bg-slate-900 border border-slate-800 text-white text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-amber-500"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSpecRows(specRows.filter((_, i) => i !== index))}
+                              className="p-2.5 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-colors shrink-0 mt-5 border border-transparent hover:border-red-500/20"
+                              title="Sətiri Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {activeTab === 'media' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-5">
