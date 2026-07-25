@@ -214,6 +214,8 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         }
       }
 
+      versionOptions.sort((a: any, b: any) => (a.price_azn ?? 0) - (b.price_azn ?? 0));
+
       activeProduct = {
         id: dbProduct.id,
         slug: dbProduct.slug,

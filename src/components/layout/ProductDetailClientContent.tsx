@@ -220,8 +220,9 @@ function ProductDetailClientContentInner({
 
   // 1. Universal Database-driven variants setup (supporting Grouped Sibling Products & Legacy variants)
   const dbVariants = React.useMemo(() => {
+    let result: any[] = [];
     if (versionOptions && Array.isArray(versionOptions) && versionOptions.length > 0) {
-      return versionOptions.map((v: any) => ({
+      result = versionOptions.map((v: any) => ({
         id: String(v.id),
         sku: v.sku || `SKU-${v.id}`,
         slug: v.slug,
@@ -238,9 +239,8 @@ function ProductDetailClientContentInner({
         gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : [],
         is_sibling: Boolean(v.slug && v.slug !== product?.slug)
       }));
-    }
-    if (siblingProducts && Array.isArray(siblingProducts) && siblingProducts.length > 0) {
-      return siblingProducts.map((s: any, index: number) => ({
+    } else if (siblingProducts && Array.isArray(siblingProducts) && siblingProducts.length > 0) {
+      result = siblingProducts.map((s: any, index: number) => ({
         id: String(s.id || s.slug || `sib_${index}`),
         sku: s.sku || `SKU-${index + 1}`,
         slug: s.slug,
@@ -257,29 +257,30 @@ function ProductDetailClientContentInner({
         gallery_images: Array.isArray(s.gallery_images) ? s.gallery_images : [],
         is_sibling: true
       }));
+    } else {
+      const rawVariants = product?.product_variants || product?.variants || [];
+      if (Array.isArray(rawVariants) && rawVariants.length > 0) {
+        result = rawVariants.map((v: any, index: number) => ({
+          id: String(v.id || `var_${index}`),
+          sku: v.sku || `SKU-${index + 1}`,
+          name: v.name || v.title_az || v.title || v.name_az || `Versiya ${index + 1}`,
+          price: v.price !== undefined && v.price !== null && v.price !== ''
+            ? Number(v.price)
+            : (v.price_azn !== undefined ? Number(v.price_azn) : Number(product?.price_azn || product?.price || 0)),
+          price_azn: v.price_azn !== undefined && v.price_azn !== null && v.price_azn !== ''
+            ? Number(v.price_azn)
+            : (v.price !== undefined ? Number(v.price) : Number(product?.price_azn || product?.price || 0)),
+          compare_at_price_azn: v.compare_at_price_azn || v.discount_price || v.original_price,
+          stock: v.stock !== undefined ? Number(v.stock) : Number(v.stock_quantity || product?.stock_quantity || 0),
+          stock_quantity: v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(v.stock || product?.stock_quantity || 0),
+          description: String(v.description || v.description_az || v.subtitle || ''),
+          image_url: v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product?.image_url,
+          gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : []),
+          specs: v.specs || {}
+        }));
+      }
     }
-    const rawVariants = product?.product_variants || product?.variants || [];
-    if (Array.isArray(rawVariants) && rawVariants.length > 0) {
-      return rawVariants.map((v: any, index: number) => ({
-        id: String(v.id || `var_${index}`),
-        sku: v.sku || `SKU-${index + 1}`,
-        name: v.name || v.title_az || v.title || v.name_az || `Versiya ${index + 1}`,
-        price: v.price !== undefined && v.price !== null && v.price !== ''
-          ? Number(v.price)
-          : (v.price_azn !== undefined ? Number(v.price_azn) : Number(product?.price_azn || product?.price || 0)),
-        price_azn: v.price_azn !== undefined && v.price_azn !== null && v.price_azn !== ''
-          ? Number(v.price_azn)
-          : (v.price !== undefined ? Number(v.price) : Number(product?.price_azn || product?.price || 0)),
-        compare_at_price_azn: v.compare_at_price_azn || v.discount_price || v.original_price,
-        stock: v.stock !== undefined ? Number(v.stock) : Number(v.stock_quantity || product?.stock_quantity || 0),
-        stock_quantity: v.stock_quantity !== undefined ? Number(v.stock_quantity) : Number(v.stock || product?.stock_quantity || 0),
-        description: String(v.description || v.description_az || v.subtitle || ''),
-        image_url: v.image_url || v.image || (Array.isArray(v.images) ? v.images[0] : null) || product?.image_url,
-        gallery_images: Array.isArray(v.gallery_images) ? v.gallery_images : (Array.isArray(v.images) ? v.images : []),
-        specs: v.specs || {}
-      }));
-    }
-    return [];
+    return result.sort((a: any, b: any) => (a.price_azn ?? 0) - (b.price_azn ?? 0));
   }, [versionOptions, siblingProducts, product?.product_variants, product?.variants, product?.price_azn, product?.price, product?.stock_quantity, product?.image_url, product?.slug]);
 
   // Read searchParam `variant` or `version` or `sku`
