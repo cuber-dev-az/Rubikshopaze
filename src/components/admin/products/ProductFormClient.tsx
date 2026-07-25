@@ -16,7 +16,10 @@ import {
   Eye, 
   Calendar,
   AlertCircle,
-  Sliders
+  Sliders,
+  FileJson,
+  Copy,
+  Check
 } from 'lucide-react';
 import Image from 'next/image';
 import { 
@@ -84,6 +87,88 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
     { id: 'spec_3', key: 'Maqnit nüvə', val_az: 'Bəli', val_en: 'Yes', val_ru: 'Да' },
     { id: 'spec_4', key: 'Gərginlik sistemi', val_az: 'MagLev', val_en: 'MagLev', val_ru: 'MagLev' }
   ]);
+
+  const [showJsonModal, setShowJsonModal] = useState(false);
+  const [jsonInput, setJsonInput] = useState('');
+  const [jsonError, setJsonError] = useState('');
+  const [jsonCopied, setJsonCopied] = useState(false);
+
+  const handleApplyJson = () => {
+    try {
+      setJsonError('');
+      if (!jsonInput.trim()) {
+        setJsonError('Xahiş olunur JSON mətnini daxil edin');
+        return;
+      }
+      const parsed = JSON.parse(jsonInput.trim());
+      const newRows: Array<{ id: string; key: string; val_az: string; val_en: string; val_ru: string }> = [];
+
+      if (Array.isArray(parsed)) {
+        parsed.forEach((item, idx) => {
+          if (typeof item === 'object' && item !== null) {
+            const key = item.key || item.name || item.title || item.attribute || `Atribut ${idx + 1}`;
+            const val_az = item.val_az || item.val || item.value || item.az || '';
+            const val_en = item.val_en || item.en || val_az;
+            const val_ru = item.val_ru || item.ru || val_az;
+            newRows.push({
+              id: `spec_json_${Date.now()}_${idx}`,
+              key: String(key),
+              val_az: String(val_az),
+              val_en: String(val_en),
+              val_ru: String(val_ru)
+            });
+          }
+        });
+      } else if (typeof parsed === 'object' && parsed !== null) {
+        if (parsed.specs_az || parsed.specs_en || parsed.specs_ru || parsed.specs) {
+          const sAz = parsed.specs_az || parsed.specs || {};
+          const sEn = parsed.specs_en || {};
+          const sRu = parsed.specs_ru || {};
+          const allKeys = Array.from(new Set([
+            ...Object.keys(sAz || {}),
+            ...Object.keys(sEn || {}),
+            ...Object.keys(sRu || {})
+          ]));
+          allKeys.forEach((k, idx) => {
+            newRows.push({
+              id: `spec_json_${Date.now()}_${idx}`,
+              key: k,
+              val_az: String(sAz[k] ?? ''),
+              val_en: String(sEn[k] ?? ''),
+              val_ru: String(sRu[k] ?? '')
+            });
+          });
+        } else {
+          Object.entries(parsed).forEach(([k, v], idx) => {
+            let valStr = '';
+            if (typeof v === 'object' && v !== null) {
+              valStr = JSON.stringify(v);
+            } else {
+              valStr = String(v ?? '');
+            }
+            newRows.push({
+              id: `spec_json_${Date.now()}_${idx}`,
+              key: k,
+              val_az: valStr,
+              val_en: valStr,
+              val_ru: valStr
+            });
+          });
+        }
+      }
+
+      if (newRows.length === 0) {
+        setJsonError('JSON formatında heç bir keçərli atribut tapılmadı');
+        return;
+      }
+
+      setSpecRows((prev) => [...prev.filter(r => r.key.trim() !== ''), ...newRows]);
+      setShowJsonModal(false);
+      setJsonInput('');
+    } catch (err: any) {
+      setJsonError('Xətalı JSON formatı: ' + (err?.message || 'Sintaksis xətası'));
+    }
+  };
 
   const [showProductDeleteConfirm, setShowProductDeleteConfirm] = useState(false);
   const [isDeletingProduct, setIsDeletingProduct] = useState(false);
@@ -723,6 +808,16 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   </button>
                   <button
                     type="button"
+                    onClick={() => {
+                      setShowJsonModal(!showJsonModal);
+                      setJsonError('');
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-extrabold text-xs rounded-xl transition-all border border-amber-500/30"
+                  >
+                    <FileJson className="w-4 h-4 text-amber-400" /> 📋 JSON ilə Import
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setSpecRows([...specRows, { id: `spec_${Date.now()}`, key: '', val_az: '', val_en: '', val_ru: '' }])}
                     className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl transition-all shadow-md shadow-amber-500/20"
                   >
@@ -730,6 +825,97 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   </button>
                 </div>
               </div>
+
+              {/* JSON Import / Export Drawer */}
+              {showJsonModal && (
+                <div className="p-5 bg-slate-950 border border-amber-500/40 rounded-2xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileJson className="w-5 h-5 text-amber-400" />
+                      <h4 className="text-sm font-black text-white">JSON Əsaslı Atribut Daxil Etmə Və Ya İxrac Etmə</h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowJsonModal(false)}
+                      className="text-xs text-slate-400 hover:text-white px-2 py-1 rounded-lg bg-slate-800"
+                    >
+                      Ləğv et
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-slate-400">
+                    Məhsulun spesifikasiya və atributlarını birbaşa JSON mətn olaraq yapışdırın (məs: <code className="text-amber-400">{`{"Weight": "65g", "Size": "55.5mm"}`}</code>) və ya mövcud atributları kopyalayın.
+                  </p>
+
+                  <textarea
+                    rows={5}
+                    value={jsonInput}
+                    onChange={(e) => {
+                      setJsonInput(e.target.value);
+                      setJsonError('');
+                    }}
+                    placeholder={`Məsələn, sadə JSON:\n{\n  "Weight": "65g",\n  "Size": "55.5mm",\n  "Magnetic core": "Yes"\n}`}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-emerald-400 focus:outline-none focus:border-amber-500 placeholder:text-slate-600"
+                  />
+
+                  {jsonError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-bold flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{jsonError}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sample = JSON.stringify({
+                            "Weight": "65g",
+                            "Size": "55.5mm",
+                            "Magnetic core": "Yes",
+                            "Tension system": "MagLev",
+                            "Surface finish": "Frosted"
+                          }, null, 2);
+                          setJsonInput(sample);
+                          setJsonError('');
+                        }}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg font-bold border border-slate-700"
+                      >
+                        📄 Nümunə Yüklə
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currentObj: Record<string, any> = {};
+                          specRows.forEach(r => {
+                            if (r.key.trim()) {
+                              currentObj[r.key.trim()] = r.val_az || r.val_en || r.val_ru;
+                            }
+                          });
+                          const exported = JSON.stringify(currentObj, null, 2);
+                          setJsonInput(exported);
+                          navigator.clipboard.writeText(exported);
+                          setJsonCopied(true);
+                          setTimeout(() => setJsonCopied(false), 2000);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg font-bold border border-slate-700"
+                      >
+                        {jsonCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{jsonCopied ? 'Kopyalandı!' : 'Cədvəli JSON Kimi İxrac Et'}</span>
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleApplyJson}
+                      className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md shadow-amber-500/20 transition-all"
+                    >
+                      ✅ JSON-u Cədvələ Əlavə Et
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {specRows.length === 0 ? (
                 <div className="p-8 bg-slate-950/50 border border-slate-800 rounded-2xl text-center space-y-2">

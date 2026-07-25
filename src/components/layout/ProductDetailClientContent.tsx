@@ -901,10 +901,19 @@ function ProductDetailClientContentInner({
     }
   }, [relatedProducts, product?.id]);
 
-  // Gallery images with dynamic variation
+  // Gallery images with dynamic variation (isolated to selected variant or product)
   const galleryImages = React.useMemo(() => {
     if (!product) return [];
-    const secondaryImages = product.gallery_images || product.images || [];
+
+    // Main image for selected variant or base product
+    const mainImg = selectedVariant?.image_url || product.image_url;
+
+    // Secondary gallery images specific to selected variant or fallback to product gallery
+    const variantGallery = selectedVariant?.gallery_images || selectedVariant?.images;
+    const secondaryImages = (Array.isArray(variantGallery) && variantGallery.length > 0)
+      ? variantGallery
+      : (product.gallery_images || product.images || []);
+
     let extraImages: string[] = [];
     if (Array.isArray(secondaryImages)) {
       extraImages = secondaryImages;
@@ -920,16 +929,13 @@ function ProductDetailClientContentInner({
         extraImages = trimmed.split(',').map((img: string) => img.trim()).filter(Boolean);
       }
     }
-    
-    // Variant images
-    const variantImages = dbVariants.map((v: any) => v.image_url || (Array.isArray(v.images) && v.images[0]) || v.image).filter(Boolean);
 
-    // Completely purge placeholder picsum URLs
-    const cleanExtraImages = [...extraImages, ...variantImages].filter((img: string) => img && typeof img === 'string' && !img.includes('picsum.photos'));
+    // Completely purge placeholder picsum URLs (strictly excluding other variants' main images)
+    const cleanExtraImages = extraImages.filter((img: string) => img && typeof img === 'string' && !img.includes('picsum.photos'));
     
-    const list = [product.image_url, ...cleanExtraImages].filter(Boolean);
+    const list = [mainImg, ...cleanExtraImages].filter(Boolean);
     return Array.from(new Set(list)) as string[];
-  }, [product, dbVariants]);
+  }, [product, selectedVariant]);
 
   const effectiveStock = React.useMemo(() => {
     if (selectedVariant) {
