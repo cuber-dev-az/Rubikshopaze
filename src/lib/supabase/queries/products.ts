@@ -247,19 +247,17 @@ export async function getSiblingProductsByGroupSlug(groupSlug: string) {
   try {
     let { data, error } = await supabase
       .from('products')
-      .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, price_azn, price, compare_at_price_azn, discount_price, stock_quantity, stock, description_az, description_en, description_ru, sku, image_url, tags, keywords, brands(*), categories(*)')
+      .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
       .eq('group_slug', groupSlug)
       .eq('is_active', true)
-      .eq('status', 'published')
-      .order('price_azn', { ascending: true });
+      .eq('status', 'published');
 
     if (error || !data || data.length === 0) {
       const fallback = await supabase
         .from('products')
-        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, price_azn, price, compare_at_price_azn, discount_price, stock_quantity, stock, description_az, description_en, description_ru, sku, image_url, tags, keywords, brands(*), categories(*)')
+        .select('*, group_slug, variant_name, variant_name_az, variant_name_en, variant_name_ru, tags, keywords, brands(*), categories(*)')
         .eq('group_slug', groupSlug)
-        .eq('is_active', true)
-        .order('price_azn', { ascending: true });
+        .eq('is_active', true);
       data = fallback.data;
     }
     return data || [];
