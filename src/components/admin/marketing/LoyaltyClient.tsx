@@ -6,8 +6,11 @@ import {
   getLoyaltyParticipants, 
   updateLoyaltyPoints, 
   getNewsletterSubscribers, 
+  getReferralParticipants,
   LoyaltyUser, 
-  NewsletterSub 
+  NewsletterSub,
+  ReferralUser,
+  ReferralRecordItem
 } from '@/lib/actions/community';
 
 export default function LoyaltyClient() {
@@ -16,6 +19,8 @@ export default function LoyaltyClient() {
   // Data states
   const [participants, setParticipants] = useState<LoyaltyUser[]>([]);
   const [subscribers, setSubscribers] = useState<NewsletterSub[]>([]);
+  const [referralUsers, setReferralUsers] = useState<ReferralUser[]>([]);
+  const [recordsList, setRecordsList] = useState<ReferralRecordItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -39,6 +44,14 @@ export default function LoyaltyClient() {
         setParticipants(res.participants);
       } else {
         setError(res.error || 'Loyallıq xallarını yükləmək alınmadı.');
+      }
+    } else if (activeTab === 'referrals') {
+      const res = await getReferralParticipants();
+      if (res.success) {
+        setReferralUsers(res.referralUsers || []);
+        setRecordsList(res.recordsList || []);
+      } else {
+        setError(res.error || 'Referal məlumatlarını yükləmək alınmadı.');
       }
     } else if (activeTab === 'newsletter') {
       const res = await getNewsletterSubscribers();
@@ -199,41 +212,119 @@ export default function LoyaltyClient() {
             )}
 
             {activeTab === 'referrals' && (
-              <div className="space-y-4 animate-in fade-in">
-                <h3 className="text-lg font-black text-white mb-6 uppercase tracking-wider font-sans">İcma Referal İzlənməsi</h3>
-                <p className="text-xs text-slate-500">Referal qeydiyyatlarından qazanılan daxili bonus balansları.</p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm text-slate-300">
-                    <thead className="bg-slate-950/80 text-xs uppercase font-black text-slate-500">
-                      <tr>
-                        <th className="px-4 py-3">İstifadəçi</th>
-                        <th className="px-4 py-3">Referal Kodu</th>
-                        <th className="px-4 py-3">Dəvət Olunan Müştəri Sayı</th>
-                        <th className="px-4 py-3">Qazanılan Bonus (AZN)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
-                      {participants.map((user, idx) => {
-                        const signupsCount = Math.floor(user.balance / 150);
-                        const rewards = signupsCount * 5;
-
-                        return (
-                          <tr key={user.user_id} className="hover:bg-slate-800/20 transition-colors">
-                            <td className="px-4 py-4 font-bold text-white">{user.name}</td>
-                            <td className="px-4 py-4 font-mono text-slate-400">REF-{user.name.slice(0, 3).toUpperCase()}-{user.user_id.slice(0, 4).toUpperCase()}</td>
-                            <td className="px-4 py-4 font-mono">{signupsCount} qeydiyyat</td>
-                            <td className="px-4 py-4 font-mono font-bold text-green-400">+{rewards.toFixed(2)} AZN</td>
-                          </tr>
-                        );
-                      })}
-                      {participants.length === 0 && (
-                        <tr>
-                          <td colSpan={4} className="px-4 py-8 text-center text-slate-500">Məlumat mövcud deyil.</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
+              <div className="space-y-8 animate-in fade-in">
+                <div>
+                  <h3 className="text-lg font-black text-white uppercase tracking-wider font-sans">İcma Referal İzlənməsi</h3>
+                  <p className="text-xs text-slate-400 mt-1">Canlı referal xətləri, dəvət olunan istifadəçilər və real bonus ödənişləri.</p>
                 </div>
+
+                {/* Summary cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lider İstifadəçilər</div>
+                    <div className="text-2xl font-black text-white font-mono mt-1">{referralUsers.length} nəfər</div>
+                  </div>
+                  <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cəmi Uğurlu Dəvətlər</div>
+                    <div className="text-2xl font-black text-amber-500 font-mono mt-1">
+                      {referralUsers.reduce((acc, u) => acc + u.invited_count, 0)} qeydiyyat
+                    </div>
+                  </div>
+                  <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl">
+                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Paylanmış Referal Bonusu</div>
+                    <div className="text-2xl font-black text-green-400 font-mono mt-1">
+                      +{referralUsers.reduce((acc, u) => acc + u.total_bonus_azn, 0).toFixed(2)} AZN
+                    </div>
+                  </div>
+                </div>
+
+                {/* Users Table */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-black text-slate-300 uppercase tracking-wider">Müştəri Referal Statistikası</h4>
+                  <div className="overflow-x-auto rounded-2xl border border-slate-800">
+                    <table className="w-full text-left text-sm text-slate-300">
+                      <thead className="bg-slate-950 text-xs uppercase font-black text-slate-500">
+                        <tr>
+                          <th className="px-4 py-3">İstifadəçi / Email</th>
+                          <th className="px-4 py-3">Referal Kodu</th>
+                          <th className="px-4 py-3">Dəvət Olunan Müştəri Sayı</th>
+                          <th className="px-4 py-3">Qazanılan Bonus (AZN)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/50 bg-slate-900/50">
+                        {referralUsers.map((user) => (
+                          <tr key={user.user_id} className="hover:bg-slate-800/20 transition-colors">
+                            <td className="px-4 py-4">
+                              <span className="font-bold text-white block">{user.name}</span>
+                              <span className="text-xs text-slate-500 font-mono">{user.email}</span>
+                            </td>
+                            <td className="px-4 py-4 font-mono text-amber-500 font-bold">{user.referral_code}</td>
+                            <td className="px-4 py-4 font-mono font-bold text-slate-200">{user.invited_count} qeydiyyat</td>
+                            <td className="px-4 py-4 font-mono font-bold text-green-400">+{user.total_bonus_azn.toFixed(2)} AZN</td>
+                          </tr>
+                        ))}
+                        {referralUsers.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-8 text-center text-slate-500">İstifadəçi tapılmadı.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Independent Referral Chain Records Table */}
+                <div className="space-y-3 pt-4 border-t border-slate-800">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-sm font-black text-slate-300 uppercase tracking-wider">Müstəqil Referal Zəncir Cədvəli (Canlı Tarixçə)</h4>
+                    <span className="text-xs text-slate-500 font-mono">Cəmi: {recordsList.length} qeyd</span>
+                  </div>
+                  
+                  <div className="overflow-x-auto rounded-2xl border border-slate-800">
+                    <table className="w-full text-left text-sm text-slate-300">
+                      <thead className="bg-slate-950 text-xs uppercase font-black text-slate-500">
+                        <tr>
+                          <th className="px-4 py-3">Dəvət Edən (Referrer)</th>
+                          <th className="px-4 py-3">Dəvət Olunan (Referred)</th>
+                          <th className="px-4 py-3">Verilən Mükafat</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3 text-right">Tarix</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/50 bg-slate-900/50">
+                        {recordsList.map((rec) => (
+                          <tr key={rec.id} className="hover:bg-slate-800/20 transition-colors">
+                            <td className="px-4 py-3 font-bold text-white">{rec.referrer_name}</td>
+                            <td className="px-4 py-3">
+                              <span className="font-bold text-slate-200 block">{rec.referred_name}</span>
+                              <span className="text-xs text-slate-500 font-mono">{rec.referred_email}</span>
+                            </td>
+                            <td className="px-4 py-3 font-mono font-bold text-green-400">+{rec.reward_amount.toFixed(2)} AZN</td>
+                            <td className="px-4 py-3">
+                              <span className={`px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded border ${
+                                rec.status === 'Tamamlandı' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                              }`}>
+                                {rec.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-xs text-slate-500">
+                              {new Date(rec.created_at).toLocaleDateString('az-AZ')}
+                            </td>
+                          </tr>
+                        ))}
+                        {recordsList.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                              <p className="font-bold text-slate-400">Hələ heç bir referal əməliyyatı qeydə alınmayıb.</p>
+                              <p className="text-xs text-slate-600 mt-1">İstifadəçilər öz referal kodları ilə yeni müştərilər dəvət etdikdə bu zəncir cədvəlində avtomatik görünəcək.</p>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
               </div>
             )}
 

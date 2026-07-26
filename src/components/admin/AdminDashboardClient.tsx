@@ -39,84 +39,12 @@ import {
   Cell
 } from 'recharts';
 
-// Trend data for Recharts
-const revenueTrendData = [
-  { name: 'Yan', revenue: 12000, orders: 180 },
-  { name: 'Fev', revenue: 19000, orders: 250 },
-  { name: 'Mar', revenue: 15000, orders: 210 },
-  { name: 'Apr', revenue: 27000, orders: 380 },
-  { name: 'May', revenue: 34000, orders: 490 },
-  { name: 'İyn', revenue: 29000, orders: 410 },
-  { name: 'İyl', revenue: 42000, orders: 580 },
-  { name: 'Avg', revenue: 48000, orders: 620 },
-  { name: 'Sen', revenue: 51000, orders: 710 },
-  { name: 'Okt', revenue: 49000, orders: 680 },
-  { name: 'Noy', revenue: 58000, orders: 820 },
-  { name: 'Dek', revenue: 72450, orders: 940 }
-];
-
-// Top Products Data
-const topProducts = [
-  { id: 1, name: 'GAN 14 MagLev Flagship 3x3', sku: 'GAN-14-ML', sales: 412, revenue: '59,740 AZN', stock: 12 },
-  { id: 2, name: 'MoYu RS3M V5 Ball-Core', sku: 'MY-RS3M-V5', sales: 389, revenue: '11,670 AZN', stock: 24 },
-  { id: 3, name: 'QiYi Super Ivy Magnetic', sku: 'QY-IVY-M', sales: 254, revenue: '5,080 AZN', stock: 8 },
-  { id: 4, name: 'GAN Swift Lube 10ml', sku: 'GAN-LUB-SF', sales: 210, revenue: '2,520 AZN', stock: 85 }
-];
-
-// Top Categories Data
-const topCategories = [
-  { name: 'Magnetic 3x3 Cubes', share: '48%', orders: 1250, value: '75,000 AZN', color: '#f59e0b' },
-  { name: 'Professional Speedcubes', share: '24%', orders: 620, value: '38,000 AZN', color: '#3b82f6' },
-  { name: 'Lubricants & Accessories', share: '18%', orders: 480, value: '11,400 AZN', color: '#10b981' },
-  { name: 'Shape Mods & Megaminx', share: '10%', orders: 210, value: '6,200 AZN', color: '#8b5cf6' }
-];
-
-// Top Countries (Demographics) Data
-const topCountries = [
-  { country: 'Azərbaycan (Bakı)', share: '82%', users: '4,120', trend: 'up' },
-  { country: 'Azərbaycan (Sumqayıt)', share: '8%', users: '410', trend: 'up' },
-  { country: 'Azərbaycan (Gəncə)', share: '6%', users: '320', trend: 'stable' },
-  { country: 'Türkiyə', share: '4%', users: '200', trend: 'up' }
-];
-
 // Top Sources Data
 const topSources = [
   { source: 'Instagram / Sosial', share: '54%', traffic: '12,450', conversion: '4.8%' },
   { source: 'Birbaşa Giriş (Direct)', share: '22%', traffic: '5,100', conversion: '3.9%' },
   { source: 'Google Axtarış (SEO)', share: '18%', traffic: '4,200', conversion: '2.5%' },
   { source: 'Referral / Keçidlər', share: '6%', traffic: '1,400', conversion: '1.2%' }
-];
-
-// Abandoned Carts Data
-const abandonedCarts = [
-  { id: 'cart_91a', customer: 'Ayxan R.', email: 'ayxan@gmail.com', items: 3, value: '215.00 AZN', time: '14 dəq əvvəl' },
-  { id: 'cart_88b', customer: 'Nailə M.', email: 'naile.m@mail.ru', items: 1, value: '55.00 AZN', time: '1 saat əvvəl' },
-  { id: 'cart_52c', customer: 'Tural S.', email: 'tural_99@box.az', items: 2, value: '110.00 AZN', time: '3 saat əvvəl' }
-];
-
-// Active CRM Support Tickets
-const activeTickets = [
-  { id: 'tc_2910', customer: 'Mirsəlim S.', subject: 'GAN 14 fırlanma səsi haqqında', priority: 'High', status: 'Açıq', time: '10 dəq əvvəl' },
-  { id: 'tc_1824', customer: 'Elnur H.', subject: 'Kuryer gecikməsi sorğusu', priority: 'Medium', status: 'Gözləmədə', time: '45 dəq əvvəl' },
-  { id: 'tc_0945', customer: 'Leyla Ə.', subject: 'Hədiyyə paketi əlavə etmək olar?', priority: 'Low', status: 'Açıq', time: '2 saat əvvəl' }
-];
-
-// Pending Approvals (Reviews / Products / Sellers)
-const pendingApprovals = [
-  { id: 'app_1', type: 'Rəy (Review)', source: 'Orxan K.', desc: 'GAN 12 MagLev möhtəşəmdir! Çox sürətli çatdırıldı.', date: 'İndi' },
-  { id: 'app_2', type: 'Rəy (Review)', source: 'Səbinə R.', desc: 'Məhsul orijinaldır, qutusu zədəsiz gəldi.', date: '12 dəq əvvəl' },
-  { id: 'app_3', type: 'Geri Ödəniş (Refund)', source: '#ord_99a', desc: 'Səhv sifariş səbəbi ilə 55.00 AZN iadə təsdiqi.', date: '1 saat əvvəl' }
-];
-
-// Recent Orders
-
-
-// Recent Customers
-const recentCustomers = [
-  { name: 'Nihad Qasımov', email: 'nihad.q@gmail.com', phone: '+994 50 500 11 22', spent: '320.00 AZN', orders: 4, date: '10 dəq əvvəl' },
-  { name: 'Aydan Əlizadə', email: 'aydan.a@yahoo.com', phone: '+994 77 410 99 88', spent: '145.00 AZN', orders: 1, date: '1 saat əvvəl' },
-  { name: 'Murad Məmmədov', email: 'murad.m@code.edu.az', phone: '+994 55 999 88 77', spent: '680.00 AZN', orders: 8, date: '5 saat əvvəl' },
-  { name: 'Fərid Həsənov', email: 'ferid_hasan@mail.ru', phone: '+994 70 882 14 56', spent: '0.00 AZN', orders: 0, date: 'Yenicə qeydiyyat' }
 ];
 
 interface AdminDashboardProps {
@@ -127,6 +55,14 @@ interface AdminDashboardProps {
     openSupportTickets: number;
     trend7Days?: any[];
     trend30Days?: any[];
+    trendMonthly?: any[];
+    topProducts?: any[];
+    topCategories?: any[];
+    topCountries?: any[];
+    abandonedCarts?: any[];
+    activeTickets?: any[];
+    pendingApprovals?: any[];
+    recentCustomers?: any[];
   };
   recentOrders: any[];
 }
@@ -134,14 +70,17 @@ interface AdminDashboardProps {
 export default function AdminDashboardClient({ stats, recentOrders }: AdminDashboardProps) {
   const [mounted, setMounted] = React.useState(false);
   const [activeChart, setActiveChart] = React.useState<'revenue' | 'orders'>('revenue');
-  const [trendDays, setTrendDays] = React.useState<7 | 30>(30);
+  const [trendDays, setTrendDays] = React.useState<7 | 30 | 12>(12);
   
   const chartData = React.useMemo(() => {
     if (trendDays === 7) {
       return stats.trend7Days || [];
     }
+    if (trendDays === 12) {
+      return stats.trendMonthly || [];
+    }
     return stats.trend30Days || [];
-  }, [stats.trend7Days, stats.trend30Days, trendDays]);
+  }, [stats.trend7Days, stats.trend30Days, stats.trendMonthly, trendDays]);
   
   const aov = stats.totalOrders > 0 ? (stats.totalSales / stats.totalOrders) : 0;
 
@@ -275,7 +214,7 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {/* Period Selector (7 or 30 Days) */}
+              {/* Period Selector (7, 30 Days or 12 Months) */}
               <div className="flex items-center bg-slate-950 p-1 border border-slate-850 rounded-xl">
                 <button
                   onClick={() => setTrendDays(7)}
@@ -292,6 +231,14 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
                   }`}
                 >
                   30 Gün
+                </button>
+                <button
+                  onClick={() => setTrendDays(12)}
+                  className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                    trendDays === 12 ? 'bg-indigo-600 text-white shadow-soft-sm' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  12 Ay (Aylıq)
                 </button>
               </div>
 
@@ -436,18 +383,22 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
           </div>
 
           <div className="space-y-3.5">
-            {topProducts.map((p) => (
-              <div key={p.id} className="flex justify-between items-center text-xs">
-                <div className="space-y-0.5 max-w-[170px]">
-                  <span className="font-bold text-slate-200 block truncate">{p.name}</span>
-                  <span className="text-[10px] text-slate-500 font-mono">SKU: {p.sku}</span>
+            {(stats.topProducts && stats.topProducts.length > 0) ? (
+              stats.topProducts.map((p) => (
+                <div key={p.id} className="flex justify-between items-center text-xs">
+                  <div className="space-y-0.5 max-w-[170px]">
+                    <span className="font-bold text-slate-200 block truncate" title={p.name}>{p.name}</span>
+                    <span className="text-[10px] text-slate-500 font-mono">SKU: {p.sku}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-black text-white font-mono block">{p.sales} ədəd</span>
+                    <span className="text-[9px] text-amber-500 font-bold block">{p.revenue}</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-black text-white font-mono block">{p.sales} ədəd</span>
-                  <span className="text-[9px] text-amber-500 font-bold block">{p.revenue}</span>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-slate-400 text-xs py-4 text-center">Hələ heç bir satış qeydə alınmayıb</div>
+            )}
           </div>
         </div>
 
@@ -462,21 +413,25 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
           </div>
 
           <div className="space-y-4">
-            {topCategories.map((c) => (
-              <div key={c.name} className="space-y-1.5">
-                <div className="flex justify-between text-xs font-bold text-slate-300">
-                  <span>{c.name}</span>
-                  <span className="font-mono text-white">{c.share}</span>
+            {(stats.topCategories && stats.topCategories.length > 0) ? (
+              stats.topCategories.map((c) => (
+                <div key={c.name} className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-300">
+                    <span>{c.name}</span>
+                    <span className="font-mono text-white">{c.share}</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: c.share, backgroundColor: c.color }} />
+                  </div>
+                  <div className="flex justify-between text-[10px] text-slate-500">
+                    <span>{c.orders} sifariş</span>
+                    <span>{c.value}</span>
+                  </div>
                 </div>
-                <div className="w-full bg-slate-950 h-2 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: c.share, backgroundColor: c.color }} />
-                </div>
-                <div className="flex justify-between text-[10px] text-slate-500">
-                  <span>{c.orders} sifariş</span>
-                  <span>{c.value}</span>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-slate-400 text-xs py-4 text-center">Kateqoriya məlumatı tapılmadı</div>
+            )}
           </div>
         </div>
 
@@ -491,18 +446,22 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
           </div>
 
           <div className="space-y-4.5">
-            {topCountries.map((c) => (
-              <div key={c.country} className="flex justify-between items-center text-xs">
-                <div className="space-y-0.5">
-                  <span className="font-bold text-slate-200 block">{c.country}</span>
-                  <span className="text-[10px] text-slate-500">{c.users} aktiv qonaq</span>
+            {(stats.topCountries && stats.topCountries.length > 0) ? (
+              stats.topCountries.map((c) => (
+                <div key={c.country} className="flex justify-between items-center text-xs">
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-slate-200 block">{c.country}</span>
+                    <span className="text-[10px] text-slate-500">{c.users}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-black text-white font-mono block">{c.share}</span>
+                    <span className="text-[9px] text-green-400 font-bold block">Artan Artım</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-black text-white font-mono block">{c.share}</span>
-                  <span className="text-[9px] text-green-400 font-bold block">Artan Artım</span>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="text-slate-400 text-xs py-4 text-center">Məkan məlumatı tapılmadı</div>
+            )}
           </div>
         </div>
 
@@ -551,18 +510,22 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
             </div>
 
             <div className="divide-y divide-slate-800/40">
-              {abandonedCarts.map((cart) => (
-                <div key={cart.id} className="py-3 first:pt-0 last:pb-0 flex justify-between items-center text-xs">
-                  <div className="space-y-0.5">
-                    <span className="font-bold text-slate-200 block">{cart.customer}</span>
-                    <span className="text-[10px] text-slate-500 block truncate max-w-[130px]">{cart.email}</span>
+              {(stats.abandonedCarts && stats.abandonedCarts.length > 0) ? (
+                stats.abandonedCarts.map((cart) => (
+                  <div key={cart.id} className="py-3 first:pt-0 last:pb-0 flex justify-between items-center text-xs">
+                    <div className="space-y-0.5">
+                      <span className="font-bold text-slate-200 block">{cart.customer}</span>
+                      <span className="text-[10px] text-slate-500 block truncate max-w-[130px]">{cart.email}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-black text-white font-mono block">{cart.value}</span>
+                      <span className="text-[9px] text-slate-400 block">{cart.items} məhsul • {cart.time}</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-black text-white font-mono block">{cart.value}</span>
-                    <span className="text-[9px] text-slate-400 block">{cart.items} məhsul • {cart.time}</span>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-slate-400 text-xs py-4 text-center">Tərk edilmiş səbət tapılmadı</div>
+              )}
             </div>
           </div>
 
@@ -583,25 +546,29 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
             </div>
 
             <div className="space-y-3.5">
-              {pendingApprovals.map((app) => (
-                <div key={app.id} className="p-3.5 bg-slate-950/50 border border-slate-800/60 rounded-2xl space-y-1.5">
-                  <div className="flex justify-between items-center text-[10px]">
-                    <span className="font-black text-amber-500 uppercase tracking-wider bg-amber-500/5 border border-amber-500/10 px-1.5 py-0.2 rounded-lg">{app.type}</span>
-                    <span className="text-slate-500 font-mono">{app.date}</span>
+              {(stats.pendingApprovals && stats.pendingApprovals.length > 0) ? (
+                stats.pendingApprovals.map((app) => (
+                  <div key={app.id} className="p-3.5 bg-slate-950/50 border border-slate-800/60 rounded-2xl space-y-1.5">
+                    <div className="flex justify-between items-center text-[10px]">
+                      <span className="font-black text-amber-500 uppercase tracking-wider bg-amber-500/5 border border-amber-500/10 px-1.5 py-0.2 rounded-lg">{app.type}</span>
+                      <span className="text-slate-500 font-mono">{app.date}</span>
+                    </div>
+                    <span className="text-xs font-bold text-slate-200 block">Kimdən: {app.source}</span>
+                    <p className="text-[10px] text-slate-400 leading-relaxed italic">&quot;{app.desc}&quot;</p>
+                    
+                    <div className="flex gap-2 pt-1">
+                      <button className="flex-1 py-1 bg-green-500/10 hover:bg-green-500 text-green-400 hover:text-slate-950 border border-green-500/20 text-[9px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer">
+                        Təsdiqlə
+                      </button>
+                      <button className="flex-1 py-1 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 text-[9px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer">
+                        Rədd Et
+                      </button>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-slate-200 block">Kimdən: {app.source}</span>
-                  <p className="text-[10px] text-slate-400 leading-relaxed italic">&quot;{app.desc}&quot;</p>
-                  
-                  <div className="flex gap-2 pt-1">
-                    <button className="flex-1 py-1 bg-green-500/10 hover:bg-green-500 text-green-400 hover:text-slate-950 border border-green-500/20 text-[9px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer">
-                      Təsdiqlə
-                    </button>
-                    <button className="flex-1 py-1 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/20 text-[9px] font-black rounded-lg uppercase tracking-wider transition-all cursor-pointer">
-                      Rədd Et
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="text-slate-400 text-xs py-4 text-center">Gözləyən təsdiq sorğusu yoxdur</div>
+              )}
             </div>
           </div>
         </div>
@@ -684,19 +651,25 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/40">
-                {recentCustomers.map((cust, idx) => (
-                  <tr key={idx} className="hover:bg-slate-850/20 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="space-y-0.5">
-                        <span className="font-bold text-slate-200 block truncate max-w-[120px]">{cust.name}</span>
-                        <span className="text-[10px] text-slate-400 font-mono block truncate max-w-[120px]">{cust.email}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 font-mono font-black text-slate-300">{cust.orders} dəfə</td>
-                    <td className="px-5 py-4 font-mono font-bold text-amber-500">{cust.spent}</td>
-                    <td className="px-5 py-4 text-right text-slate-500 font-mono">{cust.date}</td>
+                {(stats.recentCustomers && stats.recentCustomers.length > 0) ? (
+                  stats.recentCustomers.map((cust, idx) => (
+                    <tr key={idx} className="hover:bg-slate-850/20 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="space-y-0.5">
+                          <span className="font-bold text-slate-200 block truncate max-w-[120px]">{cust.name}</span>
+                          <span className="text-[10px] text-slate-400 font-mono block truncate max-w-[120px]">{cust.email}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 font-mono font-black text-slate-300">{cust.orders} dəfə</td>
+                      <td className="px-5 py-4 font-mono font-bold text-amber-500">{cust.spent}</td>
+                      <td className="px-5 py-4 text-right text-slate-500 font-mono">{cust.date}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="text-slate-400 text-xs py-4 text-center">Qeydiyyatlı müştəri tapılmadı</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -711,27 +684,31 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
             <HelpCircle className="h-4.5 w-4.5 text-amber-500" />
             CRM Sistem Yardımları & Aktiv Biletlər (Active Tickets)
           </h4>
-          <span className="text-[10px] text-slate-400">Ümumi: {activeTickets.length} aktiv müraciət</span>
+          <span className="text-[10px] text-slate-400">Ümumi: {stats.activeTickets?.length || 0} aktiv müraciət</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {activeTickets.map((t) => (
-            <div key={t.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-left relative overflow-hidden group hover:border-amber-500/25 transition-all">
-              <div className="flex justify-between items-start">
-                <span className="text-[10px] font-black text-slate-500 font-mono">ID: #{t.id}</span>
-                <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase tracking-wider ${
-                  t.priority === 'High' ? 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse' : 'bg-slate-850 text-slate-400'
-                }`}>
-                  {t.priority}
-                </span>
+          {(stats.activeTickets && stats.activeTickets.length > 0) ? (
+            stats.activeTickets.map((t) => (
+              <div key={t.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-left relative overflow-hidden group hover:border-amber-500/25 transition-all">
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] font-black text-slate-500 font-mono">ID: #{t.id}</span>
+                  <span className={`px-2 py-0.5 text-[8px] font-black rounded uppercase tracking-wider ${
+                    t.priority === 'High' ? 'bg-red-500/10 text-red-400 border border-red-500/20 animate-pulse' : 'bg-slate-850 text-slate-400'
+                  }`}>
+                    {t.priority}
+                  </span>
+                </div>
+                <span className="text-xs font-black text-white block truncate">{t.subject}</span>
+                <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1.5 border-t border-slate-900">
+                  <span>Kimdən: <strong>{t.customer}</strong></span>
+                  <span className="font-mono text-slate-500">{t.time}</span>
+                </div>
               </div>
-              <span className="text-xs font-black text-white block truncate">{t.subject}</span>
-              <div className="flex justify-between items-center text-[10px] text-slate-400 pt-1.5 border-t border-slate-900">
-                <span>Kimdən: <strong>{t.customer}</strong></span>
-                <span className="font-mono text-slate-500">{t.time}</span>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <div className="col-span-3 text-slate-400 text-xs py-4 text-center">Aktiv dəstək bileti tapılmadı</div>
+          )}
         </div>
       </div>
 

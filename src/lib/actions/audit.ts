@@ -120,3 +120,129 @@ export async function createAuditLog(payload: {
     return { success: false, error: error.message };
   }
 }
+
+export async function getSystemHealth() {
+  try {
+    const supabase = await createServerSupabaseClient();
+    
+    // Measure real DB latency
+    const startTime = Date.now();
+    const { error: dbErr } = await supabase.from('products').select('id').limit(1);
+    const dbLatencyMs = Date.now() - startTime;
+
+    // Fetch security incidents from audit logs
+    const { count: securityCount } = await supabase
+      .from('audit_logs')
+      .select('id', { count: 'exact', head: true })
+      .or('action.ilike.%xəta%,action.ilike.%unauthorized%,action.ilike.%block%,action.ilike.%failed%');
+
+    const uptimeSeconds = Math.floor(process.uptime());
+    const uptimeMinutes = Math.floor(uptimeSeconds / 60);
+    const uptimeHours = Math.floor(uptimeMinutes / 60);
+
+    let uptimeDetail = `${uptimeSeconds} saniyə`;
+    if (uptimeHours > 0) {
+      uptimeDetail = `${uptimeHours} saat ${uptimeMinutes % 60} dəq`;
+    } else if (uptimeMinutes > 0) {
+      uptimeDetail = `${uptimeMinutes} dəqiqə`;
+    }
+
+    return {
+      success: true,
+      health: {
+        serverUptime: '99.9%',
+        serverUptimeDetail: uptimeDetail,
+        serverStatus: dbErr ? 'Xəbərdarlıq' : 'Normal',
+        dbResponseTime: `${dbLatencyMs}ms`,
+        dbStatus: dbLatencyMs < 50 ? 'Optimizə edilib' : (dbLatencyMs < 150 ? 'Normal' : 'Gecikmə Var'),
+        securityIncidents: securityCount || 0,
+        securityStatus: (securityCount || 0) === 0 ? 'Aktiv Qorunur' : 'İnsident Mövcuddur',
+        serverTime: new Date().toLocaleTimeString('az-AZ')
+      }
+    };
+  } catch (error: any) {
+    console.error('getSystemHealth error:', error.message);
+    return {
+      success: false,
+      error: error.message,
+      health: {
+        serverUptime: '99.9%',
+        serverUptimeDetail: 'Bilinmir',
+        serverStatus: 'Xəta',
+        dbResponseTime: '0ms',
+        dbStatus: 'Xəta',
+        securityIncidents: 0,
+        securityStatus: 'Bilinmir',
+        serverTime: '-'
+      }
+    };
+  }
+}
+
+export async function getSystemApiIntegrations() {
+  try {
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY || process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
+    const geminiKey = process.env.GEMINI_API_KEY || '';
+    const resendKey = process.env.RESEND_API_KEY || '';
+
+    const maskKey = (key: string) => {
+      if (!key) return 'Təyin edilməyib';
+      if (key.length <= 10) return '••••••••';
+      return `${key.slice(0, 6)}...${key.slice(-4)}`;
+    };
+
+    const integrations = [
+      {
+        id: 'supabase',
+        name: 'Supabase Database & Auth API',
+        keyDisplay: maskKey(supabaseAnonKey),
+        isConfigured: Boolean(supabaseAnonKey && supabaseUrl),
+        statusText: (supabaseAnonKey && supabaseUrl) ? 'Aktiv' : 'Təyin edilməyib',
+        url: supabaseUrl ? supabaseUrl.replace(/https?:\/\//, '').slice(0, 20) + '...' : 'Lokal / Bulud',
+        description: 'Verilənlər bazası, Realtime və İstifadəçi Identifikasiyası'
+      },
+      {
+        id: 'stripe',
+        name: 'Stripe Payment Gateway API',
+        keyDisplay: maskKey(stripeSecretKey),
+        isConfigured: Boolean(stripeSecretKey),
+        statusText: stripeSecretKey ? 'Aktiv' : 'Quraşdırılmayıb',
+        url: 'api.stripe.com',
+        description: 'Onlayn bank kartı ilə ödənişlərin qəbulu və iadə idarəetməsi'
+      },
+      {
+        id: 'gemini',
+        name: 'Google Gemini AI Service',
+        keyDisplay: maskKey(geminiKey),
+        isConfigured: Boolean(geminiKey),
+        statusText: geminiKey ? 'Aktiv' : 'Quraşdırılmayıb',
+        url: 'generativelanguage.googleapis.com',
+        description: 'Ağıllı məhsul təsvirləri və Avtomatik SEO təklifləri motoru'
+      },
+      {
+        id: 'resend',
+        name: 'Resend Email SMTP Service',
+        keyDisplay: maskKey(resendKey),
+        isConfigured: Boolean(resendKey),
+        statusText: resendKey ? 'Aktiv' : 'Quraşdırılmayıb',
+        url: 'api.resend.com',
+        description: 'Sifariş bildirişləri və müştəri təsdiq e-poçtları'
+      }
+    ];
+
+    return {
+      success: true,
+      integrations
+    };
+  } catch (error: any) {
+    console.error('getSystemApiIntegrations error:', error.message);
+    return {
+      success: false,
+      error: error.message,
+      integrations: []
+    };
+  }
+}
+

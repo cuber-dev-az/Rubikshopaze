@@ -2,10 +2,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { Building, MapPin, Truck, Shield, Bell, Plus, Edit3, Trash2, Loader2, X, Check } from 'lucide-react';
-import { getWarehouses, createWarehouse, updateWarehouse, deleteWarehouse, Warehouse } from '@/lib/actions/inventory';
+import { 
+  getWarehouses, 
+  createWarehouse, 
+  updateWarehouse, 
+  deleteWarehouse, 
+  getGlobalReorderPoint, 
+  updateGlobalReorderPoint, 
+  Warehouse 
+} from '@/lib/actions/inventory';
 
 export default function WarehouseManagerClient() {
   const [globalReorder, setGlobalReorder] = useState(10);
+  const [savingReorder, setSavingReorder] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -25,13 +35,35 @@ export default function WarehouseManagerClient() {
   const fetchData = async () => {
     setLoading(true);
     setError('');
-    const res = await getWarehouses();
-    if (res.success && res.warehouses) {
-      setWarehouses(res.warehouses);
+    const [resWh, resReorder] = await Promise.all([
+      getWarehouses(),
+      getGlobalReorderPoint()
+    ]);
+
+    if (resWh.success && resWh.warehouses) {
+      setWarehouses(resWh.warehouses);
     } else {
-      setError(res.error || 'Anbarları yükləmək mümkün olmadı.');
+      setError(resWh.error || 'Anbarları yükləmək mümkün olmadı.');
     }
+
+    if (resReorder.success && typeof resReorder.reorderPoint === 'number') {
+      setGlobalReorder(resReorder.reorderPoint);
+    }
+
     setLoading(false);
+  };
+
+  const handleSaveReorder = async () => {
+    setSavingReorder(true);
+    setSaveSuccessMsg('');
+    const res = await updateGlobalReorderPoint(globalReorder);
+    if (res.success) {
+      setSaveSuccessMsg('Qlobal Kritik Stok Həddi bazada uğurla saxlanıldı!');
+      setTimeout(() => setSaveSuccessMsg(''), 4000);
+    } else {
+      alert(res.error || 'Yadda saxlamaq mümkün olmadı.');
+    }
+    setSavingReorder(false);
   };
 
   const handleOpenCreate = () => {
@@ -89,28 +121,39 @@ export default function WarehouseManagerClient() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       
       {/* Global Config */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h3 className="text-lg font-black text-white flex items-center gap-2">
-            <Bell className="w-5 h-5 text-amber-500" /> Qlobal Stok Alarmları
-          </h3>
-          <p className="text-sm text-slate-400 mt-1">Sistem üzrə standart reorder point (minimum stok səviyyəsi) konfiqurasiyası.</p>
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-3">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h3 className="text-lg font-black text-white flex items-center gap-2">
+              <Bell className="w-5 h-5 text-amber-500" /> Qlobal Stok Alarmları
+            </h3>
+            <p className="text-sm text-slate-400 mt-1">Sistem üzrə standart reorder point (minimum stok səviyyəsi) konfiqurasiyası.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Global Reorder Point</label>
+            <input 
+              type="number" 
+              min="0"
+              value={globalReorder}
+              onChange={(e) => setGlobalReorder(Number(e.target.value))}
+              className="w-24 bg-slate-950 border border-slate-800 text-white font-mono rounded-xl px-4 py-2 focus:outline-none focus:border-amber-500 transition-colors text-center" 
+            />
+            <button 
+              onClick={handleSaveReorder}
+              disabled={savingReorder}
+              className="px-4 py-2 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-slate-950 font-black text-sm rounded-xl transition-colors flex items-center gap-2"
+            >
+              {savingReorder && <Loader2 className="w-4 h-4 animate-spin" />}
+              Yadda Saxla
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Global Reorder Point</label>
-          <input 
-            type="number" 
-            value={globalReorder}
-            onChange={(e) => setGlobalReorder(Number(e.target.value))}
-            className="w-24 bg-slate-950 border border-slate-800 text-white font-mono rounded-xl px-4 py-2 focus:outline-none focus:border-amber-500 transition-colors text-center" 
-          />
-          <button 
-            onClick={() => alert('Minimum stok limiti qlobal olaraq tətbiq edildi.')}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl transition-colors"
-          >
-            Yadda Saxla
-          </button>
-        </div>
+        {saveSuccessMsg && (
+          <div className="p-3 bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-bold rounded-xl flex items-center gap-2">
+            <Check className="w-4 h-4 text-green-400" />
+            {saveSuccessMsg}
+          </div>
+        )}
       </div>
 
       <div className="flex justify-between items-center">

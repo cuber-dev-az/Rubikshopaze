@@ -1153,7 +1153,7 @@ function ProductDetailClientContentInner({
                 />
               )}
 
-              {isOutOfStock && (
+              {isTrulyOutOfStock && (
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[1.5px] flex items-center justify-center">
                   <span className="text-white text-sm font-black tracking-widest px-4 py-2 bg-red-600 rounded-xl shadow-lg uppercase">
                     {dict?.product?.out_of_stock || 'Bitib'}
@@ -1507,47 +1507,61 @@ function ProductDetailClientContentInner({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleAddToCart(false)}
-                  disabled={isTrulyOutOfStock}
-                  className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    isTrulyOutOfStock
-                      ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
-                      : isPreorder
-                      ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 active:scale-98'
-                      : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white hover:shadow-soft-lg active:scale-98'
-                  }`}
-                >
-                  {isPreorder ? (
-                    <>
-                      <Clock className="h-5 w-5 shrink-0" />
-                      <span>Öncədən Sifariş Et {quantity > 1 ? `(${quantity})` : ''}</span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="h-5 w-5 shrink-0" />
-                      <span>Səbətə Əlavə Et {quantity > 1 ? `(${quantity})` : ''}</span>
-                    </>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <div className="flex-1 flex flex-col items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart(false)}
+                    disabled={isTrulyOutOfStock}
+                    className={`w-full py-3 px-3 sm:py-4 sm:px-4 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      isTrulyOutOfStock
+                        ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+                        : isPreorder
+                        ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 active:scale-98'
+                        : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white hover:shadow-soft-lg active:scale-98'
+                    }`}
+                  >
+                    {isPreorder ? (
+                      <>
+                        <Clock className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
+                        <span>Öncədən Sifariş Et {quantity > 1 ? `(${quantity})` : ''}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
+                        <span>Səbətə Əlavə Et {quantity > 1 ? `(${quantity})` : ''}</span>
+                      </>
+                    )}
+                  </button>
+                  {isPreorder && (
+                    <span className="text-[10px] sm:text-[11px] text-amber-800 dark:text-amber-200 font-medium mt-0.5 sm:mt-1 text-center">
+                      Səbətə əlavə edir, sonra da alış-verişə davam edə bilərsiniz
+                    </span>
                   )}
-                </button>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleAddToCart(true)}
-                  disabled={isTrulyOutOfStock}
-                  className={`flex-1 py-4 px-4 font-black rounded-2xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    isTrulyOutOfStock
-                      ? 'bg-muted/50 text-muted-foreground cursor-not-allowed border border-border'
-                      : isPreorder
-                      ? 'bg-slate-900 text-amber-400 border border-amber-500/30 hover:bg-slate-800 active:scale-98'
-                      : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark hover:shadow-soft-lg active:scale-98'
-                  }`}
-                >
-                  <Zap className="h-5 w-5 shrink-0 text-amber-400" />
-                  <span>{isPreorder ? 'İndi Ön Sifariş Et' : 'İndi Al (Sifariş et)'}</span>
-                </button>
+                <div className="flex-1 flex flex-col items-center">
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart(true)}
+                    disabled={isTrulyOutOfStock}
+                    className={`w-full py-3 px-3 sm:py-4 sm:px-4 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                      isTrulyOutOfStock
+                        ? 'bg-muted/50 text-muted-foreground cursor-not-allowed border border-border'
+                        : isPreorder
+                        ? 'bg-slate-900 text-amber-400 border border-amber-500/30 hover:bg-slate-800 active:scale-98'
+                        : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark hover:shadow-soft-lg active:scale-98'
+                    }`}
+                  >
+                    <Zap className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 text-amber-400" />
+                    <span>{isPreorder ? 'İndi Ön Sifariş Et' : 'İndi Al (Sifariş et)'}</span>
+                  </button>
+                  {isPreorder && (
+                    <span className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5 sm:mt-1 text-center">
+                      Dərhal rəsmiləşdirməyə keçir
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Auxiliary actions */}
@@ -2218,7 +2232,8 @@ function ProductDetailClientContentInner({
           {displayRelated.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {displayRelated.slice(0, 4).map((rel) => {
-                const outOfStock = rel.stock_quantity <= 0;
+                const isPreorderRel = rel.stock_quantity <= 0 && (rel.allow_preorder !== undefined && rel.allow_preorder !== null ? Boolean(rel.allow_preorder) : true);
+                const outOfStock = rel.stock_quantity <= 0 && !isPreorderRel;
                 return (
                   <div
                     key={rel.id}
@@ -2237,13 +2252,17 @@ function ProductDetailClientContentInner({
                       ) : (
                         <SpeedcubeImageFallback alt={rel.title} />
                       )}
-                      {outOfStock && (
+                      {outOfStock ? (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <span className="text-white text-[10px] font-black tracking-wider px-2 py-0.5 bg-red-600 rounded-md">
                             {dict?.product?.out_of_stock || 'Bitib'}
                           </span>
                         </div>
-                      )}
+                      ) : isPreorderRel ? (
+                        <div className="absolute top-2 left-2 z-10 bg-amber-500 text-slate-950 text-[9px] font-black uppercase px-2 py-0.5 rounded-md tracking-wider shadow-sm">
+                          Ön Sifariş
+                        </div>
+                      ) : null}
                     </Link>
 
                     <div className="p-4 flex flex-col flex-grow space-y-2">
@@ -2284,7 +2303,7 @@ function ProductDetailClientContentInner({
                         }`}
                       >
                         <ShoppingBag className="h-3.5 w-3.5" />
-                        <span>{outOfStock ? (dict?.product?.out_of_stock || 'Bitib') : (dict?.product?.add_to_cart || 'Səbətə At')}</span>
+                        <span>{outOfStock ? (dict?.product?.out_of_stock || 'Bitib') : isPreorderRel ? 'Ön Sifariş' : (dict?.product?.add_to_cart || 'Səbətə At')}</span>
                       </button>
                     </div>
                   </div>
@@ -2388,12 +2407,26 @@ function ProductDetailClientContentInner({
               <button
                 type="button"
                 onClick={() => handleAddToCart(false)}
-                disabled={isOutOfStock}
-                className="py-2.5 px-4 bg-rubik-brand text-white font-extrabold text-xs sm:text-sm rounded-xl hover:bg-rubik-brand-dark active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 shadow-soft-sm cursor-pointer shrink-0"
+                disabled={isTrulyOutOfStock}
+                className={`py-2.5 px-4 font-extrabold text-xs sm:text-sm rounded-xl active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 shadow-soft-sm cursor-pointer shrink-0 ${
+                  isPreorder
+                    ? 'bg-amber-500 text-slate-950 hover:bg-amber-400'
+                    : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark'
+                }`}
               >
-                <ShoppingBag className="h-4 w-4" />
-                <span className="hidden xs:inline">Səbətə Əlavə Et</span>
-                <span className="xs:hidden">Əlavə et</span>
+                {isPreorder ? (
+                  <>
+                    <Clock className="h-4 w-4" />
+                    <span className="hidden xs:inline">Öncədən Sifariş Et</span>
+                    <span className="xs:hidden">Ön Sifariş</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="h-4 w-4" />
+                    <span className="hidden xs:inline">Səbətə Əlavə Et</span>
+                    <span className="xs:hidden">Əlavə et</span>
+                  </>
+                )}
               </button>
             </div>
           </motion.div>

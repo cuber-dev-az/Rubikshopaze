@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getSettings, updateSettings } from '@/lib/actions/settings';
 
 export interface Warehouse {
   id: string;
@@ -314,6 +315,34 @@ export async function getRecentMovements() {
     }));
 
     return { success: true, movements: formatted };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 9. Get Global Reorder Point
+export async function getGlobalReorderPoint() {
+  try {
+    const res = await getSettings('inventory');
+    if (res.success && res.data && typeof res.data.global_reorder_point === 'number') {
+      return { success: true, reorderPoint: res.data.global_reorder_point };
+    }
+    return { success: true, reorderPoint: 10 };
+  } catch (error: any) {
+    return { success: false, reorderPoint: 10, error: error.message };
+  }
+}
+
+// 10. Update Global Reorder Point
+export async function updateGlobalReorderPoint(reorderPoint: number) {
+  try {
+    const current = await getSettings('inventory');
+    const existingData = (current.success && current.data) ? current.data : {};
+    const updatedData = { ...existingData, global_reorder_point: reorderPoint };
+    const res = await updateSettings('inventory', updatedData);
+    if (!res.success) throw new Error(res.error);
+    revalidatePath('/[locale]/admin/inventory', 'page');
+    return { success: true, reorderPoint };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

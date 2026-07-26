@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Activity, ShieldAlert, Key, Search, Server, Database, ShieldCheck, Loader2, RefreshCw } from 'lucide-react';
-import { getAuditLogs } from '@/lib/actions/audit';
+import { Activity, ShieldAlert, Key, Search, Server, Database, ShieldCheck, Loader2, RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { getAuditLogs, getSystemHealth, getSystemApiIntegrations } from '@/lib/actions/audit';
 
 export default function SystemClient() {
   const [activeTab, setActiveTab] = useState<'audit' | 'health' | 'api'>('audit');
   const [logs, setLogs] = useState<any[]>([]);
+  const [health, setHealth] = useState<any>(null);
+  const [integrations, setIntegrations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState('');
@@ -14,6 +16,10 @@ export default function SystemClient() {
   useEffect(() => {
     if (activeTab === 'audit') {
       fetchLogs();
+    } else if (activeTab === 'health') {
+      fetchHealth();
+    } else if (activeTab === 'api') {
+      fetchIntegrations();
     }
   }, [activeTab]);
 
@@ -25,6 +31,30 @@ export default function SystemClient() {
       setLogs(res.logs);
     } else {
       setError(res.error || 'Loqları yükləmək mümkün olmadı.');
+    }
+    setLoading(false);
+  };
+
+  const fetchHealth = async () => {
+    setLoading(true);
+    setError('');
+    const res = await getSystemHealth();
+    if (res.success && res.health) {
+      setHealth(res.health);
+    } else {
+      setError(res.error || 'Sistem metriklərini yükləmək mümkün olmadı.');
+    }
+    setLoading(false);
+  };
+
+  const fetchIntegrations = async () => {
+    setLoading(true);
+    setError('');
+    const res = await getSystemApiIntegrations();
+    if (res.success && res.integrations) {
+      setIntegrations(res.integrations);
+    } else {
+      setError(res.error || 'İnteqrasiyaları yükləmək mümkün olmadı.');
     }
     setLoading(false);
   };
@@ -165,79 +195,145 @@ export default function SystemClient() {
 
         {activeTab === 'health' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-black text-white uppercase tracking-wider">Sistem Metrikləri (Simulyasiya)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
-              <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
-                    <Server className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-black text-green-500 uppercase px-2 py-1 bg-green-500/10 rounded">Normal</span>
-                </div>
-                <div className="text-3xl font-black text-white font-mono mb-1">99.9%</div>
-                <div className="text-sm text-slate-500 font-bold">Server Uptime</div>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
-                    <Database className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-black text-blue-500 uppercase px-2 py-1 bg-blue-500/10 rounded">Optimizə edilib</span>
-                </div>
-                <div className="text-3xl font-black text-white font-mono mb-1">12ms</div>
-                <div className="text-sm text-slate-500 font-bold">Database Response</div>
-              </div>
-
-              <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-black text-amber-500 uppercase px-2 py-1 bg-amber-500/10 rounded">Aktiv</span>
-                </div>
-                <div className="text-3xl font-black text-white font-mono mb-1">0</div>
-                <div className="text-sm text-slate-500 font-bold">Təhlükəsizlik İnsidentləri</div>
-              </div>
-
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
+                Sistem Metrikləri və Status
+                <button 
+                  onClick={fetchHealth} 
+                  className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors border border-slate-700 flex items-center justify-center"
+                  title="Metrikləri Yenilə"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </h3>
+              {health?.serverTime && (
+                <span className="text-xs text-slate-500 font-mono">Son Yenilənmə: {health.serverTime}</span>
+              )}
             </div>
+
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                <p className="text-sm font-bold uppercase tracking-wider text-slate-500">Sistem metrikləri ölçülür...</p>
+              </div>
+            ) : health ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500">
+                      <Server className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-black text-green-500 uppercase px-2 py-1 bg-green-500/10 rounded border border-green-500/20">
+                      {health.serverStatus || 'Normal'}
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-white font-mono mb-1">{health.serverUptime || '99.9%'}</div>
+                  <div className="text-sm text-slate-400 font-bold">Server Uptime</div>
+                  <div className="text-xs text-slate-500 font-mono mt-1">İşləmə müddəti: {health.serverUptimeDetail || 'Aktiv'}</div>
+                </div>
+
+                <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500">
+                      <Database className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-black text-blue-500 uppercase px-2 py-1 bg-blue-500/10 rounded border border-blue-500/20">
+                      {health.dbStatus || 'Normal'}
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-white font-mono mb-1">{health.dbResponseTime || '0ms'}</div>
+                  <div className="text-sm text-slate-400 font-bold">Database Latency</div>
+                  <div className="text-xs text-slate-500 font-mono mt-1">Canlı Sorğu Cavab Müddəti</div>
+                </div>
+
+                <div className="bg-slate-950 border border-slate-800 p-6 rounded-2xl relative overflow-hidden group hover:border-slate-700 transition-colors">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <span className={`text-xs font-black uppercase px-2 py-1 rounded border ${
+                      health.securityIncidents === 0 
+                        ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' 
+                        : 'text-red-400 bg-red-500/10 border-red-500/20'
+                    }`}>
+                      {health.securityStatus || 'Aktiv Qorunur'}
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-white font-mono mb-1">{health.securityIncidents ?? 0}</div>
+                  <div className="text-sm text-slate-400 font-bold">Təhlükəsizlik İnsidentləri</div>
+                  <div className="text-xs text-slate-500 font-mono mt-1">Qeydə alınmış loq xətaları</div>
+                </div>
+
+              </div>
+            ) : null}
           </div>
         )}
 
         {activeTab === 'api' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-black text-white uppercase tracking-wider">Xarici İnteqrasiyalar & Açarlar</h3>
-            
-            <div className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center p-4 bg-slate-950 border border-slate-800 rounded-xl">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400">
-                    <Key className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-white text-sm">Supabase Anon Key</div>
-                    <div className="text-xs text-slate-500 mt-0.5 font-mono">eyJh... (Gizli)</div>
-                  </div>
-                </div>
-                <span className="px-3 py-1 bg-green-500/10 text-green-500 text-xs font-black uppercase tracking-wider rounded border border-green-500/20">Aktiv</span>
-              </div>
-
-              <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center p-4 bg-slate-950 border border-slate-800 rounded-xl opacity-60">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-400">
-                    <ShieldAlert className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-white text-sm flex items-center gap-2">Stripe API <span className="px-2 py-0.5 bg-slate-800 text-slate-400 text-[10px] rounded uppercase">Quraşdırılmayıb</span></div>
-                    <div className="text-xs text-slate-500 mt-0.5">Ödəniş qəbulu üçün tələb olunur.</div>
-                  </div>
-                </div>
-                <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-lg transition-colors">
-                  Quraşdır
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
+                Xarici İnteqrasiyalar & API Açarları
+                <button 
+                  onClick={fetchIntegrations} 
+                  className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-colors border border-slate-700 flex items-center justify-center"
+                  title="Yenilə"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
                 </button>
-              </div>
+              </h3>
             </div>
+            
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                <p className="text-sm font-bold uppercase tracking-wider text-slate-500">İnteqrasiya statusları yoxlanılır...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {integrations.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className={`flex flex-col md:flex-row gap-4 justify-between items-start md:items-center p-4 bg-slate-950 border rounded-xl transition-colors ${
+                      item.isConfigured ? 'border-slate-800 hover:border-slate-700' : 'border-slate-800/60 opacity-75'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        item.isConfigured ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        <Key className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-white text-sm flex items-center gap-2">
+                          {item.name}
+                          <span className="text-xs text-slate-500 font-mono">({item.url})</span>
+                        </div>
+                        <div className="text-xs text-slate-400 mt-0.5">{item.description}</div>
+                        <div className="text-[11px] text-slate-500 mt-1 font-mono">
+                          Açar: <span className="text-slate-300 font-bold">{item.keyDisplay}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 self-end md:self-auto">
+                      {item.isConfigured ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-wider rounded border border-green-500/20">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {item.statusText}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-800 text-slate-400 text-xs font-black uppercase tracking-wider rounded border border-slate-700">
+                          <XCircle className="w-3.5 h-3.5" />
+                          {item.statusText}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             
           </div>
         )}

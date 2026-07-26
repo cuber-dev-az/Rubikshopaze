@@ -813,7 +813,7 @@ export default function PreordersAdminClient({
                   {syncResult.hasWaitingPreorders ? (
                     <div className="p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl space-y-3">
                       <div className="text-amber-400 font-black text-sm leading-snug">
-                        ⚠️ "Anbara {syncQty} ədəd gəldi. Növbədəki {syncResult.suggestedAllocationCount} nəfər üçün ayrılsın?"
+                        ⚠️ &quot;Anbara {syncQty} ədəd gəldi. Növbədəki {syncResult.suggestedAllocationCount} nəfər üçün ayrılsın?&quot;
                       </div>
                       <p className="text-xs text-amber-200/90 leading-relaxed font-semibold">
                         Məhsul: <strong>{syncResult.productTitle}</strong>. Təsdiqlənmiş ödənişi olan növbədəki <strong>{syncResult.suggestedAllocationCount}</strong> ön sifarişçinin statusu <code>assigned</code> ediləcək və onlara avtomatik təsdiq e-poçtu göndəriləcəkdir.

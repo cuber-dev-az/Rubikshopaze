@@ -494,11 +494,31 @@ export async function getDashboardStats() {
   try {
     const supabase = await createServerSupabaseClient();
     
-    // Fetch total orders, products count, total sales, pending tickets
-    const [ordersRes, productsRes, ticketsRes] = await Promise.all([
-      supabase.from('orders').select('total, created_at'),
+    // Fetch total orders, products count, total sales, pending tickets, all products, order_items, categories, product_categories, carts, tickets list, reviews, and profiles
+    const [
+      ordersRes,
+      productsRes,
+      ticketsRes,
+      allProductsRes,
+      orderItemsRes,
+      categoriesRes,
+      productCategoriesRes,
+      cartsRes,
+      ticketsListRes,
+      reviewsRes,
+      profilesRes
+    ] = await Promise.all([
+      supabase.from('orders').select('id, total, created_at, shipping_address, customer_name, customer_email, user_id'),
       supabase.from('products').select('id', { count: 'exact', head: true }),
-      supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open')
+      supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+      supabase.from('products').select('id, title_az, sku, stock, price_azn, category_id').limit(20),
+      supabase.from('order_items').select('quantity, total_azn, variant_id, variants(id, product_id, sku, products(id, title_az, sku, stock, category_id))'),
+      supabase.from('categories').select('id, name_az, slug_az'),
+      supabase.from('product_categories').select('product_id, category_id'),
+      supabase.from('carts').select('id, user_id, items, created_at, updated_at').order('updated_at', { ascending: false }).limit(5),
+      supabase.from('tickets').select('id, subject, contact_email, status, priority, message, created_at, user_id').order('created_at', { ascending: false }).limit(5),
+      supabase.from('reviews').select('id, rating, comment, created_at, user_id, product_id, is_approved, products(title_az)').order('created_at', { ascending: false }).limit(5),
+      supabase.from('profiles').select('id, full_name, email, phone, created_at').order('created_at', { ascending: false }).limit(5)
     ]);
 
     if (ordersRes.error) throw ordersRes.error;
@@ -549,6 +569,255 @@ export async function getDashboardStats() {
     const trend7Days = getTrendForDays(7);
     const trend30Days = getTrendForDays(30);
 
+    // Calculate monthly trend for the 12 months of the current year (Jan-Dec)
+    const azMonths = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'İyn', 'İyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+    const currentYear = new Date().getFullYear();
+    const trendMonthly = azMonths.map((name, monthIndex) => {
+      const monthOrders = orders.filter(o => {
+        if (!o.created_at) return false;
+        const orderDate = new Date(o.created_at);
+        return orderDate.getFullYear() === currentYear && orderDate.getMonth() === monthIndex;
+      });
+      const revenue = monthOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+      return {
+        name,
+        revenue,
+        orders: monthOrders.length
+      };
+    });
+
+    // Calculate Real Top Products based on order_items sales
+    const productStatsMap = new Map<string, { id: string; name: string; sku: string; sales: number; revenue: number; stock: number }>();
+
+    if (orderItemsRes.data) {
+      for (const item of orderItemsRes.data) {
+        const prod = (item.variants as any)?.products || null;
+        const prodId = prod?.id || (item.variants as any)?.product_id;
+        if (!prodId) continue;
+
+        const existing = productStatsMap.get(prodId) || {
+          id: prodId,
+          name: prod?.title_az || 'Məhsul',
+          sku: prod?.sku || (item.variants as any)?.sku || 'SKU-N/A',
+          sales: 0,
+          revenue: 0,
+          stock: prod?.stock ?? 0
+        };
+
+        existing.sales += Number(item.quantity || 0);
+        existing.revenue += Number(item.total_azn || 0);
+        productStatsMap.set(prodId, existing);
+      }
+    }
+
+    if (allProductsRes.data) {
+      for (const p of allProductsRes.data) {
+        if (!productStatsMap.has(p.id)) {
+          productStatsMap.set(p.id, {
+            id: p.id,
+            name: p.title_az || 'Məhsul',
+            sku: p.sku || 'SKU-N/A',
+            sales: 0,
+            revenue: 0,
+            stock: p.stock ?? 0
+          });
+        }
+      }
+    }
+
+    const topProducts = Array.from(productStatsMap.values())
+      .sort((a, b) => b.sales - a.sales || b.revenue - a.revenue)
+      .slice(0, 5)
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        sku: p.sku,
+        sales: p.sales,
+        revenue: `${p.revenue.toFixed(2)} AZN`,
+        stock: p.stock
+      }));
+
+    // Calculate Real Top Categories
+    const categoriesList = categoriesRes.data || [];
+    const productCategoriesList = productCategoriesRes.data || [];
+
+    const productToCategoriesMap = new Map<string, string[]>();
+    for (const pc of productCategoriesList) {
+      const existing = productToCategoriesMap.get(pc.product_id) || [];
+      existing.push(pc.category_id);
+      productToCategoriesMap.set(pc.product_id, existing);
+    }
+
+    const categoryStatsMap = new Map<string, { id: string; name: string; ordersCount: number; totalRevenue: number }>();
+    for (const cat of categoriesList) {
+      categoryStatsMap.set(cat.id, {
+        id: cat.id,
+        name: cat.name_az || cat.slug_az || 'Kateqoriya',
+        ordersCount: 0,
+        totalRevenue: 0
+      });
+    }
+
+    if (orderItemsRes.data) {
+      for (const item of orderItemsRes.data) {
+        const prod = (item.variants as any)?.products || null;
+        const prodId = prod?.id || (item.variants as any)?.product_id;
+        const directCatId = prod?.category_id;
+        if (!prodId) continue;
+
+        const catIds = new Set<string>();
+        if (directCatId) catIds.add(directCatId);
+        const mappedCatIds = productToCategoriesMap.get(prodId);
+        if (mappedCatIds) {
+          mappedCatIds.forEach(id => catIds.add(id));
+        }
+
+        const qty = Number(item.quantity || 1);
+        const totalAzn = Number(item.total_azn || 0);
+
+        for (const catId of Array.from(catIds)) {
+          const catStat = categoryStatsMap.get(catId);
+          if (catStat) {
+            catStat.ordersCount += qty;
+            catStat.totalRevenue += totalAzn;
+          }
+        }
+      }
+    }
+
+    const totalCategoryRevenue = Array.from(categoryStatsMap.values()).reduce((sum, c) => sum + c.totalRevenue, 0);
+    const colorPalette = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
+
+    const topCategories = Array.from(categoryStatsMap.values())
+      .sort((a, b) => b.totalRevenue - a.totalRevenue || b.ordersCount - a.ordersCount)
+      .slice(0, 5)
+      .map((c, idx) => ({
+        name: c.name,
+        share: totalCategoryRevenue > 0 ? `${Math.round((c.totalRevenue / totalCategoryRevenue) * 100)}%` : '0%',
+        orders: c.ordersCount,
+        value: `${c.totalRevenue.toFixed(2)} AZN`,
+        color: colorPalette[idx % colorPalette.length]
+      }));
+
+    // Calculate Real Top Demographics / Regions
+    const regionCounts = new Map<string, number>();
+    const totalOrderCount = orders.length;
+
+    for (const order of orders) {
+      const addr = (order.shipping_address || '').toLowerCase();
+      let regionName = 'Azərbaycan (Bakı)';
+
+      if (addr.includes('sumqay') || addr.includes('sumqait')) {
+        regionName = 'Azərbaycan (Sumqayıt)';
+      } else if (addr.includes('gəncə') || addr.includes('gence')) {
+        regionName = 'Azərbaycan (Gəncə)';
+      } else if (addr.includes('xırdalan') || addr.includes('xirdalan')) {
+        regionName = 'Azərbaycan (Xırdalan)';
+      } else if (addr.includes('türkiyə') || addr.includes('turkey') || addr.includes('istanbul')) {
+        regionName = 'Türkiyə';
+      } else if (addr.includes('mingəçevir') || addr.includes('mingacevir')) {
+        regionName = 'Azərbaycan (Mingəçevir)';
+      } else if (addr.includes('naxçıvan') || addr.includes('nakhchivan')) {
+        regionName = 'Azərbaycan (Naxçıvan)';
+      } else if (addr.length > 0) {
+        regionName = 'Azərbaycan (Bakı)';
+      }
+
+      regionCounts.set(regionName, (regionCounts.get(regionName) || 0) + 1);
+    }
+
+    if (regionCounts.size === 0) {
+      regionCounts.set('Azərbaycan (Bakı)', 0);
+    }
+
+    const topCountries = Array.from(regionCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([country, count]) => ({
+        country,
+        share: totalOrderCount > 0 ? `${Math.round((count / totalOrderCount) * 100)}%` : '0%',
+        users: `${count} sifariş`,
+        trend: 'up' as const
+      }));
+
+    // Helper to format relative time ago in Azerbaijani
+    const getTimeAgo = (dateStr?: string | null) => {
+      if (!dateStr) return 'Yenicə';
+      const diffMs = Date.now() - new Date(dateStr).getTime();
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+      if (diffMins < 1) return 'Yenicə';
+      if (diffMins < 60) return `${diffMins} dəq əvvəl`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours} saat əvvəl`;
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} gün əvvəl`;
+    };
+
+    // Profiles map for joining names & emails
+    const profilesMap = new Map<string, any>();
+    if (profilesRes.data) {
+      for (const prof of profilesRes.data) {
+        profilesMap.set(prof.id, prof);
+      }
+    }
+
+    // Abandoned Carts
+    const abandonedCarts = (cartsRes.data || []).map(cart => {
+      const items = Array.isArray(cart.items) ? cart.items : [];
+      const itemCount = items.reduce((acc: number, it: any) => acc + Number(it.quantity || 1), 0) || (items.length || 1);
+      const totalVal = items.reduce((acc: number, it: any) => acc + (Number(it.price || it.price_azn || 0) * Number(it.quantity || 1)), 0);
+      const prof = cart.user_id ? profilesMap.get(cart.user_id) : null;
+
+      return {
+        id: cart.id ? String(cart.id).substring(0, 8) : 'cart-1',
+        customer: prof?.full_name || 'Qonaq İstifadəçi',
+        email: prof?.email || (cart.user_id ? `user_${String(cart.user_id).substring(0, 6)}@rubikshop.az` : 'qonaq@rubikshop.az'),
+        items: itemCount,
+        value: totalVal > 0 ? `${totalVal.toFixed(2)} AZN` : 'Hesablanır...',
+        time: getTimeAgo(cart.updated_at || cart.created_at)
+      };
+    });
+
+    // Active Tickets
+    const activeTickets = (ticketsListRes.data || []).map(t => {
+      const prof = t.user_id ? profilesMap.get(t.user_id) : null;
+      return {
+        id: t.id ? String(t.id).substring(0, 8) : 'TC-1',
+        customer: prof?.full_name || t.contact_email || 'İstifadəçi',
+        subject: t.subject || t.message || 'Müştəri Dəstək Müraciəti',
+        priority: t.priority === 'high' ? 'High' : (t.priority === 'low' ? 'Low' : 'Medium'),
+        status: t.status === 'open' ? 'Açıq' : (t.status === 'pending' ? 'Gözləmədə' : 'Bağlı'),
+        time: getTimeAgo(t.created_at)
+      };
+    });
+
+    // Pending Approvals
+    const pendingApprovals = (reviewsRes.data || []).map(r => {
+      const prof = r.user_id ? profilesMap.get(r.user_id) : null;
+      const prodTitle = (r.products as any)?.title_az || 'Məhsul';
+      return {
+        id: r.id ? String(r.id) : 'app-1',
+        type: r.is_approved ? 'Rəy (Review)' : 'Gözləyən Rəy',
+        source: prof?.full_name || 'Müştəri',
+        desc: `${prodTitle}: ${r.comment || 'Qiymətləndirmə: ' + r.rating + ' ulduz'}`,
+        date: getTimeAgo(r.created_at)
+      };
+    });
+
+    // Recent Customers
+    const recentCustomers = (profilesRes.data || []).map(p => {
+      const userOrders = orders.filter(o => o.user_id === p.id || (o.customer_email && p.email && o.customer_email.toLowerCase() === p.email.toLowerCase()));
+      const totalSpent = userOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+      return {
+        name: p.full_name || p.email?.split('@')[0] || 'Müştəri',
+        email: p.email || 'E-poçt təyin edilməyib',
+        phone: p.phone || '-',
+        spent: `${totalSpent.toFixed(2)} AZN`,
+        orders: userOrders.length,
+        date: getTimeAgo(p.created_at)
+      };
+    });
+
     return {
       success: true,
       stats: {
@@ -558,6 +827,14 @@ export async function getDashboardStats() {
         openSupportTickets,
         trend7Days,
         trend30Days,
+        trendMonthly,
+        topProducts,
+        topCategories,
+        topCountries,
+        abandonedCarts,
+        activeTickets,
+        pendingApprovals,
+        recentCustomers,
       }
     };
   } catch (error: any) {

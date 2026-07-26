@@ -192,27 +192,27 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group cursor-pointer block"
     >
       {isPreorder ? (
-        <div className="absolute top-3 left-3 z-20 bg-amber-500 text-slate-950 text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none flex items-center gap-1">
-          <Clock className="w-3.5 h-3.5" />
-          Öncədən Sifariş ({product.preorder_lead_time || '14-28 iş günü'})
+        <div className="absolute top-2.5 left-2.5 z-20 bg-amber-500 text-slate-950 text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 sm:py-1 rounded-lg tracking-wider shadow-md pointer-events-none flex items-center gap-1 max-w-[calc(100%-3.2rem)]">
+          <Clock className="w-3 h-3 shrink-0" />
+          <span className="truncate">Ön Sifariş ({product.preorder_lead_time || '14-28 iş günü'})</span>
         </div>
       ) : hasDiscount && discountPercent > 0 ? (
-        <div className="absolute top-3 left-3 z-20 bg-red-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl tracking-wider shadow-md pointer-events-none">
+        <div className="absolute top-2.5 left-2.5 z-20 bg-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 sm:py-1 rounded-lg tracking-wider shadow-md pointer-events-none">
           -{discountPercent}%
         </div>
       ) : null}
 
-      <div className="absolute top-3 right-3 z-20">
+      <div className="absolute top-2.5 right-2.5 z-20">
         <button
           onClick={handleWishlistToggle}
           disabled={isWishlistLoading}
-          className="p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand cursor-pointer relative z-20"
+          className="p-1.5 sm:p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand cursor-pointer relative z-20"
           aria-label={isWishlisted ? "Seçilmişlərdən sil" : "Seçilmişlərə əlavə et"}
         >
           {isWishlistLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
           ) : (
-            <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
+            <Heart className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isWishlisted ? 'fill-current' : ''}`} />
           )}
         </button>
       </div>
