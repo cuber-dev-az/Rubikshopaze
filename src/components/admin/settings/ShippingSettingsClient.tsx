@@ -26,6 +26,9 @@ export default function ShippingSettingsClient() {
   const [editPrice, setEditPrice] = useState('');
   const [editTime, setEditTime] = useState('');
 
+  const [nearMetroPrice, setNearMetroPrice] = useState('1.00');
+  const [farMetroPrice, setFarMetroPrice] = useState('2.00');
+
   useEffect(() => {
     const loadSettings = async () => {
       setLoading(true);
@@ -35,6 +38,8 @@ export default function ShippingSettingsClient() {
           if (res.data.taxIncluded !== undefined) setTaxIncluded(res.data.taxIncluded);
           if (res.data.taxRate !== undefined) setTaxRate(res.data.taxRate);
           if (res.data.deliveryMethods) setDeliveryMethods(res.data.deliveryMethods);
+          if (res.data.nearMetroPrice !== undefined) setNearMetroPrice(String(res.data.nearMetroPrice));
+          if (res.data.farMetroPrice !== undefined) setFarMetroPrice(String(res.data.farMetroPrice));
         }
       } catch (err: any) {
         console.error(err);
@@ -53,7 +58,9 @@ export default function ShippingSettingsClient() {
       const payload = {
         taxIncluded,
         taxRate,
-        deliveryMethods
+        deliveryMethods,
+        nearMetroPrice: parseFloat(nearMetroPrice) || 1.00,
+        farMetroPrice: parseFloat(farMetroPrice) || 2.00
       };
       const res = await updateSettings('shipping', payload);
       if (res.success) {
@@ -238,6 +245,60 @@ export default function ShippingSettingsClient() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Metro Station Tariffs */}
+          <div className="pt-6 border-t border-slate-800">
+            <div className="mb-6">
+              <h3 className="text-lg font-black text-white uppercase tracking-wider flex items-center gap-2">
+                🚇 Metro Stansiyaları - Tarif Qaydaları
+              </h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Metro stansiyalarına görə avtomatik hesablanan sabit çatdırılma tarifləri.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-black text-emerald-400 uppercase tracking-wider">Yaxın Stansiyalar Tarifi</span>
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded font-bold">10 Stansiya</span>
+                </div>
+                <div className="text-xs text-slate-400 leading-relaxed">
+                  Dərnəgül, Azadlıq prospekti, Nəsimi, Memar Əcəmi (Yaşıl), 20 Yanvar, İnşaatçılar, Elmlər Akademiyası, Nizami, 28 May, Gənclik
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Tarif Qiyməti (AZN)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={nearMetroPrice}
+                    onChange={(e) => setNearMetroPrice(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 text-white font-mono text-sm rounded-xl px-3.5 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-black text-blue-400 uppercase tracking-wider">Uzaq Stansiyalar Tarifi</span>
+                  <span className="text-[10px] bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded font-bold">17 Stansiya</span>
+                </div>
+                <div className="text-xs text-slate-400 leading-relaxed">
+                  Nərimanov, Bakmil, Ulduz, Koroğlu, Qara Qarayev, Neftçilər, Xalqlar Dostluğu, Əhmədli, Həzi Aslanov, Sahil, İçərişəhər, Cəfər Cabbarlı, Xətai, Xocəsən, Avtovağzal, Memar Əcəmi (Bənövşəyi), 8 Noyabr
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Tarif Qiyməti (AZN)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={farMetroPrice}
+                    onChange={(e) => setFarMetroPrice(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-800 text-white font-mono text-sm rounded-xl px-3.5 py-2 focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

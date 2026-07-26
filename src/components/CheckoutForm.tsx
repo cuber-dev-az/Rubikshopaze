@@ -39,6 +39,8 @@ interface CheckoutFormProps {
   locale: string;
 }
 
+import { NEAR_METRO_STATIONS, FAR_METRO_STATIONS, getMetroStationCategory, getMetroStationPrice } from '@/lib/constants/delivery';
+
 export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   const router = useRouter();
   const {
@@ -64,8 +66,11 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   const [phone, setPhone] = React.useState('');
   const [instagram, setInstagram] = React.useState('');
   const [address, setAddress] = React.useState('');
+  
+  // Delivery Location & Options
+  const [locationZone, setLocationZone] = React.useState<'baku' | 'region'>('baku');
+  const [bakuDeliveryMethod, setBakuDeliveryMethod] = React.useState<'metro' | 'baku_address'>('metro');
   const [selectedMetroStation, setSelectedMetroStation] = React.useState('');
-  const [deliveryMethod, setDeliveryMethod] = React.useState<'standard' | 'express' | 'metro'>('standard');
   const [paymentMethod, setPaymentMethod] = React.useState<'bank_transfer' | 'cod'>('bank_transfer');
   
   // Extra Checkout Perks
@@ -93,14 +98,12 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     if (state.discountType === 'fixed') return state.discountValue;
     return 0;
   });
-  const freeShippingThreshold = 100;
 
   // Load settings from Supabase
   const [waNumber, setWaNumber] = React.useState('994506684925');
-  const [shippingPrices, setShippingPrices] = React.useState({
-    standard: 3,
-    express: 7,
-    metro: 0
+  const [metroPrices, setMetroPrices] = React.useState({
+    nearPrice: 1.00,
+    farPrice: 2.00
   });
 
   React.useEffect(() => {
@@ -116,16 +119,12 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
           setWaNumber(raw ? raw : '994506684925');
         }
         if (shippingRes.success && shippingRes.data) {
-          const methods = shippingRes.data.deliveryMethods || [];
-          const standardMethod = methods.find((m: any) => m.name.toLowerCase().includes('kuryer') || m.name.toLowerCase().includes('ünvan') || m.id === 2);
-          const expressMethod = methods.find((m: any) => m.name.toLowerCase().includes('express') || m.name.toLowerCase().includes('sürətli') || m.id === 3);
-          const metroMethod = methods.find((m: any) => m.name.toLowerCase().includes('metro') || m.id === 1);
-
-          setShippingPrices({
-            standard: standardMethod ? Number(standardMethod.price) : 3,
-            express: expressMethod ? Number(expressMethod.price) : 7,
-            metro: metroMethod ? Number(metroMethod.price) : 0
-          });
+          if (shippingRes.data.nearMetroPrice !== undefined) {
+            setMetroPrices({
+              nearPrice: Number(shippingRes.data.nearMetroPrice) || 1.00,
+              farPrice: Number(shippingRes.data.farMetroPrice) || 2.00
+            });
+          }
         }
       } catch (err) {
         console.error('Error fetching checkout settings:', err);
@@ -135,11 +134,15 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   }, []);
 
   const shippingCost = React.useMemo(() => {
-    if (subtotal >= freeShippingThreshold || subtotal === 0) return 0;
-    if (deliveryMethod === 'express') return shippingPrices.express;
-    if (deliveryMethod === 'metro') return shippingPrices.metro;
-    return shippingPrices.standard;
-  }, [subtotal, deliveryMethod, shippingPrices]);
+    if (locationZone === 'baku') {
+      if (bakuDeliveryMethod === 'metro') {
+        if (!selectedMetroStation) return 0;
+        return getMetroStationPrice(selectedMetroStation, metroPrices);
+      }
+      return 0; // Ünvana çatdırılma - WhatsApp-da razılaşdırılır
+    }
+    return 0; // Bakı xarici (rayon) - WhatsApp-da razılaşdırılır
+  }, [locationZone, bakuDeliveryMethod, selectedMetroStation, metroPrices]);
 
   const [couponError, setCouponError] = React.useState('');
   const [isCouponLoading, setIsCouponLoading] = React.useState(false);
@@ -259,26 +262,42 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
       });
     }
 
-    if (deliveryMethod !== 'metro') {
+    if (locationZone === 'baku') {
+      if (bakuDeliveryMethod === 'metro') {
+        if (!selectedMetroStation) {
+          errors.metroStation = dict.checkout?.validation_metro_required || t({
+            az: 'Zəhmət olmasa çatdırılma üçün metro stansiyasını seçin.',
+            en: 'Please select a metro station for delivery.',
+            ru: 'Пожалуйста, выберите станцию метро для доставки.'
+          });
+        }
+      } else {
+        if (!address.trim()) {
+          errors.address = dict.checkout?.validation_address_required || t({
+            az: 'Çatdırılma ünvanı mütləqdir.',
+            en: 'Delivery address is required.',
+            ru: 'Адрес доставки обязателен.'
+          });
+        } else if (address.trim().length < 5) {
+          errors.address = t({
+            az: 'Zəhmət olmasa daha ətraflı ünvan daxil edin (ən azı 5 simvol).',
+            en: 'Please enter a more detailed address (at least 5 characters).',
+            ru: 'Пожалуйста, введите более подробный адрес (не менее 5 символов).'
+          });
+        }
+      }
+    } else {
       if (!address.trim()) {
-        errors.address = dict.checkout?.validation_address_required || t({
-          az: 'Çatdırılma ünvanı mütləqdir.',
-          en: 'Delivery address is required.',
-          ru: 'Адрес доставки обязателен.'
+        errors.address = t({
+          az: 'Çatdırılma ünvanı / Rayon adı mütləqdir.',
+          en: 'Delivery address / District name is required.',
+          ru: 'Адрес доставки / Название района обязательно.'
         });
       } else if (address.trim().length < 5) {
         errors.address = t({
-          az: 'Zəhmət olmasa daha ətraflı ünvan daxil edin (ən azı 5 simvol).',
-          en: 'Please enter a more detailed address (at least 5 characters).',
-          ru: 'Пожалуйста, введите более подробный адрес (не менее 5 символов).'
-        });
-      }
-    } else {
-      if (!selectedMetroStation) {
-        errors.metroStation = dict.checkout?.validation_metro_required || t({
-          az: 'Zəhmət olmasa çatdırılma üçün metro stansiyasını seçin.',
-          en: 'Please select a metro station for delivery.',
-          ru: 'Пожалуйста, выберите станцию метро для доставки.'
+          az: 'Zəhmət olmasa ünvan/rayon məlumatını daha ətraflı qeyd edin (ən azı 5 simvol).',
+          en: 'Please enter address/district details in more detail (at least 5 characters).',
+          ru: 'Пожалуйста, укажите адрес/район подробнее (не менее 5 символов).'
         });
       }
     }
@@ -333,18 +352,30 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         })
       };
 
-      const deliveryLabelMap = {
-        standard: t({ az: 'Kuryer Çatdırılması (1-2 Gün)', en: 'Courier Delivery (1-2 Days)', ru: 'Доставка Курьером (1-2 Дня)' }),
-        express: t({ az: 'Sürətli Çatdırılma (3 Saat)', en: 'Express Delivery (3 Hours)', ru: 'Экспресс Доставка (3 Часа)' }),
-        metro: t({ az: `Metro stansiyası: ${selectedMetroStation}`, en: `Metro station: ${selectedMetroStation}`, ru: `Станция метро: ${selectedMetroStation}` })
-      };
+      let deliveryMethodName = '';
+      let deliveryAddressText = '';
+
+      if (locationZone === 'baku') {
+        if (bakuDeliveryMethod === 'metro') {
+          const category = getMetroStationCategory(selectedMetroStation);
+          const tariffText = category === 'near' ? 'Yaxın stansiya (1 AZN)' : 'Uzaq stansiya (2 AZN)';
+          deliveryMethodName = `Metroya Çatdırılma (${selectedMetroStation})`;
+          deliveryAddressText = `${selectedMetroStation} Metrosu (${tariffText})`;
+        } else {
+          deliveryMethodName = 'Bakı Daxili Ünvana Çatdırılma';
+          deliveryAddressText = address.trim();
+        }
+      } else {
+        deliveryMethodName = 'Bakı Xarici (Poçt/Kargo ilə Çatdırılma)';
+        deliveryAddressText = address.trim();
+      }
 
       const payload = {
         customer_name: name.trim(),
         customer_phone: formattedPhone,
         customer_instagram: instagram.trim() || 'Yoxdur',
-        delivery_address: deliveryMethod === 'metro' ? `${selectedMetroStation} Metrosu` : address.trim(),
-        delivery_method: deliveryMethod === 'metro' ? 'Metro' : 'Courier',
+        delivery_address: deliveryAddressText,
+        delivery_method: deliveryMethodName,
         total_amount_azn: totalAmount,
         checkout_platform: 'whatsapp' as const,
         subtotal: subtotal,
@@ -371,11 +402,19 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         message += `📞 *${tMsg.phone}:* ${formattedPhone}\n`;
         message += `📸 *${tMsg.instagram}:* @${instagram.trim() || 'Yoxdur'}\n\n`;
         
-        message += `🚚 *${tMsg.delivery}:* ${deliveryLabelMap[deliveryMethod]}\n`;
-        if (deliveryMethod !== 'metro') {
+        message += `🏙️ *Şəhər / Məkan:* ${locationZone === 'baku' ? 'Bakı daxili' : 'Bakı xarici (rayon)'}\n`;
+        message += `🚚 *${tMsg.delivery}:* ${deliveryMethodName}\n`;
+
+        if (locationZone === 'baku' && bakuDeliveryMethod === 'metro') {
+          const category = getMetroStationCategory(selectedMetroStation);
+          message += `📍 *${tMsg.metro}:* ${selectedMetroStation} Metrosu (${category === 'near' ? 'Yaxın stansiya - 1 AZN' : 'Uzaq stansiya - 2 AZN'})\n`;
+          message += `💰 *Çatdırılma Haqqı:* ${shippingCost.toFixed(2)} AZN\n`;
+        } else if (locationZone === 'baku' && bakuDeliveryMethod === 'baku_address') {
           message += `📍 *${tMsg.address}:* ${address.trim()}\n`;
+          message += `ℹ️ *Çatdırılma haqqı:* WhatsApp-da sizinlə razılaşdırılacaq\n`;
         } else {
-          message += `📍 *${tMsg.metro}:* ${selectedMetroStation} ${t({ az: 'metrosu', en: 'metro', ru: 'метро' })}\n`;
+          message += `📍 *Ünvan / Rayon:* ${address.trim()}\n`;
+          message += `ℹ️ *Çatdırılma üsulu və haqqı:* WhatsApp-da sizinlə razılaşdırılacaq\n`;
         }
         
         if (isGift && giftNote) {
@@ -666,156 +705,263 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
               </h2>
             </div>
 
-            {/* Selector Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                type="button"
-                onClick={() => setDeliveryMethod('standard')}
-                className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer ${
-                  deliveryMethod === 'standard'
-                    ? 'border-rubik-brand bg-rubik-brand/5'
-                    : 'border-border hover:border-foreground/10'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="p-1.5 bg-muted rounded-lg text-foreground">
-                    <Truck className="h-4.5 w-4.5" />
+            {/* Step 1: City / Location Selection */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-muted-foreground uppercase tracking-wider block">
+                {t({ az: 'Çatdırılma Bölgəsi', en: 'Delivery Region', ru: 'Регион Доставки' })} *
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setLocationZone('baku')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer flex items-center justify-between ${
+                    locationZone === 'baku'
+                      ? 'border-rubik-brand bg-rubik-brand/5 ring-1 ring-rubik-brand'
+                      : 'border-border hover:border-foreground/10 bg-background'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-rubik-brand/10 text-rubik-brand rounded-xl">
+                      <Building className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-foreground">Bakı daxili</h4>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Metro və ya ünvana çatdırılma</p>
+                    </div>
                   </div>
-                  {deliveryMethod === 'standard' && (
-                    <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
-                      <Check className="h-3 w-3" />
+                  {locationZone === 'baku' && (
+                    <span className="text-rubik-brand bg-white p-1 rounded-full border border-rubik-brand">
+                      <Check className="h-3.5 w-3.5" />
                     </span>
                   )}
-                </div>
-                <h4 className="text-xs font-black text-foreground">{dict.checkout?.delivery_kuryer || "Kuryer (Standart)"}</h4>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
-                  {dict.checkout?.delivery_kuryer_desc || "Ünvana kuryer vasitəsilə 1-2 iş günü ərzində çatdırılır."}
-                </p>
-                <span className="block mt-3 text-xs font-mono font-bold text-foreground">
-                  {subtotal >= freeShippingThreshold ? (dict.checkout?.free_delivery || 'Pulsuz') : `${shippingPrices.standard.toFixed(2)} AZN`}
-                </span>
-              </button>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setDeliveryMethod('express')}
-                className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer ${
-                  deliveryMethod === 'express'
-                    ? 'border-rubik-brand bg-rubik-brand/5'
-                    : 'border-border hover:border-foreground/10'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="p-1.5 bg-muted rounded-lg text-foreground">
-                    <Truck className="h-4.5 w-4.5 text-yellow-500 animate-pulse" />
+                <button
+                  type="button"
+                  onClick={() => setLocationZone('region')}
+                  className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer flex items-center justify-between ${
+                    locationZone === 'region'
+                      ? 'border-rubik-brand bg-rubik-brand/5 ring-1 ring-rubik-brand'
+                      : 'border-border hover:border-foreground/10 bg-background'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 text-blue-600 rounded-xl">
+                      <Truck className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-foreground">Bakı xarici (rayon)</h4>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Poçt və ya Kargo vasitəsilə</p>
+                    </div>
                   </div>
-                  {deliveryMethod === 'express' && (
-                    <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
-                      <Check className="h-3 w-3" />
+                  {locationZone === 'region' && (
+                    <span className="text-rubik-brand bg-white p-1 rounded-full border border-rubik-brand">
+                      <Check className="h-3.5 w-3.5" />
                     </span>
                   )}
-                </div>
-                <h4 className="text-xs font-black text-foreground">{dict.checkout?.delivery_express || "Sürətli Çatdırılma"}</h4>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
-                  {dict.checkout?.delivery_express_desc || "Bakı daxili 3 saat ərzində çatdırılma."}
-                </p>
-                <span className="block mt-3 text-xs font-mono font-bold text-foreground">
-                  {subtotal >= freeShippingThreshold ? (dict.checkout?.free_delivery || 'Pulsuz') : `${shippingPrices.express.toFixed(2)} AZN`}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setDeliveryMethod('metro')}
-                className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer ${
-                  deliveryMethod === 'metro'
-                    ? 'border-rubik-brand bg-rubik-brand/5'
-                    : 'border-border hover:border-foreground/10'
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className="p-1.5 bg-muted rounded-lg text-foreground">
-                    <Building className="h-4.5 w-4.5" />
-                  </div>
-                  {deliveryMethod === 'metro' && (
-                    <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
-                      <Check className="h-3 w-3" />
-                    </span>
-                  )}
-                </div>
-                <h4 className="text-xs font-black text-foreground">{dict.checkout?.delivery_metro || "Metroya Çatdırılma"}</h4>
-                <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
-                  {dict.checkout?.delivery_metro_desc || "İstənilən metro stansiyasına çatdırılma."}
-                </p>
-                <span className="block mt-3 text-xs font-mono font-bold text-green-600 font-black">
-                  {shippingPrices.metro === 0 ? (dict.checkout?.free_delivery || 'Pulsuz') : `${shippingPrices.metro.toFixed(2)} AZN`}
-                </span>
-              </button>
+                </button>
+              </div>
             </div>
 
-            {/* Address textarea or Metro Dropdown */}
+            {/* Step 2: Delivery Method Selection */}
             <AnimatePresence mode="wait">
-              {deliveryMethod !== 'metro' ? (
+              {locationZone === 'baku' ? (
                 <motion.div
-                  key="address-input"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5 overflow-hidden"
+                  key="baku-options"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="space-y-5 pt-2 border-t border-border/60"
                 >
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {dict.checkout?.address || "Çatdırılma Ünvanı"} *
+                  <label className="text-[11px] font-black text-muted-foreground uppercase tracking-wider block">
+                    {t({ az: 'Çatdırılma Üsulu', en: 'Delivery Method', ru: 'Способ Доставки' })} *
                   </label>
-                  <textarea
-                    rows={3}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder={dict.checkout?.address_placeholder || "Məsələn: Nizami küçəsi 142, bina 3..."}
-                    className={`w-full bg-muted border rounded-xl px-3.5 py-2.5 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
-                      validationErrors.address ? 'border-red-500 bg-red-50/10' : 'border-border'
-                    }`}
-                  />
-                  {validationErrors.address && (
-                    <p className="text-[9px] text-red-600 font-bold flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> {validationErrors.address}
-                    </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Option 1: Metroya çatdırılma */}
+                    <button
+                      type="button"
+                      onClick={() => setBakuDeliveryMethod('metro')}
+                      className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer ${
+                        bakuDeliveryMethod === 'metro'
+                          ? 'border-rubik-brand bg-rubik-brand/5 ring-1 ring-rubik-brand'
+                          : 'border-border hover:border-foreground/10 bg-background'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="p-1.5 bg-emerald-500/10 text-emerald-600 rounded-lg">
+                          <Building className="h-4.5 w-4.5" />
+                        </div>
+                        {bakuDeliveryMethod === 'metro' && (
+                          <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-xs font-black text-foreground">1. Metroya çatdırılma</h4>
+                      <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
+                        Sabit tarif, stansiyadan asılı olaraq avtomatik hesablanır.
+                      </p>
+                      <div className="mt-3 flex items-center gap-1 text-[11px] font-bold text-emerald-600">
+                        <span>1.00 AZN - 2.00 AZN</span>
+                      </div>
+                    </button>
+
+                    {/* Option 2: Ünvana çatdırılma */}
+                    <button
+                      type="button"
+                      onClick={() => setBakuDeliveryMethod('baku_address')}
+                      className={`p-4 rounded-2xl border text-left transition-all relative cursor-pointer ${
+                        bakuDeliveryMethod === 'baku_address'
+                          ? 'border-rubik-brand bg-rubik-brand/5 ring-1 ring-rubik-brand'
+                          : 'border-border hover:border-foreground/10 bg-background'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="p-1.5 bg-blue-500/10 text-blue-600 rounded-lg">
+                          <MapPin className="h-4.5 w-4.5" />
+                        </div>
+                        {bakuDeliveryMethod === 'baku_address' && (
+                          <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-xs font-black text-foreground">2. Ünvana çatdırılma</h4>
+                      <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
+                        Kuryer vasitəsilə birbaşa ünvanınıza təhvil verilir.
+                      </p>
+                      <span className="block mt-3 text-[10px] text-amber-600 font-bold">
+                        Haqqı WhatsApp-da razılaşdırılacaq
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Input Fields according to Baku choice */}
+                  {bakuDeliveryMethod === 'metro' ? (
+                    <div className="space-y-2 pt-2">
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                        <Building className="h-3.5 w-3.5 text-emerald-600" /> Metro stansiyasını seçin *
+                      </label>
+                      <select
+                        value={selectedMetroStation}
+                        onChange={(e) => setSelectedMetroStation(e.target.value)}
+                        className={`w-full bg-background border rounded-xl px-3.5 py-3 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
+                          validationErrors.metroStation ? 'border-red-500 bg-red-50/10' : 'border-border'
+                        }`}
+                      >
+                        <option value="">-- Metro stansiyası seçin --</option>
+                        <optgroup label="🟢 Yaxın stansiyalar — 1.00 AZN">
+                          {NEAR_METRO_STATIONS.map((st) => (
+                            <option key={st} value={st}>
+                              {st} stansiyası (1.00 AZN)
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="🔵 Uzaq stansiyalar — 2.00 AZN">
+                          {FAR_METRO_STATIONS.map((st) => (
+                            <option key={st} value={st}>
+                              {st} stansiyası (2.00 AZN)
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+
+                      {selectedMetroStation && (
+                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-800 dark:text-emerald-300 text-xs flex justify-between items-center font-bold">
+                          <span>📍 Seçilmiş Stansiya: <strong>{selectedMetroStation} Metrosu</strong></span>
+                          <span className="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-mono">
+                            +{getMetroStationPrice(selectedMetroStation, metroPrices).toFixed(2)} AZN
+                          </span>
+                        </div>
+                      )}
+
+                      {validationErrors.metroStation && (
+                        <p className="text-[9px] text-red-600 font-bold flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" /> {validationErrors.metroStation}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2 pt-2">
+                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-blue-600" /> Çatdırılma Ünvanı *
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Məsələn: Nizami küçəsi 142, bina 3, mənzil 12..."
+                        className={`w-full bg-background border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
+                          validationErrors.address ? 'border-red-500 bg-red-50/10' : 'border-border'
+                        }`}
+                      />
+                      <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs rounded-xl flex items-center gap-2">
+                        <span>ℹ️</span>
+                        <p className="font-medium">
+                          <strong>Çatdırılma haqqı WhatsApp-da sizinlə razılaşdırılacaq</strong>
+                        </p>
+                      </div>
+                      {validationErrors.address && (
+                        <p className="text-[9px] text-red-600 font-bold flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" /> {validationErrors.address}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </motion.div>
               ) : (
                 <motion.div
-                  key="metro-select"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-1.5 overflow-hidden"
+                  key="region-options"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="space-y-5 pt-2 border-t border-border/60"
                 >
-                  <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <Building className="h-3 w-3" /> {dict.checkout?.select_metro || "Metro stansiyası seçin"} *
+                  <label className="text-[11px] font-black text-muted-foreground uppercase tracking-wider block">
+                    {t({ az: 'Çatdırılma Üsulu', en: 'Delivery Method', ru: 'Способ Доставки' })} *
                   </label>
-                  <select
-                    value={selectedMetroStation}
-                    onChange={(e) => setSelectedMetroStation(e.target.value)}
-                    className={`w-full bg-muted border rounded-xl px-3.5 py-2.5 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
-                      validationErrors.metroStation ? 'border-red-500 bg-red-50/10' : 'border-border'
-                    }`}
-                  >
-                    <option value="">-- {dict.checkout?.select_metro || "Metro stansiyası seçin"} --</option>
-                    {[
-                      'İçərişəhər', 'Sahil', '28 May', 'Gənclik', 'Nəriman Nərimanov', 'Ulduz', 'Koroğlu', 
-                      'Qara Qarayev', 'Nefçilər', 'Xalqlar Dostluğu', 'Əhmədli', 'Həzi Aslanov', 
-                      'Elmlər Akademiyası', 'İnşaatçılar', '20 Yanvar', 'Memar Əcəmi', 'Nəsimi', 
-                      'Azadlıq Prospekti', 'Dərnəgül', 'Xətai', 'Cəfər Cabbarlı', '8 Noyabr', 'Avtovağzal'
-                    ].map((station) => (
-                      <option key={station} value={station}>
-                        {station} {t({ az: 'stansiyası', en: 'station', ru: 'станция' })}
-                      </option>
-                    ))}
-                  </select>
-                  {validationErrors.metroStation && (
-                    <p className="text-[9px] text-red-600 font-bold flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> {validationErrors.metroStation}
+
+                  <div className="p-4 rounded-2xl border border-rubik-brand bg-rubik-brand/5 ring-1 ring-rubik-brand">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="p-1.5 bg-blue-500/10 text-blue-600 rounded-lg">
+                        <Truck className="h-4.5 w-4.5" />
+                      </div>
+                      <span className="text-rubik-brand bg-white p-0.5 rounded-full border border-rubik-brand">
+                        <Check className="h-3 w-3" />
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-black text-foreground">Poçt / Kargo ilə çatdırılma</h4>
+                    <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
+                      Azərpoçt və ya Kargo şirkəti vasitəsilə rayon mərkəzinizə göndərilir.
                     </p>
-                  )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5 text-blue-600" /> Rayon adı və Ünvanınız *
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Məsələn: Sumqayıt şəhəri, 4-cü məhəllə / Və ya Gəncə şəhəri, Atatürk pr. 15..."
+                      className={`w-full bg-background border rounded-xl px-3.5 py-2.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand ${
+                        validationErrors.address ? 'border-red-500 bg-red-50/10' : 'border-border'
+                      }`}
+                    />
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300 text-xs rounded-xl flex items-center gap-2">
+                      <span>ℹ️</span>
+                      <p className="font-medium">
+                        <strong>Çatdırılma üsulu və haqqı WhatsApp-da sizinlə razılaşdırılacaq</strong>
+                      </p>
+                    </div>
+                    {validationErrors.address && (
+                      <p className="text-[9px] text-red-600 font-bold flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" /> {validationErrors.address}
+                      </p>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
