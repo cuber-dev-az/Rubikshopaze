@@ -170,7 +170,9 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Dönüşüm Oranı</span>
-              <span className="text-2xl md:text-3xl font-black text-white font-mono block tracking-tight">3.42%</span>
+              <span className="text-2xl md:text-3xl font-black text-white font-mono block tracking-tight">
+                {stats?.conversionRate || '0.00%'}
+              </span>
             </div>
             <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
               <Percent className="h-5 w-5" />
@@ -178,9 +180,9 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
           </div>
           <div className="flex items-center gap-1.5 mt-5 text-[11px]">
             <span className="inline-flex items-center gap-0.5 font-black text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded">
-              <ArrowUpRight className="h-3 w-3" /> +2.4%
+              <ArrowUpRight className="h-3 w-3" /> Canlı
             </span>
-            <span className="text-slate-400">Axtarış optimallaşdırması</span>
+            <span className="text-slate-400">Sifariş / Trafik nisbəti</span>
           </div>
         </div>
 
@@ -190,17 +192,19 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
           <div className="flex justify-between items-start">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Ortalama Səbət (AOV)</span>
-              <span className="text-2xl md:text-3xl font-black text-white font-mono block tracking-tight">67.60 AZN</span>
+              <span className="text-2xl md:text-3xl font-black text-white font-mono block tracking-tight">
+                {stats?.aov || '0.00 AZN'}
+              </span>
             </div>
             <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
               <ArrowUpDown className="h-5 w-5" />
             </div>
           </div>
           <div className="flex items-center gap-1.5 mt-5 text-[11px]">
-            <span className="inline-flex items-center gap-0.5 font-black text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">
-              <ArrowDownRight className="h-3 w-3" /> -1.2%
+            <span className="inline-flex items-center gap-0.5 font-black text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+              <ArrowUpRight className="h-3 w-3" /> Canlı
             </span>
-            <span className="text-slate-400">Aksessuar satışları səbəbilə</span>
+            <span className="text-slate-400">Məbləğ / Sifariş sayı</span>
           </div>
         </div>
 

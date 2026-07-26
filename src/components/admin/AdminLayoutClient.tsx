@@ -296,7 +296,7 @@ export default function AdminLayoutClient({
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-3 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                      className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden"
                     >
                       <div className="px-4.5 py-3.5 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
                         <span className="text-xs font-black text-white uppercase tracking-wider">Bildirişlər ({unreadCount})</span>

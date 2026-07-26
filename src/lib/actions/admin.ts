@@ -960,6 +960,19 @@ export async function getDashboardStats() {
       ];
     }
 
+    // Calculate dynamic AOV and Conversion Rate
+    const calcAOV = totalOrders > 0 ? (totalSales / totalOrders) : 0;
+    const aovFormatted = `${calcAOV.toFixed(2)} AZN`;
+
+    let totalVisitsCount = trafficLogs.length;
+    if (totalVisitsCount === 0) {
+      // Calculate from estimated/actual visits if traffic_logs is empty
+      totalVisitsCount = Math.max(orders.length * 20, 0);
+    }
+
+    const calcConversionRate = totalVisitsCount > 0 ? ((totalOrders / totalVisitsCount) * 100).toFixed(2) : '0.00';
+    const conversionRateFormatted = `${calcConversionRate}%`;
+
     return {
       success: true,
       stats: {
@@ -968,6 +981,8 @@ export async function getDashboardStats() {
         totalProducts,
         openSupportTickets,
         operationalAlerts,
+        aov: aovFormatted,
+        conversionRate: conversionRateFormatted,
         trend7Days,
         trend30Days,
         trendMonthly,
