@@ -82,9 +82,11 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = React.useState(false);
   const [couponInput, setCouponInput] = React.useState('');
-  const { applyCoupon } = useCartStore();
+  const { applyCoupon, getOriginalTotalPrice, getProductSavings } = useCartStore();
 
   const subtotal = useCartStore((state) => state.items.reduce((total, item) => total + item.price_azn * item.quantity, 0));
+  const origSubtotal = useCartStore((state) => state.getOriginalTotalPrice());
+  const productSavings = useCartStore((state) => state.getProductSavings());
   const hasPreorderItems = React.useMemo(() => items.some(item => item.is_preorder), [items]);
 
   React.useEffect(() => {
@@ -1155,7 +1157,14 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                       <span className="text-muted-foreground font-mono">
                         {dict.cart.quantity || "Say"}: {item.quantity}
                       </span>
-                      <span className="font-bold text-foreground font-mono">{(item.price_azn * item.quantity).toFixed(2)} AZN</span>
+                      <div className="text-right">
+                        {item.original_price_azn && item.original_price_azn > item.price_azn && (
+                          <span className="block text-[9px] text-muted-foreground line-through font-mono">
+                            {(item.original_price_azn * item.quantity).toFixed(2)} AZN
+                          </span>
+                        )}
+                        <span className="font-bold text-foreground font-mono">{(item.price_azn * item.quantity).toFixed(2)} AZN</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1191,7 +1200,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
             
             {/* Coupon display */}
             {appliedCoupon && (
-              <div className="flex justify-between items-center bg-green-50 text-green-700 p-2.5 rounded-xl border border-green-100 text-xs font-bold">
+              <div className="flex justify-between items-center bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300 p-2.5 rounded-xl border border-green-200/50 text-xs font-bold">
                 <span className="flex items-center gap-1.5">
                   <Percent className="h-3.5 w-3.5" />
                   <span>{t({ az: `Kupon (${appliedCoupon})`, en: `Coupon (${appliedCoupon})`, ru: `Купон (${appliedCoupon})` })}</span>
@@ -1202,8 +1211,20 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
 
             {/* Financial breakdown */}
             <div className="pt-4 border-t border-border/80 space-y-2.5 text-xs">
+              {productSavings > 0 && (
+                <>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>İlkin məhsul dəyəri</span>
+                    <span className="line-through font-mono">{origSubtotal.toFixed(2)} AZN</span>
+                  </div>
+                  <div className="flex justify-between text-emerald-600 font-bold">
+                    <span>Məhsul endirimləri</span>
+                    <span className="font-mono">-{productSavings.toFixed(2)} AZN</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between text-muted-foreground">
-                <span>{dict.cart.total || "Cəm"}</span>
+                <span>{dict.cart.total || "Səbət cəmi"}</span>
                 <span className="font-bold text-foreground font-mono">{subtotal.toFixed(2)} AZN</span>
               </div>
               <div className="flex justify-between text-muted-foreground">
@@ -1214,8 +1235,14 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
               </div>
               {appliedCoupon && (
                 <div className="flex justify-between text-green-600 font-bold">
-                  <span>{dict.checkout?.discount || "Endirim"}</span>
+                  <span>{dict.checkout?.discount || "Kupon Endirimi"}</span>
                   <span className="font-mono">-{discountAmount.toFixed(2)} AZN</span>
+                </div>
+              )}
+              {(productSavings > 0 || discountAmount > 0) && (
+                <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-between text-[11px] font-black text-emerald-700 dark:text-emerald-300">
+                  <span>CƏMİ QƏNAƏTİNİZ:</span>
+                  <span className="font-mono">{(productSavings + discountAmount).toFixed(2)} AZN</span>
                 </div>
               )}
               <div className="flex justify-between text-sm font-black text-foreground pt-3.5 border-t border-border">

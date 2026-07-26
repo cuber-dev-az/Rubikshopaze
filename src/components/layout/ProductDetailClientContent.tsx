@@ -1062,6 +1062,7 @@ function ProductDetailClientContentInner({
       sku: currentSku,
       title: `${product.title}${titleAddition}`,
       price_azn: finalPrice,
+      original_price_azn: hasDiscount ? numOriginalPrice : undefined,
       quantity: currentQty,
       image_url: activeImage || product.image_url,
       is_preorder: isPreorder,
@@ -1253,27 +1254,36 @@ function ProductDetailClientContentInner({
             </div>
 
             {/* 4. Active Price Tag */}
-            <div className="bg-muted/40 border border-border/60 p-4 rounded-2xl flex items-baseline justify-between my-2">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-muted-foreground block uppercase tracking-wider">
-                  Qiymət
-                </span>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl font-black text-foreground">
-                    {formatPrice(finalPrice)}
+            <div className="bg-gradient-to-r from-muted/60 via-muted/40 to-muted/20 border border-border/80 p-4 rounded-2xl my-2 space-y-2">
+              <div className="flex items-baseline justify-between">
+                <div className="space-y-1">
+                  <span className="text-[11px] font-bold text-muted-foreground block uppercase tracking-wider">
+                    Xüsusi Qiymət
                   </span>
-                  {originalPrice && (
-                    <span className="text-lg text-muted-foreground line-through font-semibold">
-                      {formatPrice(Number(originalPrice) + addonCost)}
+                  <div className="flex items-baseline flex-wrap gap-3">
+                    <span className="text-3xl font-black text-foreground font-mono tracking-tight">
+                      {formatPrice(finalPrice)}
                     </span>
-                  )}
-                  {hasDiscount && (
-                    <span className="px-2.5 py-1 bg-red-600 text-white font-black text-xs rounded-full uppercase tracking-wider shadow-sm">
-                      -{discountPercent}% ENDİRİM
-                    </span>
-                  )}
+                    {hasDiscount && (
+                      <span className="text-lg text-muted-foreground/80 line-through font-semibold font-mono">
+                        {formatPrice(numOriginalPrice + addonCost)}
+                      </span>
+                    )}
+                    {hasDiscount && (
+                      <span className="px-3 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs rounded-full uppercase tracking-wider shadow-md animate-pulse">
+                        -{discountPercent}% ENDİRİM
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {hasDiscount && (
+                <div className="pt-2 border-t border-border/50 flex items-center gap-2 text-xs font-black text-emerald-600 dark:text-emerald-400">
+                  <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Bu məhsulu seçməklə <span className="font-mono text-sm underline">{formatPrice(numOriginalPrice - finalPrice)}</span> qənaət edirsiniz!</span>
+                </div>
+              )}
             </div>
 
             {/* 5. Vertical Variant Card Selector Component */}

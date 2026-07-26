@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import type { ApplicationDictionary } from '@/types/application.types';
-import { Heart, Loader2, Clock } from 'lucide-react';
+import { Heart, Loader2, Clock, Sparkles } from 'lucide-react';
 import { toggleWishlist } from '@/lib/actions/wishlist';
 import { sanitizeImageUrl } from '@/lib/image';
 
@@ -169,6 +169,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       id: product.id,
       title: product.name || product.title || 'Məhsul',
       price_azn: currentPrice,
+      original_price_azn: hasDiscount ? oldPrice : undefined,
       quantity: 1,
       image_url: product.image_url,
       is_preorder: isPreorder,
@@ -197,8 +198,9 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           <span className="truncate">Ön Sifariş ({product.preorder_lead_time || '14-28 iş günü'})</span>
         </div>
       ) : hasDiscount && discountPercent > 0 ? (
-        <div className="absolute top-2.5 left-2.5 z-20 bg-red-600 text-white text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 sm:py-1 rounded-lg tracking-wider shadow-md pointer-events-none">
-          -{discountPercent}%
+        <div className="absolute top-2.5 left-2.5 z-20 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wider shadow-md pointer-events-none flex items-center gap-1">
+          <Sparkles className="w-3 h-3 animate-bounce" />
+          <span>-{discountPercent}% ENDİRİM</span>
         </div>
       ) : null}
 
@@ -245,13 +247,20 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           {productTitle}
         </h2>
         
-        <div className="mt-2 flex items-baseline gap-1.5 flex-wrap">
-          <span className={`text-lg font-black font-mono ${hasDiscount ? 'text-red-600' : 'text-gray-900'}`}>
-            {currentPrice.toFixed(2)} AZN
-          </span>
+        <div className="mt-2 space-y-0.5">
+          <div className="flex items-baseline gap-1.5 flex-wrap">
+            <span className={`text-lg font-black font-mono ${hasDiscount ? 'text-red-600' : 'text-gray-900'}`}>
+              {currentPrice.toFixed(2)} AZN
+            </span>
+            {hasDiscount && (
+              <span className="line-through text-gray-400 text-xs font-mono ml-1">
+                {oldPrice.toFixed(2)} AZN
+              </span>
+            )}
+          </div>
           {hasDiscount && (
-            <span className="line-through text-gray-400 text-xs font-mono ml-2">
-              {oldPrice.toFixed(2)} AZN
+            <span className="block text-[10px] font-bold text-emerald-600 font-mono">
+              Qənaət: {(oldPrice - currentPrice).toFixed(2)} AZN
             </span>
           )}
         </div>

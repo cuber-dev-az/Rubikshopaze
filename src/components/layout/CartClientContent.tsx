@@ -66,6 +66,8 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
     applyCoupon,
     removeCoupon,
     getTotalPrice,
+    getOriginalTotalPrice,
+    getProductSavings,
     getDiscountAmount,
     getFinalPrice,
     addItem
@@ -82,6 +84,8 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
   }, []);
 
   const subtotal = isMounted ? getTotalPrice() : 0;
+  const origSubtotal = isMounted ? getOriginalTotalPrice() : 0;
+  const productSavings = isMounted ? getProductSavings() : 0;
   const discountAmount = isMounted ? getDiscountAmount() : 0;
   const freeShippingThreshold = 100; // Free above 100 AZN
 
@@ -92,7 +96,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
   }, [subtotal, shippingMethod]);
 
   const taxEstimate = React.useMemo(() => {
-    return 0; // Standard 0% direct e-comm tax in Azerbaijan currently, let's keep it clear
+    return 0; // Standard 0% direct e-comm tax in Azerbaijan currently
   }, []);
 
   const total = React.useMemo(() => {
@@ -323,10 +327,25 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                         </div>
 
                         {/* Total item cost */}
-                        <div className="text-right min-w-[4.5rem]">
+                        <div className="text-right min-w-[5.5rem] space-y-0.5">
+                          {item.original_price_azn && item.original_price_azn > item.price_azn && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span className="text-[10px] text-muted-foreground line-through font-mono">
+                                {(item.original_price_azn * item.quantity).toFixed(2)} AZN
+                              </span>
+                              <span className="text-[9px] bg-red-500/10 text-red-600 font-extrabold px-1.5 py-0.2 rounded">
+                                -{Math.round(((item.original_price_azn - item.price_azn) / item.original_price_azn) * 100)}%
+                              </span>
+                            </div>
+                          )}
                           <span className="block text-xs font-black text-foreground font-mono">
                             {(item.price_azn * item.quantity).toFixed(2)} AZN
                           </span>
+                          {item.original_price_azn && item.original_price_azn > item.price_azn && (
+                            <span className="block text-[9px] text-emerald-600 font-bold font-mono">
+                              Qənaət: {((item.original_price_azn - item.price_azn) * item.quantity).toFixed(2)} AZN
+                            </span>
+                          )}
                         </div>
 
                         {/* Action buttons */}
@@ -457,15 +476,37 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                   Sifariş Xülasəsi
                 </h3>
 
+                {productSavings > 0 && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300">
+                    <Sparkles className="h-4 w-4 text-emerald-600 shrink-0 animate-bounce" />
+                    <p className="text-xs font-bold leading-tight">
+                      🎉 Təbriklər! Siz bu sifarişdə məhsul endirimlərindən <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{productSavings.toFixed(2)} AZN</span> qənaət edirsiniz!
+                    </p>
+                  </div>
+                )}
+
                 {/* Pricing Breakdowns */}
                 <div className="space-y-3 text-xs">
+                  {productSavings > 0 && (
+                    <>
+                      <div className="flex justify-between items-center text-muted-foreground">
+                        <span>İlkin məhsul dəyəri</span>
+                        <span className="line-through font-mono">{origSubtotal.toFixed(2)} AZN</span>
+                      </div>
+                      <div className="flex justify-between items-center text-emerald-600 font-bold">
+                        <span>Məhsul endirimləri</span>
+                        <span className="font-mono">-{productSavings.toFixed(2)} AZN</span>
+                      </div>
+                    </>
+                  )}
+
                   <div className="flex justify-between items-center text-muted-foreground">
-                    <span>Məhsul cəmi (Subtotal)</span>
+                    <span>Səbət cəmi (Endirimli)</span>
                     <span className="font-semibold text-foreground font-mono">{subtotal.toFixed(2)} AZN</span>
                   </div>
 
                   {appliedCoupon && (
-                    <div className="flex justify-between items-center text-green-600 bg-green-50 p-2 rounded-lg">
+                    <div className="flex justify-between items-center text-green-600 bg-green-50 dark:bg-green-950/30 p-2 rounded-lg">
                       <div className="flex items-center gap-1.5 font-bold">
                         <Percent className="h-3.5 w-3.5" />
                         <span>Kupon ({appliedCoupon} -{discountValue}{discountType === 'percentage' ? '%' : ' AZN'})</span>
@@ -482,7 +523,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                     </div>
                   )}
 
-                  {/* Delivery type select */}
+                  {/* Delivery type info */}
                   <div className="space-y-2 pt-2 border-t border-border/60">
                     <span className="block font-bold text-foreground text-[10px] uppercase tracking-wider">Çatdırılma növü</span>
                     <div className="grid grid-cols-2 gap-2">
@@ -494,9 +535,9 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                             : 'border-border text-muted-foreground hover:border-foreground/10'
                         }`}
                       >
-                        <span className="block text-[11px] text-foreground">Kuryer (1-2 gün)</span>
-                        <span className="block text-[10px] font-mono mt-0.5 text-muted-foreground">
-                          {subtotal >= freeShippingThreshold ? 'Pulsuz' : '3.00 AZN'}
+                        <span className="block text-[11px] text-foreground">📍 Metro Stansiyası</span>
+                        <span className="block text-[10px] font-mono mt-0.5 text-emerald-600 font-bold">
+                          1.00 – 2.00 AZN
                         </span>
                       </button>
 
@@ -508,25 +549,23 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                             : 'border-border text-muted-foreground hover:border-foreground/10'
                         }`}
                       >
-                        <span className="block text-[11px] text-foreground">Express (3 saat)</span>
+                        <span className="block text-[11px] text-foreground">🚚 Ünvana / Rayona</span>
                         <span className="block text-[10px] font-mono mt-0.5 text-muted-foreground">
-                          {subtotal >= freeShippingThreshold ? 'Pulsuz' : '7.00 AZN'}
+                          Razılaşdırılır
                         </span>
                       </button>
                     </div>
+                    <p className="text-[10px] text-muted-foreground italic">
+                      * Dəqiq metro stansiyası və ya unvan seçimi rəsmiləşdirmə (Checkout) zamanı olunur.
+                    </p>
                   </div>
 
-                  <div className="flex justify-between items-center text-muted-foreground pt-1.5">
-                    <span>Çatdırılma xərci</span>
-                    <span className="font-semibold text-foreground font-mono">
-                      {shippingCost === 0 ? 'Pulsuz' : `${shippingCost.toFixed(2)} AZN`}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center text-muted-foreground">
-                    <span>ƏDV (Tax estimate 0%)</span>
-                    <span className="font-semibold text-foreground font-mono">0.00 AZN</span>
-                  </div>
+                  {(productSavings > 0 || discountAmount > 0) && (
+                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between text-xs font-black text-emerald-700 dark:text-emerald-300">
+                      <span>CƏMİ QƏNAƏTİNİZ:</span>
+                      <span className="font-mono text-sm">{(productSavings + discountAmount).toFixed(2)} AZN</span>
+                    </div>
+                  )}
 
                   {/* Final Total price */}
                   <div className="flex justify-between items-center text-sm font-black text-foreground pt-4 border-t border-border">

@@ -5,10 +5,13 @@ export interface CartItem {
   id: string;
   title: string;
   price_azn: number;
+  original_price_azn?: number;
   quantity: number;
   image_url: string;
   is_preorder?: boolean;
   preorder_lead_time?: string;
+  variant_id?: string | null;
+  sku?: string;
 }
 
 interface CartState {
@@ -27,6 +30,8 @@ interface CartState {
   applyCoupon: (code: string, type: 'percentage' | 'fixed', value: number) => void;
   removeCoupon: () => void;
   getTotalPrice: () => number;
+  getOriginalTotalPrice: () => number;
+  getProductSavings: () => number;
   getDiscountAmount: () => number;
   getFinalPrice: () => number;
   getTotalItems: () => number;
@@ -119,6 +124,21 @@ export const useCartStore = create<CartState>()(
       getTotalPrice: () => {
         const state = get();
         return state.items.reduce((total, item) => total + item.price_azn * item.quantity, 0);
+      },
+
+      getOriginalTotalPrice: () => {
+        const state = get();
+        return state.items.reduce((total, item) => {
+          const orig = item.original_price_azn && item.original_price_azn > item.price_azn ? item.original_price_azn : item.price_azn;
+          return total + orig * item.quantity;
+        }, 0);
+      },
+
+      getProductSavings: () => {
+        const state = get();
+        const origTotal = state.getOriginalTotalPrice();
+        const subtotal = state.getTotalPrice();
+        return Math.max(0, origTotal - subtotal);
       },
 
       getDiscountAmount: () => {

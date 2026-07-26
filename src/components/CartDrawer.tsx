@@ -22,7 +22,7 @@ interface CartDrawerProps {
 export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
   const [user, setUser] = React.useState<any>(null);
   const { openModal } = useAuthModalStore();
-  const { items, removeItem, updateQuantity, getTotalPrice } = useCartStore();
+  const { items, removeItem, updateQuantity, getTotalPrice, getProductSavings } = useCartStore();
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -190,9 +190,16 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                             </div>
                             
                             {/* Individual total */}
-                            <span className="text-xs font-black text-foreground font-mono">
-                              {(item.price_azn * item.quantity).toFixed(2)} AZN
-                            </span>
+                            <div className="text-right">
+                              {item.original_price_azn && item.original_price_azn > item.price_azn && (
+                                <span className="block text-[10px] text-muted-foreground line-through font-mono">
+                                  {(item.original_price_azn * item.quantity).toFixed(2)} AZN
+                                </span>
+                              )}
+                              <span className="text-xs font-black text-foreground font-mono">
+                                {(item.price_azn * item.quantity).toFixed(2)} AZN
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -208,6 +215,16 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                     <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 dark:text-amber-300 text-xs font-bold leading-relaxed flex items-start gap-2">
                       <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                       <span>Səbətdə ön sifariş məhsulu var. Çatdırılma müddəti: 14-28 iş günü (100% ön ödənişli).</span>
+                    </div>
+                  )}
+
+                  {isMounted && getProductSavings() > 0 && (
+                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Məhsul Endirim Qazancı:</span>
+                      </span>
+                      <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">-{getProductSavings().toFixed(2)} AZN</span>
                     </div>
                   )}
 
