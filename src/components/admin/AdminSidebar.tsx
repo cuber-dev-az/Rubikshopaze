@@ -130,8 +130,8 @@ export default function AdminSidebar({
             { label: 'Müştərilər', href: `/${locale}/admin/customers`, icon: Users },
             { label: 'İnventar', href: `/${locale}/admin/inventory`, icon: Boxes },
             { label: 'Anbarlar', href: `/${locale}/admin/warehouses`, icon: Warehouse },
-            { label: 'Çatdırılma', href: `/${locale}/admin/shipping`, icon: Truck },
-            { label: 'Ödənişlər', href: `/${locale}/admin/payments`, icon: CreditCard },
+            { label: 'Çatdırılma', href: `/${locale}/admin/settings/shipping`, icon: Truck },
+            { label: 'Ödənişlər', href: `/${locale}/admin/settings/payments`, icon: CreditCard },
             { label: 'Qaytarılmalar (RMA)', href: `/${locale}/admin/returns`, icon: RefreshCw }
           ]
         }
