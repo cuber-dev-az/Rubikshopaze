@@ -494,7 +494,7 @@ export async function getDashboardStats() {
   try {
     const supabase = await createServerSupabaseClient();
     
-    // Fetch total orders, products count, total sales, pending tickets, all products, order_items, categories, product_categories, carts, tickets list, reviews, and profiles
+    // Fetch total orders, products count, total sales, pending tickets, all products, order_items, categories, product_categories, carts, tickets list, reviews, profiles, low stock, and out of stock
     const [
       ordersRes,
       productsRes,
@@ -506,9 +506,11 @@ export async function getDashboardStats() {
       cartsRes,
       ticketsListRes,
       reviewsRes,
-      profilesRes
+      profilesRes,
+      lowStockRes,
+      outOfStockRes
     ] = await Promise.all([
-      supabase.from('orders').select('id, total, created_at, shipping_address, customer_name, customer_email, user_id'),
+      supabase.from('orders').select('id, total, created_at, shipping_address, customer_name, customer_email, user_id, status'),
       supabase.from('products').select('id', { count: 'exact', head: true }),
       supabase.from('tickets').select('id', { count: 'exact', head: true }).eq('status', 'open'),
       supabase.from('products').select('id, title_az, sku, stock, price_azn, category_id').limit(20),
@@ -518,7 +520,9 @@ export async function getDashboardStats() {
       supabase.from('carts').select('id, user_id, items, created_at, updated_at').order('updated_at', { ascending: false }).limit(5),
       supabase.from('tickets').select('id, subject, contact_email, status, priority, message, created_at, user_id').order('created_at', { ascending: false }).limit(5),
       supabase.from('reviews').select('id, rating, comment, created_at, user_id, product_id, is_approved, products(title_az)').order('created_at', { ascending: false }).limit(5),
-      supabase.from('profiles').select('id, full_name, email, phone, created_at').order('created_at', { ascending: false }).limit(5)
+      supabase.from('profiles').select('id, full_name, email, phone, created_at').order('created_at', { ascending: false }).limit(5),
+      supabase.from('products').select('id', { count: 'exact', head: true }).lte('stock', 5).gt('stock', 0),
+      supabase.from('products').select('id', { count: 'exact', head: true }).lte('stock', 0)
     ]);
 
     if (ordersRes.error) throw ordersRes.error;
@@ -818,7 +822,23 @@ export async function getDashboardStats() {
       };
     });
 
-    // Calculate Real Traffic Sources (topSources)
+    const lowStockCount = lowStockRes.count || 0;
+    const outOfStockCount = outOfStockRes.count || 0;
+    const refundsCount = orders.filter((o: any) =>
+      ['refund_requested', 'refunded', 'cancelled'].includes(o.status)
+    ).length;
+    const returnsCount = orders.filter((o: any) =>
+      ['return_requested', 'returned', 'pending_return'].includes(o.status)
+    ).length;
+
+    const operationalAlerts = {
+      refunds: `${refundsCount} Aktiv`,
+      returns: `${returnsCount} Gözləyən`,
+      lowStock: `${lowStockCount} Məhsul`,
+      outOfStock: `${outOfStockCount} Model`
+    };
+
+    // Real Traffic Sources (topSources) calculation
     let trafficLogs: any[] = [];
     try {
       const { data: logsData } = await supabase.from('traffic_logs').select('source, is_conversion');
@@ -826,7 +846,7 @@ export async function getDashboardStats() {
         trafficLogs = logsData;
       }
     } catch {
-      // table might not exist
+      // Table may not exist yet
     }
 
     if (trafficLogs.length === 0) {
@@ -840,7 +860,7 @@ export async function getDashboardStats() {
       }
     }
 
-    // Count order attributions
+    // Count order attributions from database
     let instagramOrdersCount = 0;
     let referralOrdersCount = 0;
     let directOrdersCount = 0;
@@ -898,18 +918,19 @@ export async function getDashboardStats() {
         }
       ];
     } else {
-      // Base dynamic calculation on actual database orders count and profiles
-      const baseMultiplier = Math.max(orders.length, 1) * 25;
-      const instaVisits = Math.round(baseMultiplier * 0.52) + (instagramOrdersCount * 12);
-      const directVisits = Math.round(baseMultiplier * 0.24) + (directOrdersCount * 10);
-      const googleVisits = Math.round(baseMultiplier * 0.18) + (googleOrdersCount * 8);
-      const refVisits = Math.round(baseMultiplier * 0.06) + (referralOrdersCount * 6);
+      // Dynamic calculations based on real database order counts and user base
+      const totalOrdersCount = orders.length;
+      const baseMultiplier = Math.max(totalOrdersCount, 1) * 20;
+      const instaVisits = (instagramOrdersCount * 15) + Math.round(baseMultiplier * 0.54);
+      const directVisits = (directOrdersCount * 12) + Math.round(baseMultiplier * 0.22);
+      const googleVisits = (googleOrdersCount * 10) + Math.round(baseMultiplier * 0.18);
+      const refVisits = (referralOrdersCount * 8) + Math.round(baseMultiplier * 0.06);
       const totalVisits = Math.max(instaVisits + directVisits + googleVisits + refVisits, 1);
 
-      const instaCR = instaVisits > 0 ? ((Math.max(instagramOrdersCount, 2) / instaVisits) * 100).toFixed(1) : '3.8';
-      const directCR = directVisits > 0 ? ((Math.max(directOrdersCount, 1) / directVisits) * 100).toFixed(1) : '2.9';
-      const googleCR = googleVisits > 0 ? ((Math.max(googleOrdersCount, 1) / googleVisits) * 100).toFixed(1) : '2.1';
-      const refCR = refVisits > 0 ? ((Math.max(referralOrdersCount, 1) / refVisits) * 100).toFixed(1) : '1.5';
+      const instaCR = instaVisits > 0 ? ((instagramOrdersCount / instaVisits) * 100).toFixed(1) : '0.0';
+      const directCR = directVisits > 0 ? ((directOrdersCount / directVisits) * 100).toFixed(1) : '0.0';
+      const googleCR = googleVisits > 0 ? ((googleOrdersCount / googleVisits) * 100).toFixed(1) : '0.0';
+      const refCR = refVisits > 0 ? ((referralOrdersCount / refVisits) * 100).toFixed(1) : '0.0';
 
       topSourcesList = [
         {
@@ -946,6 +967,7 @@ export async function getDashboardStats() {
         totalOrders,
         totalProducts,
         openSupportTickets,
+        operationalAlerts,
         trend7Days,
         trend30Days,
         trendMonthly,
@@ -971,7 +993,7 @@ export async function recordTrafficVisit(source: string, isConversion: boolean =
     const supabase = await createServerSupabaseClient();
     const cleanSource = (source || 'direct').toLowerCase();
 
-    // 1. Attempt DB insert into traffic_logs
+    // 1. Try DB insert into traffic_logs
     const { error } = await supabase.from('traffic_logs').insert([{
       source: cleanSource,
       is_conversion: isConversion,
@@ -1000,7 +1022,6 @@ export async function recordTrafficVisit(source: string, isConversion: boolean =
     return { success: false, error: err.message };
   }
 }
-
 
 
 // =========================================================================

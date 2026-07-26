@@ -73,11 +73,46 @@ export default function AdminLayoutClient({
           }));
           setNotifications(mapped);
         } else {
-          // Default fallbacks if no table rows exist
-          setNotifications([
-            { id: 1, title: 'Yeni Sifariş daxil oldu', desc: 'Sifariş #ord_91a4b8c2 təsdiq gözləyir.', time: '3 dəq əvvəl', unread: true },
-            { id: 2, title: 'Anbar Xəbərdarlığı', desc: 'GAN 14 MagLev stok miqdarı 3 ədədə düşdü.', time: '1 saat əvvəl', unread: true }
+          // Dynamic live fallback from actual orders and low stock items
+          const [recentOrdersRes, lowStockRes] = await Promise.all([
+            supabase.from('orders').select('id, total, status, created_at').order('created_at', { ascending: false }).limit(4),
+            supabase.from('products').select('id, title_az, stock').lte('stock', 5).order('stock', { ascending: true }).limit(4)
           ]);
+
+          const liveItems: any[] = [];
+
+          if (recentOrdersRes.data && recentOrdersRes.data.length > 0) {
+            recentOrdersRes.data.forEach((ord: any) => {
+              const orderShort = ord.id ? String(ord.id).substring(0, 8) : 'ord';
+              liveItems.push({
+                id: `ord-${ord.id}`,
+                title: 'Yeni Sifariş daxil oldu',
+                desc: `Sifariş #${orderShort} (${ord.total || 0} AZN). Status: ${ord.status || 'Gözləyir'}`,
+                time: new Date(ord.created_at).toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit' }),
+                unread: ord.status === 'pending' || ord.status === 'processing'
+              });
+            });
+          }
+
+          if (lowStockRes.data && lowStockRes.data.length > 0) {
+            lowStockRes.data.forEach((prod: any) => {
+              liveItems.push({
+                id: `stock-${prod.id}`,
+                title: 'Anbar Xəbərdarlığı',
+                desc: `${prod.title_az || 'Məhsul'} stok miqdarı ${prod.stock ?? 0} ədədə düşdü.`,
+                time: 'Azalan Stok',
+                unread: true
+              });
+            });
+          }
+
+          if (liveItems.length > 0) {
+            setNotifications(liveItems.slice(0, 8));
+          } else {
+            setNotifications([
+              { id: 'sys-1', title: 'Sistem Statusu', desc: 'Bütün anbarlar və kuryerlər optimal işləyir.', time: 'Canlı', unread: false }
+            ]);
+          }
         }
       } catch (err) {
         console.error('Error in fetchNotifications:', err);

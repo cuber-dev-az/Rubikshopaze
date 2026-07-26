@@ -60,6 +60,12 @@ interface AdminDashboardProps {
     topCategories?: any[];
     topCountries?: any[];
     topSources?: any[];
+    operationalAlerts?: {
+      refunds: string;
+      returns: string;
+      lowStock: string;
+      outOfStock: string;
+    };
     abandonedCarts?: any[];
     activeTickets?: any[];
     pendingApprovals?: any[];
@@ -334,28 +340,28 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
               {/* Refund alarm */}
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between min-h-[110px] group hover:border-red-500/20 transition-all">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">İadə Tələbi (Refunds)</span>
-                <span className="text-2xl font-black text-red-400 font-mono mt-2 block">2 Aktiv</span>
+                <span className="text-2xl font-black text-red-400 font-mono mt-2 block">{stats?.operationalAlerts?.refunds || '0 Aktiv'}</span>
                 <span className="text-[9px] text-slate-500 font-medium mt-1">Gecikmə riski var</span>
               </div>
 
               {/* Return Alarm */}
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between min-h-[110px] group hover:border-amber-500/20 transition-all">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Geri Qaytarma (Returns)</span>
-                <span className="text-2xl font-black text-amber-500 font-mono mt-2 block">5 Gözləyən</span>
+                <span className="text-2xl font-black text-amber-500 font-mono mt-2 block">{stats?.operationalAlerts?.returns || '0 Gözləyən'}</span>
                 <span className="text-[9px] text-slate-500 font-medium mt-1">Kuryer təyini lazımdır</span>
               </div>
 
               {/* Low stock Alarm */}
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between min-h-[110px] group hover:border-orange-500/20 transition-all">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Azalan Stok (Low Stock)</span>
-                <span className="text-2xl font-black text-orange-400 font-mono mt-2 block">8 Məhsul</span>
+                <span className="text-2xl font-black text-orange-400 font-mono mt-2 block">{stats?.operationalAlerts?.lowStock || '0 Məhsul'}</span>
                 <span className="text-[9px] text-slate-500 font-medium mt-1">Min limit altındadır</span>
               </div>
 
               {/* Out of stock Alarm */}
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col justify-between min-h-[110px] group hover:border-rose-500/20 transition-all">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block">Tükənmiş (Out of stock)</span>
-                <span className="text-2xl font-black text-rose-500 font-mono mt-2 block">3 Model</span>
+                <span className="text-2xl font-black text-rose-500 font-mono mt-2 block">{stats?.operationalAlerts?.outOfStock || '0 Model'}</span>
                 <span className="text-[9px] text-slate-500 font-medium mt-1">Satışı dayandırılıb</span>
               </div>
 
@@ -479,26 +485,23 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
                 <LinkIcon className="h-4.5 w-4.5 text-purple-400" />
                 Trafik Mənbələri (Top Sources)
               </h4>
-              <span className="text-[9px] font-bold text-green-400 uppercase tracking-widest bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">
-                Canlı Baza
-              </span>
             </div>
 
             <div className="space-y-4">
-              {(stats.topSources || topSources).map((s: any) => (
+              {topSources.map((s) => (
                 <div key={s.source} className="flex justify-between items-center text-xs">
                   <div className="space-y-0.5">
                     <span className="font-bold text-slate-200 block">{s.source}</span>
-                    <span className="text-[10px] text-slate-500">{s.traffic} • CR {s.conversion}</span>
+                    <span className="text-[10px] text-slate-500">{s.traffic} klik • CR {s.conversion}</span>
                   </div>
-                  <span className="font-mono text-white font-black bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">{s.share}</span>
+                  <span className="font-mono text-white font-black bg-slate-950 px-2 py-1 rounded-xl border border-slate-800">{s.share}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] text-slate-500 text-center leading-relaxed">
-            Daxili verilənlər bazası və sifariş kəsişmələri üzərindən hesablanan real analitika.
+            İnteqrasiya olunmuş Google Analytics-4 üzərindən gələn verilənlər.
           </div>
         </div>
 

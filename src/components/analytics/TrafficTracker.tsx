@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { recordTrafficVisit } from '@/lib/actions/admin';
 
 export default function TrafficTracker() {
   useEffect(() => {
@@ -30,6 +31,8 @@ export default function TrafficTracker() {
 
       sessionStorage.setItem('rubik_traffic_tracked', 'true');
       sessionStorage.setItem('rubik_traffic_source', source);
+
+      recordTrafficVisit(source, false);
     } catch {
       // Ignore client analytics errors
     }
