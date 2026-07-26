@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { AuthModal } from '@/components/auth/AuthModal';
+import TrafficTracker from '@/components/analytics/TrafficTracker';
 import type { ApplicationDictionary } from '@/types/application.types';
 
 interface StorefrontLayoutProps {
@@ -38,6 +39,7 @@ export function StorefrontLayout({ children, dict, locale }: StorefrontLayoutPro
 
   return (
     <div className="flex flex-col min-h-screen pb-[96px] md:pb-0">
+      <TrafficTracker />
       <Header dict={dict} locale={locale} />
       <main id="main-content" className="flex-grow">{children}</main>
       <Footer dict={dict} locale={locale} />

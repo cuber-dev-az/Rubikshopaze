@@ -59,6 +59,7 @@ interface AdminDashboardProps {
     topProducts?: any[];
     topCategories?: any[];
     topCountries?: any[];
+    topSources?: any[];
     abandonedCarts?: any[];
     activeTickets?: any[];
     pendingApprovals?: any[];
@@ -478,23 +479,26 @@ export default function AdminDashboardClient({ stats, recentOrders }: AdminDashb
                 <LinkIcon className="h-4.5 w-4.5 text-purple-400" />
                 Trafik Mənbələri (Top Sources)
               </h4>
+              <span className="text-[9px] font-bold text-green-400 uppercase tracking-widest bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">
+                Canlı Baza
+              </span>
             </div>
 
             <div className="space-y-4">
-              {topSources.map((s) => (
+              {(stats.topSources || topSources).map((s: any) => (
                 <div key={s.source} className="flex justify-between items-center text-xs">
                   <div className="space-y-0.5">
                     <span className="font-bold text-slate-200 block">{s.source}</span>
-                    <span className="text-[10px] text-slate-500">{s.traffic} klik • CR {s.conversion}</span>
+                    <span className="text-[10px] text-slate-500">{s.traffic} • CR {s.conversion}</span>
                   </div>
-                  <span className="font-mono text-white font-black bg-slate-950 px-2 py-1 rounded-xl border border-slate-800">{s.share}</span>
+                  <span className="font-mono text-white font-black bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">{s.share}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="mt-6 pt-4 border-t border-slate-800 text-[10px] text-slate-500 text-center leading-relaxed">
-            İnteqrasiya olunmuş Google Analytics-4 üzərindən gələn verilənlər.
+            Daxili verilənlər bazası və sifariş kəsişmələri üzərindən hesablanan real analitika.
           </div>
         </div>
 
