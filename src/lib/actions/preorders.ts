@@ -64,7 +64,7 @@ export interface SupplierReportItem {
 
 /**
  * Generate a collision-resistant unique pre-order code
- * Format: RC-YYYY-XXXX (e.g., RC-2026-A8K9)
+ * Format: RCYYYYXXXX (e.g., RC2026A8K9)
  */
 
 function generatePreorderCode(): string {
@@ -74,7 +74,7 @@ function generatePreorderCode(): string {
   for (let i = 0; i < 4; i++) {
     randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return `RC-${year}-${randomPart}`;
+  return `RC${year}${randomPart}`;
 }
 
 /**
@@ -597,6 +597,7 @@ export async function trackOrderOrPreorderAction(code: string, contact: string) 
     const supabase = createAdminSupabaseClient();
 
     const cleanCode = code.trim();
+    const codeNoHyphen = cleanCode.replace(/-/g, '');
     const cleanContact = contact.trim();
 
     if (!cleanCode || !cleanContact) {
@@ -620,7 +621,7 @@ export async function trackOrderOrPreorderAction(code: string, contact: string) 
     const { data: preorderList } = await supabase
       .from('preorders')
       .select('*, product:products(id, title_az, title_en, title_ru, image_url, price_azn, preorder_lead_time)')
-      .or(`preorder_code.ilike.%${cleanCode}%,id.eq.${cleanCode.length === 36 ? cleanCode : '00000000-0000-0000-0000-000000000000'}`);
+      .or(`preorder_code.ilike.%${cleanCode}%,preorder_code.ilike.%${codeNoHyphen}%,id.eq.${cleanCode.length === 36 ? cleanCode : '00000000-0000-0000-0000-000000000000'}`);
 
     if (preorderList && preorderList.length > 0) {
       // Filter by phone or email

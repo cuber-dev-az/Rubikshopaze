@@ -96,7 +96,7 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
             Sifarişinizi Və Ya Ön Sifarişinizi Yoxlayın
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Hesab açmadan (Guest kimi) Sifariş Kodu (məs: RC-2026-A8K9) və Telefon nömrəniz (və ya Email) ilə anlıq növbə sırasını və çatdırılma statusunu öyrənin.
+            Hesab açmadan (Guest kimi) Sifariş Kodu (məs: RC2026A8K9) və Telefon nömrəniz (və ya Email) ilə anlıq növbə sırasını və çatdırılma statusunu öyrənin.
           </p>
         </div>
 
@@ -114,7 +114,7 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  placeholder="Məsələn: RC-2026-A8K9 və ya 8-xanalı kod"
+                  placeholder="Məsələn: RC2026A8K9 və ya 8-xanalı kod"
                   className="w-full bg-muted border border-border rounded-2xl px-4 py-3 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-rubik-brand/50 transition-all uppercase"
                   required
                 />

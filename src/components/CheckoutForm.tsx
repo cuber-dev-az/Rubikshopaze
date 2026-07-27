@@ -450,7 +450,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
 
       if (response.success && response.orderId) {
         const rawCode = String(response.orderId).substring(0, 6).toUpperCase();
-        const preorderCode = `RC-2026-${rawCode}`;
+        const preorderCode = `RC2026${rawCode}`;
         
         let message = `🔴 *RUBIKSHOP.AZ - ${tMsg.title} (${preorderCode})* 🔴\n\n`;
         message += `🎫 *Sifariş / Ön Sifariş Kodu:* ${preorderCode}\n`;
