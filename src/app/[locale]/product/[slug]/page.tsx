@@ -422,12 +422,16 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
   const relatedList = dbRelatedItems.map(p => {
     const relBrand = p.brands?.name || p.brand_name || p.brand || '';
     const cleanRelBrand = (relBrand && relBrand.toUpperCase() !== 'OTHER') ? relBrand : '';
+    const rawCompare = p.compare_at_price_azn ?? p.compare_at_price ?? p.original_price_azn ?? p.original_price ?? p.discount_price ?? p.old_price ?? p.old_price_azn;
     return {
       id: p.id,
       title: (p[`title_${locale}`] || p[`name_${locale}`] || p.title_az || p.name_az || p.title || p.name || '') as string,
       price_azn: Number(p.price ?? p.price_azn ?? 0),
+      old_price: rawCompare !== undefined && rawCompare !== null ? Number(rawCompare) : undefined,
+      discount_percent: p.discount_percent ? Number(p.discount_percent) : undefined,
       image_url: sanitizeImageUrl(p.image_url, p.id),
       stock_quantity: Number(p.stock_quantity || 0),
+      allow_preorder: p.allow_preorder,
       category_slug: p.categories?.slug || p.category_slug || p.category || '',
       brand: cleanRelBrand
     };

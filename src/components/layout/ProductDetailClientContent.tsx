@@ -33,7 +33,8 @@ import {
   Filter,
   ThumbsUp,
   ThumbsDown,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
@@ -295,8 +296,11 @@ interface ProductDetailClientContentProps {
     id: string;
     title: string;
     price_azn: number;
+    old_price?: number;
+    discount_percent?: number;
     image_url: string;
     stock_quantity: number;
+    allow_preorder?: boolean;
     brand: string;
   }>;
   locale: string;
@@ -531,8 +535,9 @@ function ProductDetailClientContentInner({
   const [addonSetup, setAddonSetup] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'description' | 'specs' | 'compatibility' | 'shipping' | 'return' | 'faq'>('description');
 
-  // Interactive video modal
+  // Interactive video modal & Fullscreen Image modal
   const [showVideoModal, setShowVideoModal] = React.useState(false);
+  const [showImageModal, setShowImageModal] = React.useState(false);
 
   // Selected purchase quantity
   const [quantity, setQuantity] = React.useState<number>(1);
@@ -884,35 +889,50 @@ function ProductDetailClientContentInner({
     return (sum / reviews.length).toFixed(1);
   }, [reviews]);
 
-  // Fallback Related Products
-  const [displayRelated, setDisplayRelated] = React.useState(relatedProducts || []);
+  // Fallback and Sorted Related Products
+  const [displayRelated, setDisplayRelated] = React.useState<any[]>([]);
 
   React.useEffect(() => {
-    if (!relatedProducts || relatedProducts.length === 0) {
-      async function loadFallbackRelated() {
+    async function processRelated() {
+      let rawList: any[] = relatedProducts || [];
+      if (!rawList || rawList.length === 0) {
         try {
           const { getActiveProducts } = await import('@/lib/supabase/queries/products');
           const allProds = await getActiveProducts();
           if (allProds && allProds.length > 0) {
-            const filtered = allProds
+            rawList = allProds
               .filter(p => p.id !== product?.id)
-              .slice(0, 4)
-              .map(p => ({
-                id: p.id,
-                title: p.title_az || p.name_az || p.title || p.name || 'Məhsul',
-                price_azn: Number(p.price || p.price_azn || 0),
-                image_url: p.image_url || '',
-                stock_quantity: Number(p.stock_quantity || 0),
-                brand: p.brands?.name || p.brand_name || p.brand || ''
-              }));
-            setDisplayRelated(filtered);
+              .map(p => {
+                const rawCompare = p.compare_at_price_azn ?? p.compare_at_price ?? p.original_price_azn ?? p.original_price ?? p.discount_price ?? p.old_price ?? p.old_price_azn;
+                return {
+                  id: p.id,
+                  title: p.title_az || p.name_az || p.title || p.name || 'Məhsul',
+                  price_azn: Number(p.price || p.price_azn || 0),
+                  old_price: rawCompare !== undefined && rawCompare !== null ? Number(rawCompare) : undefined,
+                  discount_percent: p.discount_percent ? Number(p.discount_percent) : undefined,
+                  image_url: p.image_url || '',
+                  stock_quantity: Number(p.stock_quantity || 0),
+                  allow_preorder: p.allow_preorder,
+                  brand: p.brands?.name || p.brand_name || p.brand || ''
+                };
+              });
           }
         } catch (err) {
           console.error("Error loading fallback related products:", err);
         }
       }
-      loadFallbackRelated();
+
+      // Sort logic: In-stock first (> 0), then pre-order (stock <= 0 & allow_preorder), then out of stock
+      const sorted = [...rawList].sort((a, b) => {
+        const aScore = Number(a.stock_quantity || 0) > 0 ? 2 : ((a.allow_preorder !== false && a.allow_preorder !== null) ? 1 : 0);
+        const bScore = Number(b.stock_quantity || 0) > 0 ? 2 : ((b.allow_preorder !== false && b.allow_preorder !== null) ? 1 : 0);
+        return bScore - aScore;
+      });
+
+      setDisplayRelated(sorted);
     }
+
+    processRelated();
   }, [relatedProducts, product?.id]);
 
   // Gallery images with dynamic variation (isolated to selected variant or product)
@@ -950,6 +970,77 @@ function ProductDetailClientContentInner({
     const list = [mainImg, ...cleanExtraImages].filter(Boolean);
     return Array.from(new Set(list)) as string[];
   }, [product, selectedVariant]);
+
+  const activeImageIndex = React.useMemo(() => {
+    if (!galleryImages || galleryImages.length === 0) return 0;
+    const idx = galleryImages.indexOf(activeImage);
+    return idx >= 0 ? idx : 0;
+  }, [galleryImages, activeImage]);
+
+  const thumbnailRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+
+  React.useEffect(() => {
+    if (thumbnailRefs.current[activeImageIndex]) {
+      thumbnailRefs.current[activeImageIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'center',
+      });
+    }
+  }, [activeImageIndex]);
+
+  const handlePrevImage = React.useCallback((e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (galleryImages.length <= 1) return;
+    const prevIdx = (activeImageIndex - 1 + galleryImages.length) % galleryImages.length;
+    setActiveImage(galleryImages[prevIdx]);
+  }, [activeImageIndex, galleryImages]);
+
+  const handleNextImage = React.useCallback((e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (galleryImages.length <= 1) return;
+    const nextIdx = (activeImageIndex + 1) % galleryImages.length;
+    setActiveImage(galleryImages[nextIdx]);
+  }, [activeImageIndex, galleryImages]);
+
+  React.useEffect(() => {
+    if (!showImageModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        handlePrevImage();
+      } else if (e.key === 'ArrowRight') {
+        handleNextImage();
+      } else if (e.key === 'Escape') {
+        setShowImageModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showImageModal, handlePrevImage, handleNextImage]);
+
+  const [touchStartX, setTouchStartX] = React.useState<number | null>(null);
+
+  const handleGalleryTouchStart = (e: React.TouchEvent) => {
+    if (e.touches && e.touches.length > 0) {
+      setTouchStartX(e.touches[0].clientX);
+    }
+  };
+
+  const handleGalleryTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || galleryImages.length <= 1) return;
+    const touchEndX = e.changedTouches[0]?.clientX;
+    if (typeof touchEndX === 'number') {
+      const diffX = touchStartX - touchEndX;
+      if (Math.abs(diffX) > 30) {
+        if (diffX > 0) {
+          handleNextImage();
+        } else {
+          handlePrevImage();
+        }
+      }
+    }
+    setTouchStartX(null);
+  };
 
   const effectiveStock = React.useMemo(() => {
     if (selectedVariant) {
@@ -1152,7 +1243,12 @@ function ProductDetailClientContentInner({
           
           {/* Gallery Showcase (Left Column) */}
           <div className="lg:col-span-6 space-y-4">
-            <div className="relative aspect-square w-full rounded-3xl bg-muted/40 border border-border/80 overflow-hidden group shadow-soft-sm">
+            <div 
+              className="relative aspect-square w-full rounded-3xl bg-muted/40 border border-border/80 overflow-hidden group shadow-soft-sm select-none cursor-pointer"
+              onTouchStart={handleGalleryTouchStart}
+              onTouchEnd={handleGalleryTouchEnd}
+              onClick={() => setShowImageModal(true)}
+            >
               {!activeImage || imageError ? (
                 <SpeedcubeImageFallback alt={product.title} />
               ) : (
@@ -1167,8 +1263,43 @@ function ProductDetailClientContentInner({
                 />
               )}
 
+              {/* Zoom Indicator */}
+              <div className="absolute top-4 left-4 z-10 p-2.5 rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity shadow-md pointer-events-none">
+                <Maximize2 className="h-4 w-4" />
+              </div>
+
+              {/* Left / Right click and tap areas for image switching */}
+              {galleryImages.length > 1 && (
+                <>
+                  <div 
+                    onClick={handlePrevImage}
+                    className="absolute left-0 top-0 bottom-0 w-2/5 z-20 cursor-pointer flex items-center justify-start pl-3 group/left"
+                    title="Əvvəlki şəkil"
+                  >
+                    <div className="p-2.5 rounded-full bg-black/25 text-white opacity-0 group-hover/left:opacity-100 hover:bg-black/50 transition-all backdrop-blur-sm shadow-md">
+                      <ChevronLeft className="h-5 w-5" />
+                    </div>
+                  </div>
+
+                  <div 
+                    onClick={handleNextImage}
+                    className="absolute right-0 top-0 bottom-0 w-2/5 z-20 cursor-pointer flex items-center justify-end pr-3 group/right"
+                    title="Növbəti şəkil"
+                  >
+                    <div className="p-2.5 rounded-full bg-black/25 text-white opacity-0 group-hover/right:opacity-100 hover:bg-black/50 transition-all backdrop-blur-sm shadow-md">
+                      <ChevronRight className="h-5 w-5" />
+                    </div>
+                  </div>
+
+                  {/* Image Counter Badge (Only visible when hovering / touching main image) */}
+                  <div className="absolute top-4 right-4 z-10 bg-black/60 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-sm tracking-wider opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    {activeImageIndex + 1} / {galleryImages.length}
+                  </div>
+                </>
+              )}
+
               {isTrulyOutOfStock && (
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-[1.5px] flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-[1.5px] flex items-center justify-center z-25 pointer-events-none">
                   <span className="text-white text-sm font-black tracking-widest px-4 py-2 bg-red-600 rounded-xl shadow-lg uppercase">
                     {dict?.product?.out_of_stock || 'Bitib'}
                   </span>
@@ -1176,7 +1307,7 @@ function ProductDetailClientContentInner({
               )}
 
               {/* Media Overlays */}
-              <div className="absolute bottom-4 left-4 flex gap-2">
+              <div className="absolute bottom-4 left-4 z-30 flex gap-2">
                 <button
                   type="button"
                   onClick={() => setShowVideoModal(true)}
@@ -1188,15 +1319,18 @@ function ProductDetailClientContentInner({
               </div>
             </div>
 
-            {/* Gallery Thumbnails */}
+            {/* Gallery Thumbnails - Strictly Single Row Horizontal Scroll */}
             {galleryImages.length > 1 && (
-              <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory flex-nowrap min-w-0 w-full">
                 {galleryImages.map((img, idx) => (
                   <button
                     key={idx}
+                    ref={(el) => {
+                      thumbnailRefs.current[idx] = el;
+                    }}
                     type="button"
                     onClick={() => setActiveImage(img)}
-                    className={`relative w-16 h-16 rounded-2xl bg-muted/40 border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
+                    className={`relative w-16 h-16 shrink-0 snap-start rounded-2xl bg-muted/40 border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
                       activeImage === img ? 'border-rubik-brand ring-2 ring-rubik-brand/20 shadow-soft-md scale-95' : 'border-transparent hover:border-border'
                     }`}
                   >
@@ -2271,6 +2405,22 @@ function ProductDetailClientContentInner({
               {displayRelated.slice(0, 4).map((rel) => {
                 const isPreorderRel = rel.stock_quantity <= 0 && (rel.allow_preorder !== undefined && rel.allow_preorder !== null ? Boolean(rel.allow_preorder) : true);
                 const outOfStock = rel.stock_quantity <= 0 && !isPreorderRel;
+
+                const basePrice = Number(rel.price_azn || 0);
+                const rawOld = Number(rel.old_price || rel.compare_at_price_azn || rel.compare_at_price || rel.old_price_azn || 0);
+                let oldPriceVal = 0;
+                if (rawOld > basePrice) {
+                  oldPriceVal = rawOld;
+                } else if (rel.discount_percent && Number(rel.discount_percent) > 0 && basePrice > 0) {
+                  oldPriceVal = Math.round((basePrice / (1 - Number(rel.discount_percent) / 100)) * 100) / 100;
+                }
+                const hasDiscount = oldPriceVal > basePrice;
+                const discountPercent = hasDiscount
+                  ? (rel.discount_percent && Number(rel.discount_percent) > 0
+                      ? Math.round(Number(rel.discount_percent))
+                      : Math.round(((oldPriceVal - basePrice) / oldPriceVal) * 100))
+                  : 0;
+
                 return (
                   <div
                     key={rel.id}
@@ -2289,6 +2439,13 @@ function ProductDetailClientContentInner({
                       ) : (
                         <SpeedcubeImageFallback alt={rel.title} />
                       )}
+
+                      {hasDiscount && (
+                        <div className="absolute top-2 right-2 z-10 bg-red-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-md tracking-wider shadow-sm">
+                          -{discountPercent}%
+                        </div>
+                      )}
+
                       {outOfStock ? (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <span className="text-white text-[10px] font-black tracking-wider px-2 py-0.5 bg-red-600 rounded-md">
@@ -2317,6 +2474,11 @@ function ProductDetailClientContentInner({
                         <span className="text-sm md:text-base font-black text-foreground">
                           {rel.price_azn.toFixed(2)} AZN
                         </span>
+                        {hasDiscount && (
+                          <span className="text-xs font-semibold text-muted-foreground line-through">
+                            {oldPriceVal.toFixed(2)} AZN
+                          </span>
+                        )}
                       </div>
 
                       <button
@@ -2397,6 +2559,90 @@ function ProductDetailClientContentInner({
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      <AnimatePresence>
+        {showImageModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-md flex items-center justify-center p-2 sm:p-6 select-none"
+            onClick={() => setShowImageModal(false)}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowImageModal(false)}
+              className="absolute top-4 right-4 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 cursor-pointer border border-white/20 shadow-xl"
+              title="Bağla"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Modal Content */}
+            <div
+              className="relative w-full max-w-5xl h-[85vh] flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+              onTouchStart={handleGalleryTouchStart}
+              onTouchEnd={handleGalleryTouchEnd}
+            >
+              {/* Left Arrow Button */}
+              {galleryImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePrevImage();
+                  }}
+                  className="absolute left-2 sm:left-6 z-50 p-3 sm:p-4 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all duration-200 cursor-pointer border border-white/20 shadow-2xl backdrop-blur-md active:scale-90"
+                  title="Əvvəlki"
+                >
+                  <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+                </button>
+              )}
+
+              {/* Main Image */}
+              <div className="relative w-full h-full flex items-center justify-center p-4">
+                {!activeImage || imageError ? (
+                  <SpeedcubeImageFallback alt={product.title} />
+                ) : (
+                  <Image
+                    src={sanitizeImageUrl(activeImage, product.id)}
+                    alt={product.title}
+                    fill
+                    unoptimized
+                    priority
+                    className="object-contain max-h-full max-w-full drop-shadow-2xl transition-all duration-300"
+                  />
+                )}
+              </div>
+
+              {/* Right Arrow Button */}
+              {galleryImages.length > 1 && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNextImage();
+                  }}
+                  className="absolute right-2 sm:left-auto sm:right-6 z-50 p-3 sm:p-4 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all duration-200 cursor-pointer border border-white/20 shadow-2xl backdrop-blur-md active:scale-90"
+                  title="Növbəti"
+                >
+                  <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
+                </button>
+              )}
+
+              {/* Image Counter Badge */}
+              {galleryImages.length > 0 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-50 bg-black/70 border border-white/20 text-white text-xs sm:text-sm font-black px-4 py-1.5 rounded-full backdrop-blur-md shadow-2xl tracking-widest">
+                  {activeImageIndex + 1} / {galleryImages.length}
+                </div>
+              )}
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
