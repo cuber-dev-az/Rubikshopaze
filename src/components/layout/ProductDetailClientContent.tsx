@@ -685,6 +685,21 @@ function ProductDetailClientContentInner({
   const [bundleChecked2, setBundleChecked2] = React.useState(true);
   const [bundleChecked3, setBundleChecked3] = React.useState(true);
 
+  // Only consider real related products from DB (excluding current product, preorders, and out-of-stock items)
+  const validRelatedItems = React.useMemo(() => {
+    if (!relatedProducts || !Array.isArray(relatedProducts)) return [];
+    return relatedProducts.filter((r: any) => 
+      r && 
+      r.id && 
+      String(r.id) !== String(product?.id) && 
+      !r.is_preorder && 
+      (r.stock_quantity === undefined || r.stock_quantity === null || Number(r.stock_quantity) > 0) &&
+      (r.stock === undefined || r.stock === null || Number(r.stock) > 0)
+    );
+  }, [relatedProducts, product?.id]);
+
+  const hasValidBundle = validRelatedItems.length > 0;
+
   const bundleItem1 = React.useMemo(() => ({
     id: product?.id || '',
     title: product?.title || 'Məhsul',
@@ -694,58 +709,56 @@ function ProductDetailClientContentInner({
   }), [product?.id, product?.title, finalPrice, activeImage, product?.image_url]);
 
   const bundleItem2 = React.useMemo(() => {
-    if (relatedProducts && relatedProducts.length > 0) {
-      const rel = relatedProducts[0];
+    if (validRelatedItems.length > 0) {
+      const rel = validRelatedItems[0];
+      const origPrice = Number(rel.compare_at_price_azn || rel.original_price_azn || rel.price_azn || 0);
+      const currPrice = Number(rel.price_azn || 0);
       return {
-        id: rel.id,
-        title: rel.title,
-        price: rel.price_azn,
-        image: rel.image_url,
+        id: String(rel.id),
+        title: String(rel.title),
+        price: currPrice,
+        original_price: origPrice > currPrice ? origPrice : currPrice,
+        image: rel.image_url || '',
         required: false
       };
     }
-    return {
-      id: 'bundle-acc-lube',
-      title: 'QiYi M-Lube Professional Speedcube Yağı (10ml)',
-      price: 6.00,
-      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&auto=format&fit=crop&q=80',
-      required: false
-    };
-  }, [relatedProducts]);
+    return null;
+  }, [validRelatedItems]);
 
   const bundleItem3 = React.useMemo(() => {
-    if (relatedProducts && relatedProducts.length > 1) {
-      const rel = relatedProducts[1];
+    if (validRelatedItems.length > 1) {
+      const rel = validRelatedItems[1];
+      const origPrice = Number(rel.compare_at_price_azn || rel.original_price_azn || rel.price_azn || 0);
+      const currPrice = Number(rel.price_azn || 0);
       return {
-        id: rel.id,
-        title: rel.title,
-        price: rel.price_azn,
-        image: rel.image_url,
+        id: String(rel.id),
+        title: String(rel.title),
+        price: currPrice,
+        original_price: origPrice > currPrice ? origPrice : currPrice,
+        image: rel.image_url || '',
         required: false
       };
     }
-    return {
-      id: 'bundle-acc-mat',
-      title: 'Rubikshop Pro Speedcube Rezin Mat Altlıq',
-      price: 12.00,
-      image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=300&auto=format&fit=crop&q=80',
-      required: false
-    };
-  }, [relatedProducts]);
+    return null;
+  }, [validRelatedItems]);
 
   const bundleTotalPrice = React.useMemo(() => {
     let total = bundleItem1.price;
-    if (bundleChecked2) total += bundleItem2.price;
-    if (bundleChecked3) total += bundleItem3.price;
+    if (bundleChecked2 && bundleItem2) total += bundleItem2.price;
+    if (bundleChecked3 && bundleItem3) total += bundleItem3.price;
     return total;
-  }, [bundleItem1.price, bundleItem2.price, bundleItem3.price, bundleChecked2, bundleChecked3]);
+  }, [bundleItem1.price, bundleItem2, bundleItem3, bundleChecked2, bundleChecked3]);
 
   const bundleSavings = React.useMemo(() => {
     let savings = 0;
-    if (bundleChecked2) savings += 1.50;
-    if (bundleChecked3) savings += 2.50;
+    if (bundleChecked2 && bundleItem2 && bundleItem2.original_price > bundleItem2.price) {
+      savings += (bundleItem2.original_price - bundleItem2.price);
+    }
+    if (bundleChecked3 && bundleItem3 && bundleItem3.original_price > bundleItem3.price) {
+      savings += (bundleItem3.original_price - bundleItem3.price);
+    }
     return savings;
-  }, [bundleChecked2, bundleChecked3]);
+  }, [bundleChecked2, bundleChecked3, bundleItem2, bundleItem3]);
 
   const handleAddBundleToCart = () => {
     addItem({
@@ -755,20 +768,20 @@ function ProductDetailClientContentInner({
       quantity: 1,
       image_url: bundleItem1.image
     });
-    if (bundleChecked2) {
+    if (bundleChecked2 && bundleItem2) {
       addItem({
         id: bundleItem2.id,
         title: bundleItem2.title,
-        price_azn: Math.max(1, bundleItem2.price - 1.50),
+        price_azn: bundleItem2.price,
         quantity: 1,
         image_url: bundleItem2.image
       });
     }
-    if (bundleChecked3) {
+    if (bundleChecked3 && bundleItem3) {
       addItem({
         id: bundleItem3.id,
         title: bundleItem3.title,
-        price_azn: Math.max(1, bundleItem3.price - 2.50),
+        price_azn: bundleItem3.price,
         quantity: 1,
         image_url: bundleItem3.image
       });
@@ -1286,8 +1299,8 @@ function ProductDetailClientContentInner({
               )}
             </div>
 
-            {/* 5. Vertical Variant Card Selector Component */}
-            {dbVariants.length > 0 && (
+            {/* 5. Vertical Variant Card Selector Component - Only displayed if product has 2 or more versions */}
+            {dbVariants.length > 1 && (
               <div className="my-4 space-y-2">
                 <div className="text-xs md:text-sm font-bold text-foreground flex items-center gap-1.5">
                   <span className="text-muted-foreground font-semibold">
@@ -1710,168 +1723,182 @@ function ProductDetailClientContentInner({
           </div>
         </div>
 
-        {/* 2. Frequently Bought Together Bundle Section */}
-        <div className="bg-card border border-border/90 rounded-3xl p-5 md:p-6 shadow-soft-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-rubik-brand/10 text-rubik-brand rounded-xl">
-                <Sparkles className="h-5 w-5" />
+        {/* 2. Frequently Bought Together Bundle Section - Only rendered if real bundle products exist in DB */}
+        {hasValidBundle && (
+          <div className="bg-card border border-border/90 rounded-3xl p-5 md:p-6 shadow-soft-sm space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-rubik-brand/10 text-rubik-brand rounded-xl">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base md:text-lg text-foreground tracking-tight">
+                    Tez-tez Birlikdə Alınır
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Bu məhsulla birlikdə ən çox seçilən peşəkar aksesuarlar və tamamlayıcı məhsullar
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-black text-base md:text-lg text-foreground tracking-tight">
-                  Tez-tez Birlikdə Alınır
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Bu məhsulla birlikdə ən çox seçilən peşəkar aksesuarlar və xüsusi endirimli paket
-                </p>
-              </div>
+              {bundleSavings > 0 && (
+                <span className="text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full w-fit">
+                  🔥 {bundleSavings.toFixed(2)} AZN Qənaət
+                </span>
+              )}
             </div>
-            {bundleSavings > 0 && (
-              <span className="text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full w-fit">
-                🔥 {bundleSavings.toFixed(2)} AZN Qənaət
-              </span>
-            )}
-          </div>
 
-          {/* Bundle Items Visual Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div className="lg:col-span-8 flex flex-col md:flex-row items-center gap-3">
-              {/* Item 1 (Main product) */}
-              <div className="flex items-center gap-3 bg-muted/30 border border-border/80 rounded-2xl p-3 w-full md:w-1/3 min-h-[95px]">
-                <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
-                  {bundleItem1.image ? (
-                    <Image
-                      src={sanitizeImageUrl(bundleItem1.image, 'bundle1')}
-                      alt={bundleItem1.title}
-                      fill
-                      referrerPolicy="no-referrer"
-                      className="object-contain"
-                    />
-                  ) : (
-                    <SpeedcubeImageFallback alt="Bundle item" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-rubik-brand block">Əsas Məhsul</span>
-                  <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
-                    {bundleItem1.title}
-                  </span>
-                  <span className="text-xs font-black text-foreground block">
-                    {bundleItem1.price.toFixed(2)} AZN
-                  </span>
-                </div>
-              </div>
-
-              <span className="text-muted-foreground font-black text-lg hidden md:inline shrink-0">+</span>
-
-              {/* Item 2 */}
-              <label className={`flex items-center gap-3 border rounded-2xl p-3 w-full md:w-1/3 min-h-[95px] cursor-pointer transition-all select-none ${
-                bundleChecked2 ? 'bg-muted/30 border-rubik-brand/60' : 'bg-background border-border/50 opacity-60'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={bundleChecked2}
-                  onChange={(e) => setBundleChecked2(e.target.checked)}
-                  className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
-                />
-                <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
-                  {bundleItem2.image ? (
-                    <Image
-                      src={sanitizeImageUrl(bundleItem2.image, 'bundle2')}
-                      alt={bundleItem2.title}
-                      fill
-                      referrerPolicy="no-referrer"
-                      className="object-contain"
-                    />
-                  ) : (
-                    <SpeedcubeImageFallback alt="Bundle item" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 block">Tövsiyə Olunan</span>
-                  <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
-                    {bundleItem2.title}
-                  </span>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="font-black text-rubik-brand">
-                      {Math.max(1, bundleItem2.price - 1.50).toFixed(2)} AZN
+            {/* Bundle Items Visual Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-8 flex flex-col md:flex-row items-center gap-3">
+                {/* Item 1 (Main product) */}
+                <div className="flex items-center gap-3 bg-muted/30 border border-border/80 rounded-2xl p-3 w-full md:w-1/3 min-h-[95px]">
+                  <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
+                    {bundleItem1.image ? (
+                      <Image
+                        src={sanitizeImageUrl(bundleItem1.image, 'bundle1')}
+                        alt={bundleItem1.title}
+                        fill
+                        referrerPolicy="no-referrer"
+                        className="object-contain"
+                      />
+                    ) : (
+                      <SpeedcubeImageFallback alt="Bundle item" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <span className="text-[9px] font-black uppercase tracking-wider text-rubik-brand block">Əsas Məhsul</span>
+                    <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
+                      {bundleItem1.title}
                     </span>
-                    <span className="text-[10px] text-muted-foreground line-through">
-                      {bundleItem2.price.toFixed(2)} AZN
+                    <span className="text-xs font-black text-foreground block">
+                      {bundleItem1.price.toFixed(2)} AZN
                     </span>
                   </div>
                 </div>
-              </label>
 
-              <span className="text-muted-foreground font-black text-lg hidden md:inline shrink-0">+</span>
+                {bundleItem2 && (
+                  <>
+                    <span className="text-muted-foreground font-black text-lg hidden md:inline shrink-0">+</span>
 
-              {/* Item 3 */}
-              <label className={`flex items-center gap-3 border rounded-2xl p-3 w-full md:w-1/3 min-h-[95px] cursor-pointer transition-all select-none ${
-                bundleChecked3 ? 'bg-muted/30 border-rubik-brand/60' : 'bg-background border-border/50 opacity-60'
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={bundleChecked3}
-                  onChange={(e) => setBundleChecked3(e.target.checked)}
-                  className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
-                />
-                <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
-                  {bundleItem3.image ? (
-                    <Image
-                      src={sanitizeImageUrl(bundleItem3.image, 'bundle3')}
-                      alt={bundleItem3.title}
-                      fill
-                      referrerPolicy="no-referrer"
-                      className="object-contain"
-                    />
-                  ) : (
-                    <SpeedcubeImageFallback alt="Bundle item" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1 space-y-1">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-blue-500 block">Aksesuar</span>
-                  <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
-                    {bundleItem3.title}
-                  </span>
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <span className="font-black text-rubik-brand">
-                      {Math.max(1, bundleItem3.price - 2.50).toFixed(2)} AZN
-                    </span>
-                    <span className="text-[10px] text-muted-foreground line-through">
-                      {bundleItem3.price.toFixed(2)} AZN
-                    </span>
-                  </div>
-                </div>
-              </label>
-            </div>
+                    {/* Item 2 */}
+                    <label className={`flex items-center gap-3 border rounded-2xl p-3 w-full md:w-1/3 min-h-[95px] cursor-pointer transition-all select-none ${
+                      bundleChecked2 ? 'bg-muted/30 border-rubik-brand/60' : 'bg-background border-border/50 opacity-60'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={bundleChecked2}
+                        onChange={(e) => setBundleChecked2(e.target.checked)}
+                        className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
+                      />
+                      <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
+                        {bundleItem2.image ? (
+                          <Image
+                            src={sanitizeImageUrl(bundleItem2.image, 'bundle2')}
+                            alt={bundleItem2.title}
+                            fill
+                            referrerPolicy="no-referrer"
+                            className="object-contain"
+                          />
+                        ) : (
+                          <SpeedcubeImageFallback alt="Bundle item" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 block">Tövsiyə Olunan</span>
+                        <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
+                          {bundleItem2.title}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="font-black text-rubik-brand">
+                            {bundleItem2.price.toFixed(2)} AZN
+                          </span>
+                          {bundleItem2.original_price > bundleItem2.price && (
+                            <span className="text-[10px] text-muted-foreground line-through">
+                              {bundleItem2.original_price.toFixed(2)} AZN
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  </>
+                )}
 
-            {/* Bundle CTA Box */}
-            <div className="lg:col-span-4 bg-muted/40 border border-border/80 rounded-2xl p-4 flex flex-col justify-between gap-3 h-full">
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground font-semibold block">Paket Cəmi Məbləğ:</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl md:text-2xl font-black text-foreground">
-                    {(bundleTotalPrice - bundleSavings).toFixed(2)} AZN
-                  </span>
-                  {bundleSavings > 0 && (
-                    <span className="text-xs text-muted-foreground line-through font-bold">
+                {bundleItem3 && (
+                  <>
+                    <span className="text-muted-foreground font-black text-lg hidden md:inline shrink-0">+</span>
+
+                    {/* Item 3 */}
+                    <label className={`flex items-center gap-3 border rounded-2xl p-3 w-full md:w-1/3 min-h-[95px] cursor-pointer transition-all select-none ${
+                      bundleChecked3 ? 'bg-muted/30 border-rubik-brand/60' : 'bg-background border-border/50 opacity-60'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={bundleChecked3}
+                        onChange={(e) => setBundleChecked3(e.target.checked)}
+                        className="h-4 w-4 rounded text-rubik-brand focus:ring-rubik-brand cursor-pointer shrink-0"
+                      />
+                      <div className="relative h-16 w-16 shrink-0 bg-background rounded-xl overflow-hidden border border-border p-1.5">
+                        {bundleItem3.image ? (
+                          <Image
+                            src={sanitizeImageUrl(bundleItem3.image, 'bundle3')}
+                            alt={bundleItem3.title}
+                            fill
+                            referrerPolicy="no-referrer"
+                            className="object-contain"
+                          />
+                        ) : (
+                          <SpeedcubeImageFallback alt="Bundle item" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-blue-500 block">Tamamlayıcı</span>
+                        <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
+                          {bundleItem3.title}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="font-black text-rubik-brand">
+                            {bundleItem3.price.toFixed(2)} AZN
+                          </span>
+                          {bundleItem3.original_price > bundleItem3.price && (
+                            <span className="text-[10px] text-muted-foreground line-through">
+                              {bundleItem3.original_price.toFixed(2)} AZN
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  </>
+                )}
+              </div>
+
+              {/* Bundle CTA Box */}
+              <div className="lg:col-span-4 bg-muted/40 border border-border/80 rounded-2xl p-4 flex flex-col justify-between gap-3 h-full">
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground font-semibold block">Paket Cəmi Məbləğ:</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl md:text-2xl font-black text-foreground">
                       {bundleTotalPrice.toFixed(2)} AZN
                     </span>
-                  )}
+                    {bundleSavings > 0 && (
+                      <span className="text-xs text-muted-foreground line-through font-bold">
+                        {(bundleTotalPrice + bundleSavings).toFixed(2)} AZN
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={handleAddBundleToCart}
-                className="w-full py-3 px-4 bg-rubik-brand text-white font-black text-xs md:text-sm rounded-xl hover:bg-rubik-brand-dark transition-all flex items-center justify-center gap-2 shadow-soft-sm cursor-pointer active:scale-98"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                <span>Seçilənləri Birlikdə Səbətə Əlavə Et</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={handleAddBundleToCart}
+                  className="w-full py-3 px-4 bg-rubik-brand text-white font-black text-xs md:text-sm rounded-xl hover:bg-rubik-brand-dark transition-all flex items-center justify-center gap-2 shadow-soft-sm cursor-pointer active:scale-98"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  <span>Seçilənləri Birlikdə Səbətə Əlavə Et</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* 3. Information Tabs Accordion with Description & Dynamic Comparison Table */}
         <div className="border border-border rounded-3xl bg-card overflow-hidden shadow-soft-sm">

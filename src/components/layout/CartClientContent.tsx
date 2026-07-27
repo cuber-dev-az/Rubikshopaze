@@ -133,69 +133,31 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
     };
   }, []);
 
-  // Filter recommendations: Exclude items in cart, saved items, pre-orders, and out-of-stock
+  // Filter recommendations: Exclude items in cart, saved items, pre-orders, and out-of-stock items strictly from Supabase DB
   const filteredUpsells = React.useMemo(() => {
     const cartIds = new Set(items.map(i => String(i.id)));
     const cartTitles = new Set(items.map(i => i.title.trim().toLowerCase()));
     const savedIds = new Set(savedItems.map(s => String(s.id)));
 
-    // Fallback standard accessories (if DB has few items or loading)
-    const fallbackAccessories = [
-      {
-        id: 'gan-lube-magic-10ml',
-        title: 'GAN Lube Magic 10ml Premium Silicone Oil',
-        price_azn: 15.0,
-        image_url: 'https://picsum.photos/seed/ganlube/300/300',
-        brand: 'GAN',
-        desc: 'Dönmə sürətini artırır və səsi azaldır.',
-        is_preorder: false
-      },
-      {
-        id: 'moyu-stand-base',
-        title: 'MoYu Triangular Stand Holder',
-        price_azn: 3.0,
-        image_url: 'https://picsum.photos/seed/moyustand/300/300',
-        brand: 'MoYu',
-        desc: 'Kubu rəfdə sərgiləmək üçün xüsusi dayaq.',
-        is_preorder: false
-      },
-      {
-        id: 'qiyi-cleaning-cloth',
-        title: 'QiYi Cube Microfiber Polish Cloth',
-        price_azn: 5.0,
-        image_url: 'https://picsum.photos/seed/qiyicloth/300/300',
-        brand: 'QiYi',
-        desc: 'Kubun xarici səthini təmizləmək üçün.',
-        is_preorder: false
-      }
-    ];
-
-    let candidates: any[] = [];
-
-    if (dbUpsellProducts && dbUpsellProducts.length > 0) {
-      candidates = dbUpsellProducts.map(p => {
-        const title = p[`title_${locale}`] || p.title_az || p.name_az || '';
-        const desc = p[`description_${locale}`] || p.description_az || '';
-        const brandName = p.brands?.name || p.brand || 'RubikShop';
-        return {
-          id: String(p.id),
-          title: String(title),
-          price_azn: Number(p.price_azn || 0),
-          image_url: sanitizeImageUrl(p.image_url, p.id),
-          brand: String(brandName),
-          desc: String(desc).replace(/<[^>]*>/g, '').substring(0, 60),
-          is_preorder: Boolean(p.is_preorder),
-          stock_qty: p.stock_quantity ?? p.stock
-        };
-      });
+    if (!dbUpsellProducts || dbUpsellProducts.length === 0) {
+      return [];
     }
 
-    // Merge fallback accessories so there is always a quality recommendation
-    for (const fb of fallbackAccessories) {
-      if (!candidates.some(c => c.id === fb.id)) {
-        candidates.push(fb);
-      }
-    }
+    const candidates = dbUpsellProducts.map(p => {
+      const title = p[`title_${locale}`] || p.title_az || p.name_az || p.title_en || '';
+      const desc = p[`description_${locale}`] || p.description_az || p.description_en || '';
+      const brandName = p.brands?.name || p.brand || 'RubikShop';
+      return {
+        id: String(p.id),
+        title: String(title),
+        price_azn: Number(p.price_azn || 0),
+        image_url: sanitizeImageUrl(p.image_url, p.id),
+        brand: String(brandName),
+        desc: String(desc).replace(/<[^>]*>/g, '').substring(0, 60),
+        is_preorder: Boolean(p.is_preorder),
+        stock_qty: p.stock_quantity ?? p.stock
+      };
+    });
 
     // Exclude:
     // 1. Items in cart (by ID or Title)
@@ -203,6 +165,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
     // 3. Pre-orders (`is_preorder === true`)
     // 4. Out-of-stock items (`stock_qty <= 0`)
     const valid = candidates.filter(prod => {
+      if (!prod.title) return false;
       if (cartIds.has(String(prod.id))) return false;
       if (savedIds.has(String(prod.id))) return false;
       if (cartTitles.has(prod.title.trim().toLowerCase())) return false;
