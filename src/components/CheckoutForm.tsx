@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { signIn } from '@/lib/actions/auth';
+import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { sanitizeImageUrl } from '@/lib/image';
@@ -11,6 +12,7 @@ import {
   ShoppingBag,
   User,
   Phone,
+  Mail,
   MapPin,
   Truck,
   CreditCard,
@@ -53,7 +55,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     return obj[locale as keyof typeof obj] || obj.az;
   }, [locale]);
 
-  // Authentication State Simulation
+  // Authentication State
   const [checkoutMode, setCheckoutMode] = React.useState<'guest' | 'login'>('guest');
   const [loginEmail, setLoginEmail] = React.useState('');
   const [loginPassword, setLoginPassword] = React.useState('');
@@ -64,8 +66,35 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
   // Form Field States
   const [name, setName] = React.useState('');
   const [phone, setPhone] = React.useState('');
-  const [instagram, setInstagram] = React.useState('');
+  const [email, setEmail] = React.useState('');
   const [address, setAddress] = React.useState('');
+
+  // Auto-detect logged-in user session
+  React.useEffect(() => {
+    const supabaseClient = createClient();
+    async function loadActiveSession() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (user) {
+          setIsLoggedIn(true);
+          setCheckoutMode('login');
+          if (user.email) {
+            setLoginEmail(user.email);
+            setEmail(user.email);
+          }
+          if (user.user_metadata?.full_name) {
+            setName(user.user_metadata.full_name);
+          }
+          if (user.user_metadata?.phone) {
+            setPhone(user.user_metadata.phone);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching auth user in checkout:', err);
+      }
+    }
+    loadActiveSession();
+  }, []);
   
   // Delivery Location & Options
   const [locationZone, setLocationZone] = React.useState<'baku' | 'region'>('baku');
@@ -209,17 +238,39 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
     setAuthError('');
     setIsAuthLoading(true);
 
-    const formData = new FormData();
-    formData.append('email', loginEmail);
-    formData.append('password', loginPassword);
+    try {
+      const supabaseClient = createClient();
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
 
-    const res = await signIn(formData);
-    setIsAuthLoading(false);
+      if (error) {
+        setAuthError(error.message || t({
+          az: 'İstifadəçi adı və ya şifrə yanlışdır.',
+          en: 'Invalid email or password.',
+          ru: 'Неверный email или пароль.'
+        }));
+        setIsAuthLoading(false);
+        return;
+      }
 
-    if (res.error) {
-      setAuthError(res.error);
-    } else {
-      window.location.reload();
+      if (data?.user) {
+        setIsLoggedIn(true);
+        if (data.user.email) {
+          setEmail(data.user.email);
+        }
+        if (data.user.user_metadata?.full_name) {
+          setName(data.user.user_metadata.full_name);
+        }
+        if (data.user.user_metadata?.phone) {
+          setPhone(data.user.user_metadata.phone);
+        }
+      }
+    } catch (err: any) {
+      setAuthError(err?.message || 'Giriş zamanı xəta baş verdi.');
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
@@ -336,7 +387,7 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         title: t({ az: 'YENİ SİFARİŞ', en: 'NEW ORDER', ru: 'НОВЫЙ ЗАКАЗ' }),
         customer: t({ az: 'Müştəri', en: 'Customer', ru: 'Клиент' }),
         phone: t({ az: 'Telefon', en: 'Phone', ru: 'Телефон' }),
-        instagram: t({ az: 'Instagram', en: 'Instagram', ru: 'Instagram' }),
+        emailLabel: t({ az: 'E-poçt', en: 'Email', ru: 'Эл. Почта' }),
         delivery: t({ az: 'Çatdırılma Metodu', en: 'Delivery Method', ru: 'Метод Доставки' }),
         address: t({ az: 'Ünvan', en: 'Address', ru: 'Адрес' }),
         metro: t({ az: 'Görüş stansiyası', en: 'Metro Station', ru: 'Станция Метро' }),
@@ -372,10 +423,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         deliveryAddressText = address.trim();
       }
 
+      const activeEmail = email.trim() || loginEmail.trim();
+
       const payload = {
         customer_name: name.trim(),
         customer_phone: formattedPhone,
-        customer_instagram: instagram.trim() || 'Yoxdur',
+        customer_email: activeEmail || undefined,
+        customer_instagram: activeEmail || 'Yoxdur',
         delivery_address: deliveryAddressText,
         delivery_method: deliveryMethodName,
         total_amount_azn: totalAmount,
@@ -402,7 +456,10 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         message += `🎫 *Sifariş / Ön Sifariş Kodu:* ${preorderCode}\n`;
         message += `👤 *${tMsg.customer}:* ${name.trim()}\n`;
         message += `📞 *${tMsg.phone}:* ${formattedPhone}\n`;
-        message += `📸 *${tMsg.instagram}:* @${instagram.trim() || 'Yoxdur'}\n\n`;
+        if (activeEmail) {
+          message += `📧 *${tMsg.emailLabel}:* ${activeEmail}\n`;
+        }
+        message += `\n`;
         
         message += `🏙️ *Şəhər / Məkan:* ${locationZone === 'baku' ? 'Bakı daxili' : 'Bakı xarici (rayon)'}\n`;
         message += `🚚 *${tMsg.delivery}:* ${deliveryMethodName}\n`;
@@ -668,26 +725,13 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-3 w-3"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                      </svg>
-                      <span>{dict.checkout?.instagram || "Instagram"}</span>
+                      <Mail className="h-3 w-3" /> {t({ az: 'E-poçt Ünvanı', en: 'Email Address', ru: 'Эл. Почта' })}
                     </label>
                     <input
-                      type="text"
-                      value={instagram}
-                      onChange={(e) => setInstagram(e.target.value)}
-                      placeholder={dict.checkout?.instagram_placeholder || "Məs: rubikshop.az (Könüllü)"}
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="example@rubikshop.az (Könüllü)"
                       className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-[16px] text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                     />
                   </div>

@@ -64,7 +64,11 @@ export default function BlogListingPage({ params }: { params: { locale: string }
         {loading ? (
           <div className="text-center text-slate-400 py-12 font-bold">Yüklənir...</div>
         ) : posts.length === 0 ? (
-          <div className="text-center text-slate-400 py-12">Heç bir məqalə tapılmadı.</div>
+          <div className="text-center bg-slate-900 border border-slate-800 rounded-3xl p-12 space-y-3 max-w-md mx-auto">
+            <BookOpen className="w-10 h-10 text-amber-500 mx-auto opacity-80" />
+            <h3 className="text-lg font-bold text-white">Hələ ki məqalə yoxdur</h3>
+            <p className="text-xs text-slate-400">Yeni məqalələr dərhal burada görünəcək.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map(post => {

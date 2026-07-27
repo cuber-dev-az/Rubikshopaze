@@ -149,13 +149,31 @@ export async function getNewsletterSubscribers() {
 export async function subscribeToNewsletter(email: string) {
   try {
     const supabase = await createServerSupabaseClient();
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check if email already exists
+    const { data: existing } = await supabase
+      .from('newsletter_subscribers')
+      .select('id')
+      .eq('email', cleanEmail)
+      .maybeSingle();
+
+    if (existing) {
+      return { success: true, alreadySubscribed: true };
+    }
+
     const { data, error } = await supabase
       .from('newsletter_subscribers')
-      .insert([{ email: email.trim().toLowerCase(), is_active: true }])
+      .insert([{ email: cleanEmail, is_active: true }])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === '23505') {
+        return { success: true, alreadySubscribed: true };
+      }
+      throw error;
+    }
     return { success: true, subscriber: data };
   } catch (error: any) {
     return { success: false, error: error.message };

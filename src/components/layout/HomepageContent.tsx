@@ -63,6 +63,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
   const [bundleProduct, setBundleProduct] = React.useState<any | null>(null);
   const [activeCampaign, setActiveCampaign] = React.useState<any | null>(null);
   const [approvedReviews, setApprovedReviews] = React.useState<any[]>([]);
+  const [dbBlogPosts, setDbBlogPosts] = React.useState<any[]>([]);
   const [dbLoading, setDbLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -262,6 +263,18 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
 
         if (campaignsData && campaignsData.length > 0) {
           setActiveCampaign(campaignsData[0]);
+        }
+
+        // 5. Fetch Published Blog Posts
+        const { data: blogData } = await supabaseClient
+          .from('blog_posts')
+          .select('*')
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(3);
+
+        if (blogData) {
+          setDbBlogPosts(blogData);
         }
 
       } catch (err) {
@@ -1010,47 +1023,57 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
 
       {/* 6. CONTENT TEASERS SECTION */}
       <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 border-t border-border/40">
-        {/* Blog Teasers */}
-        <div className="space-y-10">
-          <div className="flex items-end justify-between border-b border-border pb-4">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-black text-foreground font-sans tracking-tight">
-                {t({ az: 'Bloq və Xəbərnəvislik', en: 'Blog & News Hub', ru: 'Блог и центр новостей' })}
-              </h2>
-              <p className="text-muted-foreground text-sm mt-1">
-                {t({ az: 'Speedcubing sənətinin sirləri, gərginlik ayarları və son xəbərlər.', en: 'Tips, setup tutorials, and major speedcubing news.', ru: 'Советы, руководства по настройке и спидкубинг-новости.' })}
-              </p>
+        {/* Blog Teasers - Only render if posts exist */}
+        {dbBlogPosts && dbBlogPosts.length > 0 && (
+          <div className="space-y-10">
+            <div className="flex items-end justify-between border-b border-border pb-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-foreground font-sans tracking-tight">
+                  {t({ az: 'Bloq və Xəbərnəvislik', en: 'Blog & News Hub', ru: 'Блог и центр новостей' })}
+                </h2>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {t({ az: 'Speedcubing sənətinin sirləri, gərginlik ayarları və son xəbərlər.', en: 'Tips, setup tutorials, and major speedcubing news.', ru: 'Советы, руководства по настройке и спидкубинг-новости.' })}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {dbBlogPosts.map((post) => {
+                const title = post[`title_${locale}`] || post.title_az || '';
+                const content = post[`content_${locale}`] || post.content_az || '';
+                const snippet = content ? content.replace(/<[^>]*>/g, '').substring(0, 100) + '...' : '';
+                const dateStr = post.created_at ? new Date(post.created_at).toLocaleDateString() : '';
+
+                return (
+                  <Link
+                    key={post.id}
+                    href={`/${locale}/blog/${post.slug}`}
+                    className="group flex flex-col bg-card border border-border rounded-3xl overflow-hidden shadow-soft-sm hover:shadow-soft-md transition-all duration-300 hover:-translate-y-1"
+                  >
+                    <div className="relative aspect-video bg-muted">
+                      <Image
+                        src={post.featured_image || 'https://picsum.photos/seed/blog/800/450'}
+                        alt={String(title)}
+                        fill
+                        referrerPolicy="no-referrer"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-6 flex flex-col flex-grow space-y-3">
+                      <span className="text-[10px] font-bold text-rubik-brand tracking-wider">{dateStr}</span>
+                      <h3 className="text-base font-bold text-foreground group-hover:text-rubik-brand transition-colors line-clamp-2 leading-snug">
+                        {String(title)}
+                      </h3>
+                      <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                        {snippet}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {blogPosts.map((post) => (
-              <div key={post.id} className="group flex flex-col bg-card border border-border rounded-3xl overflow-hidden shadow-soft-sm hover:shadow-soft-md transition-all duration-300">
-                <div className="relative aspect-video bg-muted">
-                  <Image
-                    src={post.image}
-                    alt={t(post.title)}
-                    fill
-                    referrerPolicy="no-referrer"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute bottom-3 right-3 bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                    {post.readTime}
-                  </span>
-                </div>
-                <div className="p-6 flex flex-col flex-grow space-y-3">
-                  <span className="text-[10px] font-bold text-rubik-brand tracking-wider">{post.date}</span>
-                  <h3 className="text-base font-bold text-foreground group-hover:text-rubik-brand transition-colors line-clamp-2 leading-snug">
-                    {t(post.title)}
-                  </h3>
-                  <p className="text-xs md:text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                    {t(post.desc)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* FAQ Teaser Accordion */}
         <div className="max-w-3xl mx-auto space-y-8">

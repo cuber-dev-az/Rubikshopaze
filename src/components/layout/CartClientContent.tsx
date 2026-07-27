@@ -89,11 +89,8 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
   const discountAmount = isMounted ? getDiscountAmount() : 0;
   const freeShippingThreshold = 100; // Free above 100 AZN
 
-  // Calculate Shipping Cost
-  const shippingCost = React.useMemo(() => {
-    if (subtotal >= freeShippingThreshold || subtotal === 0) return 0;
-    return shippingMethod === 'express' ? 7 : 3;
-  }, [subtotal, shippingMethod]);
+  // On Cart page, shipping is calculated at Checkout based on selected station/address
+  const shippingCost = 0;
 
   const taxEstimate = React.useMemo(() => {
     return 0; // Standard 0% direct e-comm tax in Azerbaijan currently
@@ -101,8 +98,8 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
 
   const total = React.useMemo(() => {
     const finalProductPrice = isMounted ? getFinalPrice() : 0;
-    return finalProductPrice + shippingCost + taxEstimate;
-  }, [isMounted, getFinalPrice, shippingCost, taxEstimate]);
+    return finalProductPrice;
+  }, [isMounted, getFinalPrice]);
 
   const progressToFreeShipping = Math.min((subtotal / freeShippingThreshold) * 100, 100);
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
@@ -525,38 +522,22 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
 
                   {/* Delivery type info */}
                   <div className="space-y-2 pt-2 border-t border-border/60">
-                    <span className="block font-bold text-foreground text-[10px] uppercase tracking-wider">Çatdırılma növü</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => setShippingMethod('standard')}
-                        className={`p-2.5 text-left border rounded-xl transition-all cursor-pointer ${
-                          shippingMethod === 'standard'
-                            ? 'border-rubik-brand bg-rubik-brand/5 font-bold'
-                            : 'border-border text-muted-foreground hover:border-foreground/10'
-                        }`}
-                      >
-                        <span className="block text-[11px] text-foreground">📍 Metro Stansiyası</span>
-                        <span className="block text-[10px] font-mono mt-0.5 text-emerald-600 font-bold">
-                          1.00 – 2.00 AZN
-                        </span>
-                      </button>
-
-                      <button
-                        onClick={() => setShippingMethod('express')}
-                        className={`p-2.5 text-left border rounded-xl transition-all cursor-pointer ${
-                          shippingMethod === 'express'
-                            ? 'border-rubik-brand bg-rubik-brand/5 font-bold'
-                            : 'border-border text-muted-foreground hover:border-foreground/10'
-                        }`}
-                      >
-                        <span className="block text-[11px] text-foreground">🚚 Ünvana / Rayona</span>
-                        <span className="block text-[10px] font-mono mt-0.5 text-muted-foreground">
-                          Razılaşdırılır
-                        </span>
-                      </button>
+                    <div className="flex justify-between items-center">
+                      <span className="block font-bold text-foreground text-[10px] uppercase tracking-wider">Çatdırılma</span>
+                      <span className="text-[11px] font-bold text-emerald-600 font-mono">Checkout-da hesablanır</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground italic">
-                      * Dəqiq metro stansiyası və ya unvan seçimi rəsmiləşdirmə (Checkout) zamanı olunur.
+                    <div className="p-3 bg-muted/40 border border-border/60 rounded-xl space-y-1.5 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="text-foreground font-semibold flex items-center gap-1">📍 Metro Stansiyası:</span>
+                        <span className="text-emerald-600 font-bold font-mono">1.00 – 2.00 AZN</span>
+                      </div>
+                      <div className="flex justify-between items-center text-muted-foreground text-[11px]">
+                        <span>🚚 Ünvana / Rayona:</span>
+                        <span>Razılaşdırılır</span>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground italic leading-tight">
+                      * Dəqiq metro stansiyası növbəti addımda (Checkout) seçilərək çatdırılma məbləği dəqiq əlavə edilir.
                     </p>
                   </div>
 

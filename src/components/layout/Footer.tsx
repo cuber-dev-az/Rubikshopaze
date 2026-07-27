@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Send, Mail, MapPin, Phone, ShieldCheck, Heart, AlertCircle } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useAuthUser } from '@/hooks/useAuthUser';
+import { subscribeToNewsletter } from '@/lib/actions/community';
 
 interface FooterProps {
   dict: ApplicationDictionary;
@@ -15,6 +16,7 @@ export function Footer({ dict, locale }: FooterProps) {
   const { userRole } = useAuthUser();
   const [email, setEmail] = React.useState('');
   const [subscribed, setSubscribed] = React.useState(false);
+  const [subscribing, setSubscribing] = React.useState(false);
   
   const [phone, setPhone] = React.useState('+994 50 668 49 25');
   const [emailVal, setEmailVal] = React.useState('info@rubikshop.az');
@@ -41,12 +43,25 @@ export function Footer({ dict, locale }: FooterProps) {
     loadFooterSettings();
   }, []);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-    setSubscribed(true);
-    setEmail('');
-    setTimeout(() => setSubscribed(false), 5000);
+    if (!email.trim() || subscribing) return;
+    setSubscribing(true);
+    
+    try {
+      const res = await subscribeToNewsletter(email);
+      if (res.success) {
+        setSubscribed(true);
+        setEmail('');
+        setTimeout(() => setSubscribed(false), 5000);
+      } else {
+        alert(res.error || 'Xəta baş verdi, xahiş olunur yenidən cəhd edin.');
+      }
+    } catch (err) {
+      console.error('Error subscribing to newsletter:', err);
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   const currentYear = new Date().getFullYear();
@@ -78,9 +93,16 @@ export function Footer({ dict, locale }: FooterProps) {
             />
             <button
               type="submit"
-              className="px-6 py-3 bg-rubik-brand text-white text-sm font-semibold rounded-lg hover:bg-rubik-brand-dark active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+              disabled={subscribing || subscribed}
+              className="px-6 py-3 bg-rubik-brand text-white text-sm font-semibold rounded-lg hover:bg-rubik-brand-dark active:scale-95 disabled:opacity-70 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
             >
-              <span>{subscribed ? (dict.footer?.newsletter_subscribed || 'Abunə olundu!') : (dict.footer?.newsletter_button || 'Abunə ol')}</span>
+              <span>
+                {subscribing
+                  ? 'Gözləyin...'
+                  : subscribed
+                  ? (dict.footer?.newsletter_subscribed || 'Abunə olundu!')
+                  : (dict.footer?.newsletter_button || 'Abunə ol')}
+              </span>
               <Send className="h-4 w-4" />
             </button>
           </form>
