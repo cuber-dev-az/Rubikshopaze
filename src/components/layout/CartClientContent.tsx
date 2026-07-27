@@ -104,33 +104,115 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
   const progressToFreeShipping = Math.min((subtotal / freeShippingThreshold) * 100, 100);
   const remainingForFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
 
-  // High conversion Cross-sells
-  const upsellProducts = [
-    {
-      id: 'gan-lube-magic-10ml',
-      title: 'GAN Lube Magic 10ml Premium Silicone Oil',
-      price_azn: 15.0,
-      image_url: 'https://picsum.photos/seed/ganlube/300/300',
-      brand: 'GAN',
-      desc: 'Dönmə sürətini artırır və səsi azaldır.'
-    },
-    {
-      id: 'moyu-stand-base',
-      title: 'MoYu Triangular Stand Holder',
-      price_azn: 3.0,
-      image_url: 'https://picsum.photos/seed/moyustand/300/300',
-      brand: 'MoYu',
-      desc: 'Kubu rəfdə sərgiləmək üçün xüsusi dayaq.'
-    },
-    {
-      id: 'qiyi-cleaning-cloth',
-      title: 'QiYi Cube Microfiber Polish Cloth',
-      price_azn: 5.0,
-      image_url: 'https://picsum.photos/seed/qiyicloth/300/300',
-      brand: 'QiYi',
-      desc: 'Kubun xarici səthini təmizləmək üçün.'
+  // Dynamic real-time recommendations from Supabase DB
+  const [dbUpsellProducts, setDbUpsellProducts] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    let isSubscribed = true;
+    const fetchUpsells = async () => {
+      try {
+        const supabaseClient = createClient();
+        const { data, error } = await supabaseClient
+          .from('products')
+          .select('id, title_az, title_en, title_ru, price_azn, compare_at_price_azn, original_price_azn, image_url, description_az, description_en, description_ru, is_preorder, stock_quantity, stock, is_active, brand_id, brands(name)')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (!error && data && isSubscribed) {
+          setDbUpsellProducts(data);
+        }
+      } catch (err) {
+        console.error('Error fetching cart recommendations:', err);
+      }
+    };
+
+    fetchUpsells();
+    return () => {
+      isSubscribed = false;
+    };
+  }, []);
+
+  // Filter recommendations: Exclude items in cart, saved items, pre-orders, and out-of-stock
+  const filteredUpsells = React.useMemo(() => {
+    const cartIds = new Set(items.map(i => String(i.id)));
+    const cartTitles = new Set(items.map(i => i.title.trim().toLowerCase()));
+    const savedIds = new Set(savedItems.map(s => String(s.id)));
+
+    // Fallback standard accessories (if DB has few items or loading)
+    const fallbackAccessories = [
+      {
+        id: 'gan-lube-magic-10ml',
+        title: 'GAN Lube Magic 10ml Premium Silicone Oil',
+        price_azn: 15.0,
+        image_url: 'https://picsum.photos/seed/ganlube/300/300',
+        brand: 'GAN',
+        desc: 'Dönmə sürətini artırır və səsi azaldır.',
+        is_preorder: false
+      },
+      {
+        id: 'moyu-stand-base',
+        title: 'MoYu Triangular Stand Holder',
+        price_azn: 3.0,
+        image_url: 'https://picsum.photos/seed/moyustand/300/300',
+        brand: 'MoYu',
+        desc: 'Kubu rəfdə sərgiləmək üçün xüsusi dayaq.',
+        is_preorder: false
+      },
+      {
+        id: 'qiyi-cleaning-cloth',
+        title: 'QiYi Cube Microfiber Polish Cloth',
+        price_azn: 5.0,
+        image_url: 'https://picsum.photos/seed/qiyicloth/300/300',
+        brand: 'QiYi',
+        desc: 'Kubun xarici səthini təmizləmək üçün.',
+        is_preorder: false
+      }
+    ];
+
+    let candidates: any[] = [];
+
+    if (dbUpsellProducts && dbUpsellProducts.length > 0) {
+      candidates = dbUpsellProducts.map(p => {
+        const title = p[`title_${locale}`] || p.title_az || p.name_az || '';
+        const desc = p[`description_${locale}`] || p.description_az || '';
+        const brandName = p.brands?.name || p.brand || 'RubikShop';
+        return {
+          id: String(p.id),
+          title: String(title),
+          price_azn: Number(p.price_azn || 0),
+          image_url: sanitizeImageUrl(p.image_url, p.id),
+          brand: String(brandName),
+          desc: String(desc).replace(/<[^>]*>/g, '').substring(0, 60),
+          is_preorder: Boolean(p.is_preorder),
+          stock_qty: p.stock_quantity ?? p.stock
+        };
+      });
     }
-  ];
+
+    // Merge fallback accessories so there is always a quality recommendation
+    for (const fb of fallbackAccessories) {
+      if (!candidates.some(c => c.id === fb.id)) {
+        candidates.push(fb);
+      }
+    }
+
+    // Exclude:
+    // 1. Items in cart (by ID or Title)
+    // 2. Saved items (by ID)
+    // 3. Pre-orders (`is_preorder === true`)
+    // 4. Out-of-stock items (`stock_qty <= 0`)
+    const valid = candidates.filter(prod => {
+      if (cartIds.has(String(prod.id))) return false;
+      if (savedIds.has(String(prod.id))) return false;
+      if (cartTitles.has(prod.title.trim().toLowerCase())) return false;
+      if (prod.is_preorder === true) return false;
+      if (prod.stock_qty !== undefined && prod.stock_qty !== null && Number(prod.stock_qty) <= 0) return false;
+      return true;
+    });
+
+    return valid.slice(0, 3);
+  }, [dbUpsellProducts, items, savedItems, locale]);
 
   const [isCouponLoading, setIsCouponLoading] = React.useState(false);
   const handleApplyCoupon = async (e: React.FormEvent) => {
@@ -153,7 +235,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
     setIsCouponLoading(false);
   };
 
-  const handleAddUpsell = (up: typeof upsellProducts[0]) => {
+  const handleAddUpsell = (up: any) => {
     addItem({
       id: up.id,
       title: up.title,
@@ -418,49 +500,53 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                 </div>
               )}
 
-              {/* Upsell / Cross-sell Slider */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-rubik-brand animate-bounce" />
-                  Səbətinizi tamamlamaq üçün tövsiyələr
-                </h3>
+              {/* Upsell / Cross-sell Section - Only render when valid recommendations exist */}
+              {filteredUpsells.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="h-4 w-4 text-rubik-brand animate-bounce" />
+                    Səbətinizi tamamlamaq üçün tövsiyələr
+                  </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {upsellProducts.map((up) => (
-                    <div key={up.id} className="bg-card border border-border/80 p-4 rounded-2xl shadow-soft-sm flex flex-col justify-between hover:border-rubik-brand/40 transition-colors">
-                      <div className="space-y-3">
-                        <div className="relative aspect-square w-16 h-16 rounded-xl bg-muted/40 mx-auto overflow-hidden flex items-center justify-center p-1.5">
-                          <Image
-                            src={sanitizeImageUrl(up.image_url, up.id)}
-                            alt={up.title}
-                            fill
-                            referrerPolicy="no-referrer"
-                            className="object-contain p-1"
-                            sizes="64px"
-                          />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {filteredUpsells.map((up) => (
+                      <div key={up.id} className="bg-card border border-border/80 p-4 rounded-2xl shadow-soft-sm flex flex-col justify-between hover:border-rubik-brand/40 transition-colors">
+                        <div className="space-y-3">
+                          <div className="relative aspect-square w-16 h-16 rounded-xl bg-muted/40 mx-auto overflow-hidden flex items-center justify-center p-1.5">
+                            <Image
+                              src={sanitizeImageUrl(up.image_url, up.id)}
+                              alt={up.title}
+                              fill
+                              referrerPolicy="no-referrer"
+                              className="object-contain p-1"
+                              sizes="64px"
+                            />
+                          </div>
+                          <div className="text-center space-y-1">
+                            <span className="text-[9px] font-bold text-rubik-brand uppercase">{up.brand}</span>
+                            <h4 className="text-[11px] font-bold text-foreground leading-snug line-clamp-2 min-h-[2.2rem]">
+                              {up.title}
+                            </h4>
+                            {up.desc && (
+                              <p className="text-[9px] text-muted-foreground leading-normal line-clamp-1">{up.desc}</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-center space-y-1">
-                          <span className="text-[9px] font-bold text-rubik-brand uppercase">{up.brand} Accessary</span>
-                          <h4 className="text-[11px] font-bold text-foreground leading-snug line-clamp-2 min-h-[2.2rem]">
-                            {up.title}
-                          </h4>
-                          <p className="text-[9px] text-muted-foreground leading-normal line-clamp-1">{up.desc}</p>
+
+                        <div className="pt-3 border-t border-border/60 mt-3 flex items-center justify-between">
+                          <span className="text-xs font-black text-foreground font-mono">{up.price_azn.toFixed(2)} AZN</span>
+                          <button
+                            onClick={() => handleAddUpsell(up)}
+                            className="px-2.5 py-1 bg-foreground text-card hover:bg-rubik-brand hover:text-white font-black text-[10px] rounded-lg transition-colors cursor-pointer"
+                          >
+                            + Əlavə et
+                          </button>
                         </div>
                       </div>
-
-                      <div className="pt-3 border-t border-border/60 mt-3 flex items-center justify-between">
-                        <span className="text-xs font-black text-foreground font-mono">{up.price_azn.toFixed(2)} AZN</span>
-                        <button
-                          onClick={() => handleAddUpsell(up)}
-                          className="px-2.5 py-1 bg-foreground text-card hover:bg-rubik-brand hover:text-white font-black text-[10px] rounded-lg transition-colors cursor-pointer"
-                        >
-                          + Əlavə et
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
             </div>
 
