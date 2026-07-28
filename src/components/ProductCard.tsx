@@ -282,7 +282,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
             ) : isPreorder ? (
               <>
                 <Clock className="w-4 h-4" />
-                Öncədən Sifariş Et
+                Ön sifariş et
               </>
             ) : (
               dict.product.add_to_cart

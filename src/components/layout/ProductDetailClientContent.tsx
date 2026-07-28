@@ -1681,7 +1681,7 @@ function ProductDetailClientContentInner({
                     {isPreorder ? (
                       <>
                         <Clock className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
-                        <span>Öncədən Sifariş Et {quantity > 1 ? `(${quantity})` : ''}</span>
+                        <span>Ön sifariş et {quantity > 1 ? `(${quantity})` : ''}</span>
                       </>
                     ) : (
                       <>
@@ -2700,8 +2700,8 @@ function ProductDetailClientContentInner({
                 {isPreorder ? (
                   <>
                     <Clock className="h-4 w-4" />
-                    <span className="hidden xs:inline">Öncədən Sifariş Et</span>
-                    <span className="xs:hidden">Ön Sifariş</span>
+                    <span className="hidden xs:inline">Ön sifariş et</span>
+                    <span className="xs:hidden">Ön sifariş et</span>
                   </>
                 ) : (
                   <>

@@ -8,6 +8,7 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { AuthModal } from '@/components/auth/AuthModal';
 import TrafficTracker from '@/components/analytics/TrafficTracker';
 import type { ApplicationDictionary } from '@/types/application.types';
+import { MessageCircle } from 'lucide-react';
 
 interface StorefrontLayoutProps {
   children: React.ReactNode;
@@ -32,17 +33,33 @@ export function StorefrontLayout({ children, dict, locale }: StorefrontLayoutPro
   if (!mounted) {
     return (
       <div className="flex flex-col min-h-screen pb-[96px] md:pb-0">
-        <main id="main-content" className="flex-grow">{children}</main>
+        <main id="main-content" className="flex-grow pb-[96px] md:pb-0">{children}</main>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen pb-[96px] md:pb-0">
+    <div className="flex flex-col min-h-screen pb-[96px] md:pb-0 relative">
       <TrafficTracker />
       <Header dict={dict} locale={locale} />
-      <main id="main-content" className="flex-grow">{children}</main>
+      <main id="main-content" className="flex-grow pb-[96px] md:pb-0">{children}</main>
       <Footer dict={dict} locale={locale} />
+      
+      {/* Floating Support Button situated above fixed mobile bottom nav */}
+      <a
+        href="https://wa.me/994506684925"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-[80px] md:bottom-8 right-4 md:right-6 z-40 bg-[#25D366] hover:bg-[#20bd5a] text-white p-3.5 rounded-full shadow-lg transition-all hover:scale-110 active:scale-95 flex items-center justify-center group"
+        aria-label="Köməkçi WhatsApp Dəstək"
+        title="Köməkçi Dəstək Xətti"
+      >
+        <MessageCircle className="w-6 h-6 shrink-0" />
+        <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out text-xs font-bold pl-0 group-hover:pl-2">
+          Dəstək
+        </span>
+      </a>
+
       <MobileBottomNav dict={dict} locale={locale} />
       <AuthModal />
     </div>

@@ -72,7 +72,7 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
 
   const navContent = (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-[9999] flex md:hidden bg-[#0d1117] border-t border-gray-800 shadow-[0_-4px_24px_rgba(0,0,0,0.4)] pointer-events-auto"
+      className="fixed bottom-0 left-0 right-0 z-[9999] flex md:hidden bg-[#FFFFFF] border-t border-[#EDEDED] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pointer-events-auto"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-around h-[64px] px-1 w-full max-w-7xl mx-auto">
@@ -97,14 +97,14 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
                 }
               }}
               className={`relative flex flex-col items-center justify-center w-full h-full min-h-[44px] min-w-[44px] py-1 px-1 transition-all cursor-pointer ${
-                isActive ? 'text-red-500 font-semibold' : 'text-gray-300 hover:text-white'
+                isActive ? 'text-[#D8232A] font-semibold' : 'text-[#6B7280] hover:text-[#17181C]'
               }`}
               aria-label={item.name}
             >
               <div className="relative flex items-center justify-center p-1 rounded-full group-active:scale-95 transition-transform duration-100">
-                <Icon className={`w-[22px] h-[22px] transition-transform ${isActive ? 'scale-110 text-red-500' : 'group-hover:scale-105'}`} />
+                <Icon className={`w-[22px] h-[22px] transition-transform ${isActive ? 'scale-110 text-[#D8232A]' : 'group-hover:scale-105'}`} />
                 {item.badge !== undefined && (
-                  <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[9px] font-black text-white bg-red-500 border-2 border-[#0d1117] rounded-full animate-pulse">
+                  <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[9px] font-black text-white bg-[#D8232A] border-2 border-[#FFFFFF] rounded-full animate-pulse">
                     {item.badge}
                   </span>
                 )}

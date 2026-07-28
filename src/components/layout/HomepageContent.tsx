@@ -27,7 +27,8 @@ import {
   Droplet,
   Timer,
   Layers,
-  ChevronDown
+  ChevronDown,
+  Clock
 } from 'lucide-react';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { useCartStore } from '@/store/useCartStore';
@@ -351,14 +352,14 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
     if (activeCampaign) {
       return (
         <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="bg-gradient-to-r from-rubik-charcoal to-rubik-charcoal-dark border border-border/10 rounded-xl p-8 lg:p-12 shadow-md text-center max-w-4xl mx-auto space-y-6">
-            <span className="px-3 py-1 bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold rounded-full uppercase tracking-wider animate-pulse">
+          <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-[12px] p-8 lg:p-12 shadow-[0_1px_3px_rgba(0,0,0,0.06)] text-center max-w-4xl mx-auto space-y-6">
+            <span className="px-3 py-1 bg-[#FDECEC] border border-[#D8232A]/30 text-[#D8232A] text-xs font-bold rounded-full uppercase tracking-wider animate-pulse">
               {t({ az: 'XÜSUSİ KAMPANİYA', en: 'SPECIAL CAMPAIGN', ru: 'СПЕЦИАЛЬНАЯ КАМПАНИЯ' })}
             </span>
-            <h2 className="text-3xl lg:text-4xl font-black text-white">
+            <h2 className="text-3xl lg:text-4xl font-black text-[#17181C]">
               {activeCampaign.name}
             </h2>
-            <p className="text-gray-300 text-sm md:text-base leading-relaxed max-w-xl mx-auto">
+            <p className="text-[#6B7280] text-sm md:text-base leading-relaxed max-w-xl mx-auto">
               {t({
                 az: `Mağazamızdakı məhsullara ${activeCampaign.discount_percent}%-dək möhtəşəm endirim kampaniyası başladı! Fürsəti qaçırmayın.`,
                 en: `A magnificent campaign has started with up to ${activeCampaign.discount_percent}% off on select products!`,
@@ -371,7 +372,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                   const element = document.getElementById('catalog-grid');
                   element?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="px-8 py-4 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2 mx-auto cursor-pointer"
+                className="px-8 py-4 bg-[#D8232A] hover:bg-[#B31B21] text-white font-bold rounded-xl text-sm transition-all flex items-center gap-2 mx-auto cursor-pointer"
               >
                 <span>{t({ az: 'Kampaniyadakı Məhsulları Kəşf Et', en: 'Explore Campaign Products', ru: 'Посмотреть товары кампании' })}</span>
                 <ArrowRight className="h-4 w-4" />
@@ -718,14 +719,33 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                       <span className="text-xl font-black text-rubik-brand shrink-0">{heroProduct.price_azn.toFixed(2)} AZN</span>
                     </div>
 
-                    <button
-                      onClick={() => handleAddToCart(heroProduct)}
-                      disabled={heroProduct.stock_quantity <= 0}
-                      className="w-full mt-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
-                    >
-                      <ShoppingBag className="h-4 w-4" />
-                      <span>{heroProduct.stock_quantity <= 0 ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
-                    </button>
+                    {heroProduct.allow_preorder && heroProduct.stock_quantity <= 0 ? (
+                      <div className="flex flex-col w-full mt-3">
+                        <button
+                          onClick={() => handleAddToCart(heroProduct)}
+                          className="w-full bg-[#FFFFFF] text-[#D8232A] border-[1.5px] border-[#D8232A] hover:bg-[#FDECEC] font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
+                        >
+                          <Clock className="h-4 w-4" />
+                          <span>Ön sifariş et</span>
+                        </button>
+                        <p className="text-[12px] text-[#6B7280] text-center mt-1 font-normal">
+                          14-28 iş günü ərzində çatdırılacaq
+                        </p>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleAddToCart(heroProduct)}
+                        disabled={heroProduct.stock_quantity <= 0}
+                        className={`w-full mt-3 font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                          heroProduct.stock_quantity <= 0
+                            ? 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed border-none'
+                            : 'bg-[#D8232A] hover:bg-[#B31B21] text-white active:scale-98'
+                        }`}
+                      >
+                        <ShoppingBag className="h-4 w-4" />
+                        <span>{heroProduct.stock_quantity <= 0 ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               </div>
@@ -843,15 +863,15 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
       <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Shipping Banner */}
-          <div className="bg-rubik-charcoal border border-slate-800 text-white p-8 rounded-xl shadow-md flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300">
-            <div className="p-3 bg-white/5 rounded-xl w-fit">
-              <Truck className="h-6 w-6 text-rubik-brand" />
+          <div className="bg-[#FFFFFF] border border-[#E5E7EB] text-[#17181C] p-8 rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-md hover:border-[#17181C]/20 flex flex-col justify-between space-y-6 group transition-all duration-300">
+            <div className="p-3 bg-[#F3F4F6] text-[#17181C] rounded-xl w-fit">
+              <Truck className="h-6 w-6 text-[#D8232A]" />
             </div>
             <div>
-              <h3 className="text-xl font-bold leading-tight">
+              <h3 className="text-xl font-bold leading-tight text-[#17181C]">
                 {t({ az: '24 Saat Daxilində Sürətli Çatdırılma!', en: '24-Hour Express Courier!', ru: 'Экспресс курьер за 24 часа!' })}
               </h3>
-              <p className="text-xs md:text-sm text-gray-300 mt-2">
+              <p className="text-xs md:text-sm text-[#6B7280] mt-2">
                 {t({
                   az: 'Bakı daxilində eyni gün kuryer çatdırılması. Sifarişi qapıda yoxlayaraq, nağd və ya kartla ödəniş imkanı.',
                   en: 'Same day shipping within Baku. Double-check your cube at your door, then pay cash or card.',
@@ -862,15 +882,15 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
           </div>
 
           {/* Gift Card Banner */}
-          <div className="bg-rubik-charcoal border border-slate-800 text-white p-8 rounded-xl shadow-md flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300">
-            <div className="p-3 bg-white/5 rounded-xl w-fit">
-              <Gift className="h-6 w-6 text-rubik-brand" />
+          <div className="bg-[#FFFFFF] border border-[#E5E7EB] text-[#17181C] p-8 rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-md hover:border-[#17181C]/20 flex flex-col justify-between space-y-6 group transition-all duration-300">
+            <div className="p-3 bg-[#F3F4F6] text-[#17181C] rounded-xl w-fit">
+              <Gift className="h-6 w-6 text-[#D8232A]" />
             </div>
             <div>
-              <h3 className="text-xl font-bold leading-tight">
+              <h3 className="text-xl font-bold leading-tight text-[#17181C]">
                 {t({ az: 'RubikShop Hədiyyə Kartları', en: 'Premium Gift Cards', ru: 'Подарочные карты' })}
               </h3>
-              <p className="text-xs md:text-sm text-gray-300 mt-2">
+              <p className="text-xs md:text-sm text-[#6B7280] mt-2">
                 {t({
                   az: 'Doğmalarınız və speedcuber dostlarınız üçün ideal intellektual hədiyyə kartları. 20 - 200 AZN dəyərində.',
                   en: 'Perfect intellectual gift cards for speedcubers and family. Value from 20 to 200 AZN.',
@@ -881,15 +901,15 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
           </div>
 
           {/* Wholesale Banner */}
-          <div className="bg-rubik-charcoal border border-slate-800 text-white p-8 rounded-xl shadow-md flex flex-col justify-between space-y-6 group hover:-translate-y-1 transition-all duration-300 md:col-span-2 lg:col-span-1">
-            <div className="p-3 bg-white/5 rounded-xl w-fit">
-              <Building2 className="h-6 w-6 text-rubik-green" />
+          <div className="bg-[#FFFFFF] border border-[#E5E7EB] text-[#17181C] p-8 rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-md hover:border-[#17181C]/20 flex flex-col justify-between space-y-6 group transition-all duration-300 md:col-span-2 lg:col-span-1">
+            <div className="p-3 bg-[#F3F4F6] text-[#17181C] rounded-xl w-fit">
+              <Building2 className="h-6 w-6 text-[#16A34A]" />
             </div>
             <div>
-              <h3 className="text-xl font-bold leading-tight">
+              <h3 className="text-xl font-bold leading-tight text-[#17181C]">
                 {t({ az: 'Məktəblər & Klublar üçün Topdan Satış', en: 'Schools & Clubs Wholesale', ru: 'Опт для школ и клубов' })}
               </h3>
-              <p className="text-xs md:text-sm text-gray-300 mt-2">
+              <p className="text-xs md:text-sm text-[#6B7280] mt-2">
                 {t({
                   az: 'Dərnəklər, məktəb layihələri və intellektual oyun qrupları üçün xüsusi endirimli topdan qiymətlər və əlaqə.',
                   en: 'Special high-volume discounts for classrooms, puzzle clubs, and intellect leagues with full supply.',
@@ -946,13 +966,13 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
           {renderReviewsSection()}
 
           {/* Community Team Sponsorship */}
-          <div className="bg-rubik-charcoal border border-slate-800 rounded-xl p-8 lg:p-12 text-white text-center space-y-6 max-w-4xl mx-auto shadow-md">
-            <Users className="h-10 w-10 text-rubik-brand mx-auto animate-bounce" />
+          <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-[12px] p-8 lg:p-12 text-[#17181C] text-center space-y-6 max-w-4xl mx-auto shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+            <Users className="h-10 w-10 text-[#D8232A] mx-auto animate-bounce" />
             <div className="space-y-2">
-              <h2 className="text-2xl font-black">
+              <h2 className="text-2xl font-black text-[#17181C]">
                 {t({ az: 'Sponsorluq Proqramına Qoşulun!', en: 'Apply for Team Sponsorship!', ru: 'Подайте заявку на спонсорство!' })}
               </h2>
-              <p className="text-xs md:text-sm text-indigo-100 max-w-xl mx-auto leading-relaxed">
+              <p className="text-xs md:text-sm text-[#6B7280] max-w-xl mx-auto leading-relaxed">
                 {t({
                   az: 'Siz rəsmi WCA yarışlarında iştirak edirsiniz? Ölkə rekordçusunuz yoxsa gələcək vəd edən gənc speedcubersiniz? Rubikshop AZ sizə peşəkar kub dəstəyi təklif edir.',
                   en: 'Do you participate in official WCA events or hold national records? Apply to join Rubikshop AZ professional racing team!',
@@ -960,7 +980,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 })}
               </p>
             </div>
-            <button className="px-6 py-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white text-xs md:text-sm font-bold rounded-xl transition-all cursor-pointer">
+            <button className="px-6 py-3 bg-[#D8232A] hover:bg-[#B31B21] text-white text-xs md:text-sm font-bold rounded-xl transition-all cursor-pointer">
               {t({ az: 'İndi Müraciət Et', en: 'Apply Now', ru: 'Подать заявку сейчас' })}
             </button>
           </div>
@@ -1121,17 +1141,16 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
         </div>
 
         {/* Bottom CTA */}
-        <div className="bg-gradient-to-br from-rubik-brand to-rubik-brand-dark rounded-xl p-8 lg:p-16 text-white text-center space-y-6 shadow-md max-w-4xl mx-auto relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px]"></div>
+        <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-[12px] p-8 lg:p-16 text-[#17181C] text-center space-y-6 shadow-[0_1px_3px_rgba(0,0,0,0.06)] max-w-4xl mx-auto relative overflow-hidden">
           <div className="relative z-10 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-black leading-tight">
+            <h2 className="text-3xl md:text-4xl font-black text-[#17181C] leading-tight">
               {t({
                 az: 'Saniyələrinizi Qənaət Etməyə Hazırsınız?',
                 en: 'Ready to Save Your Precious Seconds?',
                 ru: 'Готовы сэкономить драгоценные секунды?'
               })}
             </h2>
-            <p className="text-sm md:text-base text-white/95 max-w-lg mx-auto leading-relaxed">
+            <p className="text-sm md:text-base text-[#6B7280] max-w-lg mx-auto leading-relaxed">
               {t({
                 az: 'Daha yaxşı kəsiklər, daha hamar fırlanma mexanizmi və peşəkar tənzimləmə sayəsində növbəti PB-nizi təyin edin.',
                 en: 'Get your next personal best today. Enjoy fast corner cuttings, smooth rotations, and official setup services.',
@@ -1145,7 +1164,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 const element = document.getElementById('catalog-grid');
                 element?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="px-8 py-4 bg-white text-rubik-brand font-black rounded-xl hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center gap-2 mx-auto cursor-pointer text-sm"
+              className="px-8 py-4 bg-[#D8232A] hover:bg-[#B31B21] text-white font-black rounded-xl hover:scale-105 active:scale-95 transition-all shadow-md flex items-center gap-2 mx-auto cursor-pointer text-sm"
             >
               <span>{t({ az: 'Məhsulları Alın', en: 'Shop Speedcubes', ru: 'Купить кубики' })}</span>
               <ArrowRight className="h-4 w-4" />
