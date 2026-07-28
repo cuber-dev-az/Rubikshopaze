@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Mail, Lock, User as UserIcon, ArrowRight, Loader2 } from 'lucide-react';
+import { X, Mail, Lock, User as UserIcon, ArrowRight, Loader2, Eye, EyeOff, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter, useParams } from 'next/navigation';
@@ -17,6 +17,7 @@ export function AuthModal() {
   const { isOpen, view, closeModal, setView } = useAuthModalStore();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
   const [name, setName] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
@@ -26,19 +27,35 @@ export function AuthModal() {
   const [step, setStep] = React.useState(1); // 1 = entry, 2 = 6-digit OTP verification
   const [otp, setOtp] = React.useState('');
   const [token, setToken] = React.useState('');
+  const [resendTimer, setResendTimer] = React.useState(0);
 
   const router = useRouter();
   const params = useParams();
   const locale = (params?.locale as string) || 'az';
 
+  // Resend countdown timer interval
+  React.useEffect(() => {
+    let interval: any = null;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [resendTimer]);
+
   const handleClose = () => {
     closeModal();
     setEmail('');
     setPassword('');
+    setShowPassword(false);
     setName('');
     setOtp('');
     setToken('');
     setStep(1);
+    setResendTimer(0);
     setError('');
     setSuccess('');
   };
@@ -50,6 +67,8 @@ export function AuthModal() {
     setOtp('');
     setToken('');
     setStep(1);
+    setResendTimer(0);
+    setShowPassword(false);
   }, [view]);
 
   const getErrorMessage = (err: any): string => {
@@ -156,7 +175,7 @@ export function AuthModal() {
       } else if (res?.token) {
         setToken(res.token);
         setStep(2);
-        setSuccess('Təsdiq kodu e-poçt ünvanınıza göndərildi! Zəhmət olmasa daxil edin.');
+        setResendTimer(45);
       } else {
         setError('Təsdiq kodu göndərilə bilmədi.');
       }
@@ -253,7 +272,7 @@ export function AuthModal() {
       } else if (res?.token) {
         setToken(res.token);
         setStep(2);
-        setSuccess('Şifrə sıfırlama kodu e-poçt ünvanınıza göndərildi!');
+        setResendTimer(45);
       } else {
         setError('Sıfırlama kodu göndərilə bilmədi.');
       }
@@ -295,6 +314,7 @@ export function AuthModal() {
 
   // Resend OTP Code action
   const handleResendOTP = async () => {
+    if (resendTimer > 0 || loading) return;
     setLoading(true);
     setError('');
     setSuccess('');
@@ -307,6 +327,7 @@ export function AuthModal() {
         setError(getErrorMessage(res.error));
       } else if (res?.token) {
         setToken(res.token);
+        setResendTimer(45);
         setSuccess('Təsdiq kodu yenidən göndərildi!');
       } else {
         setError('Yeni kod göndərilə bilmədi.');
@@ -379,14 +400,16 @@ export function AuthModal() {
             </div>
 
             {error && (
-              <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-sm rounded-lg font-medium">
-                {error}
+              <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-sm rounded-xl font-medium flex items-center gap-2.5">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                <span>{error}</span>
               </div>
             )}
             
             {success && (
-              <div className="mb-6 p-3 bg-green-500/10 border border-green-500/20 text-green-500 text-sm rounded-lg font-medium">
-                {success}
+              <div className="mb-6 p-3 bg-green-500/10 border border-green-500/30 text-green-500 text-sm rounded-xl font-medium flex items-center gap-2.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                <span>{success}</span>
               </div>
             )}
 
@@ -400,9 +423,14 @@ export function AuthModal() {
                       type="text"
                       required
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:border-rubik-brand focus:ring-1 focus:ring-rubik-brand transition-all"
-                      placeholder="Adınız"
+                      onChange={(e) => {
+                        setName(e.target.value);
+                        if (error) setError('');
+                      }}
+                      className={`w-full pl-10 pr-4 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                        error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                      }`}
+                      placeholder="Ad və soyadınız"
                     />
                   </div>
                 </div>
@@ -411,15 +439,20 @@ export function AuthModal() {
               {/* Email entry field - visible in login, step 1 of register, step 1 of forgot password */}
               {((view === 'login') || (view === 'register' && step === 1) || (view === 'forgot_password' && step === 1)) && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-foreground">Email</label>
+                  <label className="text-sm font-bold text-foreground">E-poçt</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <input
                       type="email"
                       required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:border-rubik-brand focus:ring-1 focus:ring-rubik-brand transition-all"
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (error) setError('');
+                      }}
+                      className={`w-full pl-10 pr-4 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                        error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                      }`}
                       placeholder="E-poçt ünvanı"
                     />
                   </div>
@@ -444,38 +477,67 @@ export function AuthModal() {
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:border-rubik-brand focus:ring-1 focus:ring-rubik-brand transition-all"
-                      placeholder="••••••••"
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        if (error) setError('');
+                      }}
+                      className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                        error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                      }`}
+                      placeholder={view === 'register' ? 'Şifrəniz (min. 6 simvol)' : '••••••••'}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                      title={showPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
+                  {view === 'register' && (
+                    <p className="text-[11px] text-muted-foreground font-medium pl-1">
+                      * Şifrə ən azı 6 simvoldan ibarət olmalıdır.
+                    </p>
+                  )}
                 </div>
               )}
 
               {/* Step 2 verification view: Code entry box */}
               {step === 2 && (
                 <div className="space-y-4">
-                  <div className="p-3 bg-muted rounded-xl text-center text-xs text-muted-foreground font-medium">
-                    Biz <strong className="text-foreground">{email}</strong> ünvanına 6 rəqəmli təsdiq kodu göndərdik. Zəhmət olmasa daxil edin.
+                  <div className="p-3.5 bg-muted/80 border border-border/80 rounded-xl text-center text-xs text-muted-foreground font-medium leading-relaxed">
+                    Biz <strong className="text-foreground font-bold">{email}</strong> ünvanına 6 rəqəmli təsdiq kodu göndərdik. Zəhmət olmasa daxil edin.
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-foreground text-center block">Təsdiq Kodu</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                       <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="one-time-code"
                         required
                         maxLength={6}
-                        pattern="[0-9]{6}"
                         value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                        className="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:border-rubik-brand focus:ring-1 focus:ring-rubik-brand tracking-[0.25em] text-center font-black text-lg transition-all"
-                        placeholder="000000"
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setOtp(val);
+                          if (error) setError('');
+                        }}
+                        className={`w-full pl-11 pr-4 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 tracking-[0.35em] text-center font-mono font-black text-xl transition-all placeholder:tracking-normal placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-muted-foreground/40 ${
+                          error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                        }`}
+                        placeholder="6 rəqəmli kod"
                       />
                     </div>
+                    <p className="text-[11px] text-muted-foreground text-center font-medium pt-0.5">
+                      ⏳ Kod 10 dəqiqə ərzində etibarlıdır.
+                    </p>
                   </div>
 
                   {/* Password entry during reset password step 2 */}
@@ -485,26 +547,41 @@ export function AuthModal() {
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <input
-                          type="password"
+                          type={showPassword ? 'text' : 'password'}
                           required
                           value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-xl text-foreground focus:outline-none focus:border-rubik-brand focus:ring-1 focus:ring-rubik-brand transition-all"
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                            if (error) setError('');
+                          }}
+                          className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                            error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                          }`}
                           placeholder="Yaxşı bir şifrə yazın (min. 6 simvol)"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                          title={showPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
                   )}
 
                   {/* Resend code option */}
-                  <div className="text-center">
+                  <div className="text-center pt-1">
                     <button
                       type="button"
                       onClick={handleResendOTP}
-                      disabled={loading}
-                      className="text-xs font-bold text-rubik-brand hover:underline transition-all cursor-pointer"
+                      disabled={resendTimer > 0 || loading}
+                      className="text-xs font-bold text-rubik-brand hover:underline transition-all disabled:opacity-50 disabled:no-underline cursor-pointer"
                     >
-                      Kodu almadınız? Yenidən göndər
+                      {resendTimer > 0 
+                        ? `Kodu almadınız? Yenidən göndər (${resendTimer}s)` 
+                        : 'Kodu almadınız? Yenidən göndər'}
                     </button>
                   </div>
                 </div>
