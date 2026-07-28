@@ -105,7 +105,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
       if (data.transparentUrl && !data.use_fallback) {
         applyFn(data.transparentUrl);
-        setRemoveBgSuccess('Fon AI (RMBG-2.0) vasitəsilə uğurla silindi və şəffaf şəkil tətbiq olundu! ✨');
+        setRemoveBgSuccess('Fon AI (BiRefNet HD) vasitəsilə uğurla silindi və şəffaf şəkil tətbiq olundu! ✨');
         serverSuccess = true;
       }
     } catch (err) {
@@ -1138,7 +1138,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                         ) : (
                           <>
                             <Wand2 className="w-4 h-4 text-purple-200" />
-                            <span>✨ Fonu Sil (RMBG-2.0 AI)</span>
+                            <span>✨ Fonu Sil (BiRefNet HD AI)</span>
                           </>
                         )}
                       </button>
