@@ -13,6 +13,112 @@ import {
   verifyOTPAndResetPasswordAction 
 } from '@/lib/actions/auth';
 
+interface SixDigitOtpInputProps {
+  value: string;
+  onChange: (val: string) => void;
+  error?: string;
+  disabled?: boolean;
+}
+
+function SixDigitOtpInput({ value, onChange, error, disabled }: SixDigitOtpInputProps) {
+  const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  // Automatically focus box 0 on mount or when value is reset
+  React.useEffect(() => {
+    if (!value) {
+      inputRefs.current[0]?.focus();
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const rawChar = e.target.value.replace(/\D/g, '');
+    if (!rawChar) {
+      const valArr = value.split('');
+      valArr[index] = '';
+      onChange(valArr.join('').trimEnd());
+      return;
+    }
+
+    const lastChar = rawChar.slice(-1);
+    const valArr = value.padEnd(6, ' ').split('');
+    valArr[index] = lastChar;
+    const newOtp = valArr.join('').trimEnd();
+    onChange(newOtp);
+
+    // Auto-advance focus to next box
+    if (index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Backspace') {
+      if (!value[index] && index > 0) {
+        const valArr = value.split('');
+        valArr[index - 1] = '';
+        onChange(valArr.join('').trimEnd());
+        inputRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    onChange(pasted);
+    const targetIdx = Math.min(pasted.length, 5);
+    inputRefs.current[targetIdx]?.focus();
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className={`grid grid-cols-6 gap-2 sm:gap-2.5 ${error ? 'animate-shake' : ''}`}>
+        {Array.from({ length: 6 }).map((_, idx) => {
+          const digit = value[idx] || '';
+          const hasVal = Boolean(digit);
+          return (
+            <input
+              key={idx}
+              ref={(el) => { inputRefs.current[idx] = el; }}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="one-time-code"
+              maxLength={1}
+              disabled={disabled}
+              value={digit}
+              onChange={(e) => handleChange(e, idx)}
+              onKeyDown={(e) => handleKeyDown(e, idx)}
+              onPaste={handlePaste}
+              className={`w-full h-12 sm:h-13 text-center text-xl font-mono font-black rounded-xl bg-muted border transition-all focus:outline-none focus:ring-2 select-none ${
+                error
+                  ? 'border-red-500 bg-red-50/50 text-red-600 focus:ring-red-500 focus:border-red-500'
+                  : hasVal
+                  ? 'border-rubik-brand bg-rubik-brand/5 text-foreground focus:ring-rubik-brand'
+                  : 'border-border text-foreground focus:border-rubik-brand focus:ring-rubik-brand'
+              }`}
+            />
+          );
+        })}
+      </div>
+      {error ? (
+        <p className="text-xs text-red-500 font-bold text-center animate-shake flex items-center justify-center gap-1">
+          <span>×</span> {error}
+        </p>
+      ) : value.length === 6 ? (
+        <p className="text-xs text-green-600 font-bold text-center flex items-center justify-center gap-1">
+          <span>✓</span> 6 rəqəmli kod daxil edildi
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function AuthModal() {
   const { isOpen, view, closeModal, setView } = useAuthModalStore();
   const [email, setEmail] = React.useState('');
@@ -604,29 +710,17 @@ export function AuthModal() {
                     Biz <strong className="text-foreground font-bold">{email}</strong> ünvanına 6 rəqəmli təsdiq kodu göndərdik. Zəhmət olmasa daxil edin.
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-foreground text-center block">Təsdiq Kodu</label>
-                    <div className="relative">
-                      <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        autoComplete="one-time-code"
-                        required
-                        maxLength={6}
-                        value={otp}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          setOtp(val);
-                          if (error) setError('');
-                        }}
-                        className={`w-full pl-11 pr-4 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 tracking-[0.35em] text-center font-mono font-black text-xl transition-all placeholder:tracking-normal placeholder:font-sans placeholder:text-sm placeholder:font-normal placeholder:text-muted-foreground/40 ${
-                          error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
-                        }`}
-                        placeholder="6 rəqəmli kod"
-                      />
-                    </div>
-                    <p className="text-[11px] text-muted-foreground text-center font-medium pt-0.5">
+                    <label className="text-sm font-bold text-foreground text-center block mb-1">Təsdiq Kodu (6 rəqəmli)</label>
+                    <SixDigitOtpInput
+                      value={otp}
+                      onChange={(val) => {
+                        setOtp(val);
+                        if (error) setError('');
+                      }}
+                      error={error}
+                      disabled={loading}
+                    />
+                    <p className="text-[11px] text-muted-foreground text-center font-medium pt-1">
                       ⏳ Kod 10 dəqiqə ərzində etibarlıdır.
                     </p>
                   </div>
