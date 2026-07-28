@@ -549,8 +549,8 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
 
   return (
     <div className="w-full bg-background overflow-hidden">
-      {/* 1. HERO SECTION */}
-      <section className="relative bg-gradient-to-br from-rubik-charcoal via-rubik-charcoal-dark to-black text-white py-16 lg:py-28 px-4 sm:px-6 lg:px-8 border-b border-border/5 overflow-hidden">
+      {/* 1. HERO SECTION (Dark Banner) */}
+      <section className="relative bg-gradient-to-br from-[#0d1117] via-[#161b22] to-[#0A0A0F] text-white py-12 lg:py-16 px-4 sm:px-6 lg:px-8 border-b border-border/10 overflow-hidden">
         <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#3182ce_1px,transparent_1px)] [background-size:16px_16px]"></div>
         
         {banners.length > 0 && banners[currentBannerIndex] ? (
@@ -564,7 +564,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 transition={{ duration: 0.5 }}
                 className="lg:col-span-7 space-y-6 md:space-y-8"
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold uppercase tracking-wider animate-pulse">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D8232A]/20 border border-[#D8232A]/40 text-[#D8232A] text-xs font-bold uppercase tracking-wider animate-pulse">
                   <Sparkles className="h-4 w-4" />
                   <span>{banners[currentBannerIndex][`subtitle_${locale}`] || banners[currentBannerIndex].subtitle_az || t({ az: 'Xüsusi Təklif', en: 'Special Offer', ru: 'Специальное предложение' })}</span>
                 </div>
@@ -575,7 +575,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 <div className="flex flex-wrap items-center gap-4 pt-2">
                   <Link
                     href={banners[currentBannerIndex].link_url || '#'}
-                    className="px-8 py-4 bg-rubik-brand text-white font-bold rounded-xl shadow-lg hover:bg-rubik-brand-dark hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 group cursor-pointer"
+                    className="px-8 py-4 bg-[#D8232A] hover:bg-[#B31B21] text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 group cursor-pointer"
                   >
                     <span>{banners[currentBannerIndex][`button_text_${locale}`] || banners[currentBannerIndex].button_text_az || t({ az: 'Kəşf Et', en: 'Explore', ru: 'Исследовать' })}</span>
                     <ArrowRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform" />
@@ -611,147 +611,151 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                   <button 
                     key={idx} 
                     onClick={() => setCurrentBannerIndex(idx)}
-                    className={`h-2 rounded-full transition-all ${idx === currentBannerIndex ? 'w-8 bg-rubik-brand' : 'w-2 bg-gray-600 hover:bg-gray-400'}`} 
+                    className={`h-2 rounded-full transition-all ${idx === currentBannerIndex ? 'w-8 bg-[#D8232A]' : 'w-2 bg-gray-600 hover:bg-gray-400'}`} 
                   />
                 ))}
               </div>
             )}
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-            <div className={`${heroProduct ? 'lg:col-span-7' : 'lg:col-span-12 text-center flex flex-col items-center justify-center'} space-y-6 md:space-y-8`}>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D8232A]/20 border border-[#D8232A]/40 text-[#D8232A] text-xs font-bold uppercase tracking-wider animate-pulse">
-                <Sparkles className="h-4 w-4" />
-                <span>{t({ az: 'Azərbaycan Speedcubing Flaqmanı', en: 'Azerbaijan Speedcubing Flagship', ru: 'Флагман Спидкубинга в Азербайджане' })}</span>
-              </div>
-              <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white font-sans">
-                <span>
-                  {t({
-                    az: 'Sürətli Həllin Yeni Sərhədləri!',
-                    en: 'New Frontiers of Speedcubing!',
-                    ru: 'Новые рубежи спидкубинга!'
-                  })}
-                </span>
-                {" "}
-                <br />
-                <span className="text-[#D8232A]">
-                  RubikShop.az
-                </span>
-              </h1>
-              <p className="text-base md:text-xl text-gray-300 font-sans leading-relaxed max-w-2xl">
-                {t({
-                  az: 'Azərbaycanın ilk və tək ixtisaslaşmış mağazasında 100% orijinal GAN, MoYu və QiYi flaqmanlarını kəşf edin. Premium tənzimləmə xidməti ilə rekordlarınızı alt-üst edin!',
-                  en: 'Discover 100% genuine GAN, MoYu, and QiYi flagships in Azerbaijan’s premier puzzle boutique. Destroy your personal records with our fine-tuning service!',
-                  ru: 'Откройте для себя 100% оригинальные флагманы GAN, MoYu и QiYi в первом специализированном магазине Азербайджана. Побейте рекорды!'
-                })}
-              </p>
-
-              <div className="flex flex-wrap items-center gap-4 pt-2 justify-center lg:justify-start">
-                <button
-                  onClick={() => {
-                    const element = document.getElementById('catalog-grid');
-                    element?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-8 py-4 bg-[#D8232A] hover:bg-[#B31B21] text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 group cursor-pointer"
-                >
-                  <span>{t({ az: 'Kataloqu Kəşf Et', en: 'Explore Catalog', ru: 'Исследовать каталог' })}</span>
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform" />
-                </button>
-                <button
-                  onClick={() => {
-                    const element = document.getElementById('learning-section');
-                    element?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="px-8 py-4 bg-white/10 border border-white/20 hover:border-white/40 text-white font-bold rounded-xl hover:bg-white/20 transition-all duration-300 flex items-center gap-2 cursor-pointer"
-                >
-                  <span>{t({ az: 'Alqoritmlər & Öyrənmə', en: 'Learn Algorithms', ru: 'Изучить алгоритмы' })}</span>
-                </button>
-              </div>
-
-              {/* Quick Stats Banner on White Background */}
-              <div className="grid grid-cols-3 gap-4 p-5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] max-w-lg w-full text-[#17181C]">
-                <div>
-                  <span className="block text-2xl md:text-3xl font-black text-[#D8232A] font-mono">24h</span>
-                  <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Sürətli Çatdırılma', en: 'Fast Delivery', ru: 'Быстрая доставка' })}</span>
-                </div>
-                <div>
-                  <span className="block text-2xl md:text-3xl font-black text-[#D8232A] font-mono">100%</span>
-                  <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Orijinal Brendlər', en: 'Genuine Brand', ru: 'Оригинальные бренды' })}</span>
-                </div>
-                <div>
-                  <span className="block text-2xl md:text-3xl font-black text-[#16A34A] font-mono">5k+</span>
-                  <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Məmnun Müştəri', en: 'Happy Cubers', ru: 'Довольные клиенты' })}</span>
-                </div>
-              </div>
+          <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D8232A]/20 border border-[#D8232A]/40 text-[#D8232A] text-xs font-bold uppercase tracking-wider animate-pulse">
+              <Sparkles className="h-4 w-4" />
+              <span>{t({ az: 'Azərbaycan Speedcubing Flaqmanı', en: 'Azerbaijan Speedcubing Flagship', ru: 'Флагман Спидкубинга в Азербайджане' })}</span>
             </div>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white font-sans">
+              <span>
+                {t({
+                  az: 'Sürətli Həllin Yeni Sərhədləri!',
+                  en: 'New Frontiers of Speedcubing!',
+                  ru: 'Новые рубежи спидкубинга!'
+                })}
+              </span>
+              {" "}
+              <br />
+              <span className="text-[#D8232A]">
+                RubikShop.az
+              </span>
+            </h1>
+            <p className="text-base md:text-xl text-gray-300 font-sans leading-relaxed max-w-2xl mx-auto">
+              {t({
+                az: 'Azərbaycanın ilk və tək ixtisaslaşmış mağazasında 100% orijinal GAN, MoYu və QiYi flaqmanlarını kəşf edin. Premium tənzimləmə xidməti ilə rekordlarınızı alt-üst edin!',
+                en: 'Discover 100% genuine GAN, MoYu, and QiYi flagships in Azerbaijan’s premier puzzle boutique. Destroy your personal records with our fine-tuning service!',
+                ru: 'Откройте для себя 100% оригинальные флагманы GAN, MoYu и QiYi в первом специализированном магазине Азербайджана. Побейте рекорды!'
+              })}
+            </p>
 
-            {/* Dynamic Featured Hero Product Card slot - Transferred to White Background */}
-            {heroProduct ? (
-              <div className="lg:col-span-5 flex justify-center">
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.8, type: 'spring' }}
-                  className="w-full max-w-sm bg-[#FFFFFF] border border-[#E5E7EB] rounded-[16px] p-6 shadow-[0_4px_16px_rgba(0,0,0,0.08)] relative text-[#17181C]"
-                >
-                  <div className="absolute top-4 right-4 bg-[#FDECEC] border border-[#D8232A]/30 text-[#B31B21] text-[10px] font-bold uppercase px-2.5 py-1 rounded-full tracking-wider shadow-sm">
-                    {t({ az: 'FLAQMAN', en: 'FLAGSHIP', ru: 'ФЛАГМАН' })}
-                  </div>
-
-                  <div className="relative aspect-square w-full bg-[#F9FAFB] border border-[#F3F4F6] rounded-xl overflow-hidden p-4 mb-5 flex items-center justify-center">
-                    <Image
-                      src={sanitizeImageUrl(heroProduct.image_url, heroProduct.id)}
-                      alt={heroProduct.title}
-                      fill
-                      referrerPolicy="no-referrer"
-                      className="object-contain p-6 transform hover:rotate-12 transition-transform duration-500"
-                    />
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-start gap-2">
-                      <div>
-                        <h3 className="text-lg font-bold text-[#17181C] leading-tight line-clamp-1">{heroProduct.title}</h3>
-                        <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-1">
-                          {heroProduct.description || t({ az: 'Premium Sürət Kubu', en: 'Premium Speedcube', ru: 'Премиум кубик' })}
-                        </p>
-                      </div>
-                      <span className="text-xl font-black text-[#D8232A] shrink-0">{heroProduct.price_azn.toFixed(2)} AZN</span>
-                    </div>
-
-                    {(heroProduct.allow_preorder !== false && heroProduct.allow_preorder !== 0) && heroProduct.stock_quantity <= 0 ? (
-                      <div className="flex flex-col w-full mt-3">
-                        <button
-                          onClick={() => handleAddToCart(heroProduct)}
-                          className="w-full bg-[#FFFFFF] text-[#D8232A] border-[1.5px] border-[#D8232A] hover:bg-[#FDECEC] font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
-                        >
-                          <Clock className="h-4 w-4" />
-                          <span>Ön sifariş et</span>
-                        </button>
-                        <p className="text-[12px] text-[#6B7280] text-center mt-1 font-normal">
-                          14-28 iş günü ərzində çatdırılacaq
-                        </p>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleAddToCart(heroProduct)}
-                        disabled={heroProduct.stock_quantity <= 0}
-                        className={`w-full mt-3 font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                          heroProduct.stock_quantity <= 0
-                            ? 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed border-none'
-                            : 'bg-[#D8232A] hover:bg-[#B31B21] text-white active:scale-98'
-                        }`}
-                      >
-                        <ShoppingBag className="h-4 w-4" />
-                        <span>{heroProduct.stock_quantity <= 0 ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              </div>
-            ) : null}
+            <div className="flex flex-wrap items-center gap-4 pt-2 justify-center">
+              <button
+                onClick={() => {
+                  const element = document.getElementById('catalog-grid');
+                  element?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-8 py-4 bg-[#D8232A] hover:bg-[#B31B21] text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 group cursor-pointer"
+              >
+                <span>{t({ az: 'Kataloqu Kəşf Et', en: 'Explore Catalog', ru: 'Исследовать каталог' })}</span>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform" />
+              </button>
+              <button
+                onClick={() => {
+                  const element = document.getElementById('learning-section');
+                  element?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-8 py-4 bg-white/10 border border-white/20 hover:border-white/40 text-white font-bold rounded-xl hover:bg-white/20 transition-all duration-300 flex items-center gap-2 cursor-pointer"
+              >
+                <span>{t({ az: 'Alqoritmlər & Öyrənmə', en: 'Learn Algorithms', ru: 'Изучить алгоритмы' })}</span>
+              </button>
+            </div>
           </div>
         )}
+      </section>
+
+      {/* 1.5. STATS & FEATURED FLAGSHIP PRODUCT SECTION (Light Section Backdrop) */}
+      <section className="bg-[#F6F6F8] border-b border-[#E5E7EB] py-10 lg:py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          {/* Quick Stats Banner */}
+          <div className="lg:col-span-7 flex flex-col justify-center">
+            <div className="grid grid-cols-3 gap-4 p-6 bg-[#FFFFFF] border border-[#E5E7EB] rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-[#17181C]">
+              <div>
+                <span className="block text-2xl md:text-3xl font-black text-[#D8232A] font-mono">24h</span>
+                <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Sürətli Çatdırılma', en: 'Fast Delivery', ru: 'Быстрая доставка' })}</span>
+              </div>
+              <div>
+                <span className="block text-2xl md:text-3xl font-black text-[#D8232A] font-mono">100%</span>
+                <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Orijinal Brendlər', en: 'Genuine Brand', ru: 'Оригинальные бренды' })}</span>
+              </div>
+              <div>
+                <span className="block text-2xl md:text-3xl font-black text-[#16A34A] font-mono">5k+</span>
+                <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Məmnun Müştəri', en: 'Happy Cubers', ru: 'Довольные клиенты' })}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Featured Hero Product Card slot */}
+          {heroProduct ? (
+            <div className="lg:col-span-5 flex justify-center">
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8, type: 'spring' }}
+                className="w-full max-w-sm bg-[#FFFFFF] border border-[#E5E7EB] rounded-[16px] p-5 shadow-[0_4px_16px_rgba(0,0,0,0.06)] relative text-[#17181C]"
+              >
+                <div className="relative aspect-square w-full bg-[#F9FAFB] border border-[#F3F4F6] rounded-xl overflow-hidden p-4 mb-4 flex items-center justify-center">
+                  <div className="absolute top-2.5 right-2.5 z-10 bg-[#FDECEC] border border-[#D8232A]/30 text-[#B31B21] text-[10px] font-bold uppercase px-2.5 py-1 rounded-full tracking-wider shadow-sm">
+                    {t({ az: 'FLAQMAN', en: 'FLAGSHIP', ru: 'ФЛАГМАН' })}
+                  </div>
+                  <Image
+                    src={sanitizeImageUrl(heroProduct.image_url, heroProduct.id)}
+                    alt={heroProduct.title}
+                    fill
+                    referrerPolicy="no-referrer"
+                    className="object-contain p-6 transform hover:rotate-12 transition-transform duration-500"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <h3 className="text-lg font-bold text-[#17181C] leading-tight line-clamp-1">{heroProduct.title}</h3>
+                      <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-1">
+                        {heroProduct.description || t({ az: 'Premium Sürət Kubu', en: 'Premium Speedcube', ru: 'Премиум кубик' })}
+                      </p>
+                    </div>
+                    <span className="text-xl font-black text-[#D8232A] shrink-0">{heroProduct.price_azn.toFixed(2)} AZN</span>
+                  </div>
+
+                  {(heroProduct.allow_preorder !== false && heroProduct.allow_preorder !== 0) && heroProduct.stock_quantity <= 0 ? (
+                    <div className="flex flex-col w-full mt-3">
+                      <button
+                        onClick={() => handleAddToCart(heroProduct)}
+                        className="w-full bg-[#FFFFFF] text-[#D8232A] border-[1.5px] border-[#D8232A] hover:bg-[#FDECEC] font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
+                      >
+                        <Clock className="h-4 w-4" />
+                        <span>Ön sifariş et</span>
+                      </button>
+                      <p className="text-[12px] text-[#6B7280] text-center mt-1 font-normal">
+                        14-28 iş günü ərzində çatdırılacaq
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleAddToCart(heroProduct)}
+                      disabled={heroProduct.stock_quantity <= 0}
+                      className={`w-full mt-3 font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                        heroProduct.stock_quantity <= 0
+                          ? 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed border-none'
+                          : 'bg-[#D8232A] hover:bg-[#B31B21] text-white active:scale-98'
+                      }`}
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      <span>{heroProduct.stock_quantity <= 0 ? dict.product.out_of_stock : dict.product.add_to_cart}</span>
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          ) : null}
+        </div>
       </section>
       
       {/* 2. FEATURED CATEGORIES SECTION */}

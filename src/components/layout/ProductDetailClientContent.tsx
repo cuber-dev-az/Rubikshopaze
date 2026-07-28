@@ -1363,7 +1363,7 @@ function ProductDetailClientContentInner({
                 )}
 
                 {product?.is_featured && (
-                  <span className="px-2.5 py-1 bg-amber-500/10 text-amber-600 border border-amber-500/20 font-bold text-xs rounded-full uppercase">
+                  <span className="px-2.5 py-1 bg-[#FDECEC] text-[#B31B21] border border-[#D8232A]/30 font-bold text-xs rounded-full uppercase">
                     ⭐ FLAQMAN
                   </span>
                 )}
