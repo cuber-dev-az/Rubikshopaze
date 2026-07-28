@@ -549,10 +549,8 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
 
   return (
     <div className="w-full bg-background overflow-hidden">
-      {/* 1. HERO SECTION (Dark Banner) */}
-      <section className="relative bg-gradient-to-br from-[#0d1117] via-[#161b22] to-[#0A0A0F] text-white py-12 lg:py-16 px-4 sm:px-6 lg:px-8 border-b border-border/10 overflow-hidden">
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#3182ce_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        
+      {/* 1. HERO SECTION (Light Theme) */}
+      <section className="relative bg-[#FFFFFF] text-[#17181C] py-12 lg:py-16 px-4 sm:px-6 lg:px-8 border-b border-[#E5E7EB] overflow-hidden">
         {banners.length > 0 && banners[currentBannerIndex] ? (
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 min-h-[400px]">
             <AnimatePresence mode="wait">
@@ -564,11 +562,11 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 transition={{ duration: 0.5 }}
                 className="lg:col-span-7 space-y-6 md:space-y-8"
               >
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D8232A]/20 border border-[#D8232A]/40 text-[#D8232A] text-xs font-bold uppercase tracking-wider animate-pulse">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FDECEC] border border-[#D8232A]/30 text-[#B31B21] text-xs font-bold uppercase tracking-wider animate-pulse">
                   <Sparkles className="h-4 w-4" />
                   <span>{banners[currentBannerIndex][`subtitle_${locale}`] || banners[currentBannerIndex].subtitle_az || t({ az: 'Xüsusi Təklif', en: 'Special Offer', ru: 'Специальное предложение' })}</span>
                 </div>
-                <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white font-sans">
+                <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight text-[#17181C] font-sans">
                   {banners[currentBannerIndex][`title_${locale}`] || banners[currentBannerIndex].title_az}
                 </h1>
                 
@@ -611,7 +609,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                   <button 
                     key={idx} 
                     onClick={() => setCurrentBannerIndex(idx)}
-                    className={`h-2 rounded-full transition-all ${idx === currentBannerIndex ? 'w-8 bg-[#D8232A]' : 'w-2 bg-gray-600 hover:bg-gray-400'}`} 
+                    className={`h-2 rounded-full transition-all ${idx === currentBannerIndex ? 'w-8 bg-[#D8232A]' : 'w-2 bg-gray-300 hover:bg-gray-400'}`} 
                   />
                 ))}
               </div>
@@ -619,11 +617,11 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
           </div>
         ) : (
           <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D8232A]/20 border border-[#D8232A]/40 text-[#D8232A] text-xs font-bold uppercase tracking-wider animate-pulse">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FDECEC] border border-[#D8232A]/30 text-[#B31B21] text-xs font-bold uppercase tracking-wider animate-pulse">
               <Sparkles className="h-4 w-4" />
               <span>{t({ az: 'Azərbaycan Speedcubing Flaqmanı', en: 'Azerbaijan Speedcubing Flagship', ru: 'Флагман Спидкубинга в Азербайджане' })}</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight text-white font-sans">
+            <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight text-[#17181C] font-sans">
               <span>
                 {t({
                   az: 'Sürətli Həllin Yeni Sərhədləri!',
@@ -637,7 +635,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 RubikShop.az
               </span>
             </h1>
-            <p className="text-base md:text-xl text-gray-300 font-sans leading-relaxed max-w-2xl mx-auto">
+            <p className="text-base md:text-xl text-[#4B5563] font-sans leading-relaxed max-w-2xl mx-auto">
               {t({
                 az: 'Azərbaycanın ilk və tək ixtisaslaşmış mağazasında 100% orijinal GAN, MoYu və QiYi flaqmanlarını kəşf edin. Premium tənzimləmə xidməti ilə rekordlarınızı alt-üst edin!',
                 en: 'Discover 100% genuine GAN, MoYu, and QiYi flagships in Azerbaijan’s premier puzzle boutique. Destroy your personal records with our fine-tuning service!',
@@ -661,7 +659,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                   const element = document.getElementById('learning-section');
                   element?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="px-8 py-4 bg-white/10 border border-white/20 hover:border-white/40 text-white font-bold rounded-xl hover:bg-white/20 transition-all duration-300 flex items-center gap-2 cursor-pointer"
+                className="px-8 py-4 bg-[#F3F4F6] hover:bg-[#E5E7EB] text-[#17181C] border border-[#E5E7EB] font-bold rounded-xl transition-all duration-300 flex items-center gap-2 cursor-pointer"
               >
                 <span>{t({ az: 'Alqoritmlər & Öyrənmə', en: 'Learn Algorithms', ru: 'Изучить алгоритмы' })}</span>
               </button>
