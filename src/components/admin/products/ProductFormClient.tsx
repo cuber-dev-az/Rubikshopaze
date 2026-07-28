@@ -22,7 +22,8 @@ import {
   Check,
   Wand2,
   Loader2,
-  Sparkles
+  Sparkles,
+  RotateCcw
 } from 'lucide-react';
 import Image from 'next/image';
 import { removeBackgroundClient } from '@/lib/client-remove-bg';
@@ -60,6 +61,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [productType, setProductType] = useState('standard');
   const [status, setStatus] = useState('draft');
   const [imageUrl, setImageUrl] = useState('');
+  const [originalImageUrl, setOriginalImageUrl] = useState('');
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState('');
   const [stock_quantity, setStock_quantity] = useState<number>(0);
@@ -79,9 +81,12 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [removeBgSuccess, setRemoveBgSuccess] = useState('');
 
   const handleRemoveBg = async (targetUrl: string, applyFn: (newUrl: string) => void) => {
-    if (!targetUrl || !targetUrl.startsWith('http')) {
+    if (!targetUrl || (!targetUrl.startsWith('http') && !targetUrl.startsWith('data:image/'))) {
       alert("Zəhmət olmasa düzgün və aktiv şəkil URL-i daxil edin.");
       return;
+    }
+    if (!originalImageUrl) {
+      setOriginalImageUrl(targetUrl);
     }
     setRemovingBg(true);
     setRemoveBgError('');
@@ -1104,26 +1109,41 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   <h3 className="text-base font-black text-white flex items-center gap-2">
                     <ImageIcon className="w-5 h-5 text-amber-500" /> Əsas Məhsul Şəkli
                   </h3>
-                  {imageUrl && (
-                    <button
-                      type="button"
-                      disabled={removingBg}
-                      onClick={() => handleRemoveBg(imageUrl, (newUrl) => setImageUrl(newUrl))}
-                      className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-purple-900/30 shrink-0"
-                    >
-                      {removingBg ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>AI Fon Silinir...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 text-purple-200" />
-                          <span>✨ Fonu Sil (RMBG-2.0 AI)</span>
-                        </>
-                      )}
-                    </button>
-                  )}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {originalImageUrl && imageUrl !== originalImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setImageUrl(originalImageUrl);
+                          setRemoveBgSuccess('Orijinal şəkil bərpa olundu! ↩️');
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition-all border border-slate-700 shrink-0"
+                      >
+                        <RotateCcw className="w-4 h-4 text-amber-400" />
+                        <span>Orijinalı Bərpa Et</span>
+                      </button>
+                    )}
+                    {imageUrl && (
+                      <button
+                        type="button"
+                        disabled={removingBg}
+                        onClick={() => handleRemoveBg(imageUrl, (newUrl) => setImageUrl(newUrl))}
+                        className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-purple-900/30 shrink-0"
+                      >
+                        {removingBg ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>AI Fon Silinir...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Wand2 className="w-4 h-4 text-purple-200" />
+                            <span>✨ Fonu Sil (RMBG-2.0 AI)</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {removeBgSuccess && (

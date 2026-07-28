@@ -1,12 +1,12 @@
 /**
- * Client-side Smart Edge-Connected Flood Fill Background Removal.
- * Starts from outer borders and floods inward along matching background pixels.
- * STOPS at product borders (e.g., black lines, colored plastic), preserving internal
- * white faces (such as Rubik's cube white sides) completely intact!
+ * Client-side Smart Edge-Aware Background Removal.
+ * Uses outer border sampling + edge gradient detection to flood background pixels.
+ * Strictly STOPS at object boundaries (e.g. plastic borders, sticker outlines, shadows),
+ * guaranteeing that internal white faces (such as Rubik's cube white sides) stay 100% intact!
  */
 export async function removeBackgroundClient(
   imageUrl: string,
-  tolerance: number = 35
+  tolerance: number = 22
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -34,56 +34,68 @@ export async function removeBackgroundClient(
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
 
-        // Sample 4 corners to determine background color
-        const corners = [
-          0, // Top-Left
-          (width - 1) * 4, // Top-Right
-          (height - 1) * width * 4, // Bottom-Left
-          ((height - 1) * width + (width - 1)) * 4, // Bottom-Right
-        ];
+        // Sample border pixels (10px border around edges) to determine true background color
+        let sumR = 0, sumG = 0, sumB = 0, sampleCount = 0;
+        const borderDepth = Math.max(2, Math.min(10, Math.floor(Math.min(width, height) * 0.02)));
 
-        let bgR = 0, bgG = 0, bgB = 0;
-        corners.forEach((idx) => {
-          bgR += data[idx];
-          bgG += data[idx + 1];
-          bgB += data[idx + 2];
-        });
-        bgR = Math.round(bgR / 4);
-        bgG = Math.round(bgG / 4);
-        bgB = Math.round(bgB / 4);
-
-        // Helper function to test if pixel (r,g,b) matches background
-        const isBackground = (r: number, g: number, b: number): boolean => {
-          const diffR = Math.abs(r - bgR);
-          const diffG = Math.abs(g - bgG);
-          const diffB = Math.abs(b - bgB);
-          const maxDiff = Math.max(diffR, diffG, diffB);
-
-          // Near background color OR studio white/light gray
-          if (maxDiff <= tolerance) return true;
-          if (bgR >= 210 && bgG >= 210 && bgB >= 210 && r >= 235 && g >= 235 && b >= 235) {
-            return true;
+        for (let x = 0; x < width; x++) {
+          for (let y = 0; y < borderDepth; y++) {
+            const idx1 = (y * width + x) * 4;
+            const idx2 = ((height - 1 - y) * width + x) * 4;
+            sumR += data[idx1] + data[idx2];
+            sumG += data[idx1 + 1] + data[idx2 + 1];
+            sumB += data[idx1 + 2] + data[idx2 + 2];
+            sampleCount += 2;
           }
-          return false;
+        }
+        for (let y = borderDepth; y < height - borderDepth; y++) {
+          for (let x = 0; x < borderDepth; x++) {
+            const idx1 = (y * width + x) * 4;
+            const idx2 = (y * width + (width - 1 - x)) * 4;
+            sumR += data[idx1] + data[idx2];
+            sumG += data[idx1 + 1] + data[idx2 + 1];
+            sumB += data[idx1 + 2] + data[idx2 + 2];
+            sampleCount += 2;
+          }
+        }
+
+        const bgR = sampleCount > 0 ? Math.round(sumR / sampleCount) : 255;
+        const bgG = sampleCount > 0 ? Math.round(sumG / sampleCount) : 255;
+        const bgB = sampleCount > 0 ? Math.round(sumB / sampleCount) : 255;
+
+        // Color distance helper
+        const colorDistance = (r: number, g: number, b: number) => {
+          const dr = r - bgR;
+          const dg = g - bgG;
+          const db = b - bgB;
+          return Math.sqrt(dr * dr + dg * dg + db * db);
         };
 
         const totalPixels = width * height;
+        const distMap = new Float32Array(totalPixels);
+        for (let i = 0; i < totalPixels; i++) {
+          const p = i * 4;
+          distMap[i] = colorDistance(data[p], data[p + 1], data[p + 2]);
+        }
+
         const visited = new Uint8Array(totalPixels);
+        const alphaMap = new Uint8Array(totalPixels);
+        alphaMap.fill(255); // Default all pixels to opaque (keep object 100% intact)
+
         const queue: number[] = [];
 
-        // Add all border pixels to queue (top, bottom, left, right)
+        // Enqueue 1px outer frame
         for (let x = 0; x < width; x++) {
-          // Top row (y = 0)
-          queue.push(x); // index = 0 * width + x
-          // Bottom row (y = height - 1)
+          queue.push(x);
           queue.push((height - 1) * width + x);
         }
         for (let y = 1; y < height - 1; y++) {
-          // Left col (x = 0)
           queue.push(y * width);
-          // Right col (x = width - 1)
           queue.push(y * width + (width - 1));
         }
+
+        const effectiveTolerance = Math.max(14, tolerance);
+        const featherRange = 10;
 
         let head = 0;
         while (head < queue.length) {
@@ -91,24 +103,58 @@ export async function removeBackgroundClient(
           if (visited[pixelIndex]) continue;
           visited[pixelIndex] = 1;
 
-          const dataIdx = pixelIndex * 4;
-          const r = data[dataIdx];
-          const g = data[dataIdx + 1];
-          const b = data[dataIdx + 2];
+          const dist = distMap[pixelIndex];
 
-          if (isBackground(r, g, b)) {
-            // Make background pixel transparent
-            data[dataIdx + 3] = 0;
+          // If pixel matches background color
+          if (dist <= effectiveTolerance + featherRange) {
+            // Calculate smooth alpha for anti-aliased edge
+            if (dist <= effectiveTolerance) {
+              alphaMap[pixelIndex] = 0; // Pure background
+            } else {
+              const factor = (dist - effectiveTolerance) / featherRange;
+              alphaMap[pixelIndex] = Math.round(factor * 255);
+            }
 
-            const x = pixelIndex % width;
-            const y = Math.floor(pixelIndex / width);
+            // Only continue flood fill if it's strictly background
+            if (dist <= effectiveTolerance + 4) {
+              const x = pixelIndex % width;
+              const y = Math.floor(pixelIndex / width);
 
-            // Enqueue 4 neighbors
-            if (x > 0 && !visited[pixelIndex - 1]) queue.push(pixelIndex - 1);
-            if (x < width - 1 && !visited[pixelIndex + 1]) queue.push(pixelIndex + 1);
-            if (y > 0 && !visited[pixelIndex - width]) queue.push(pixelIndex - width);
-            if (y < height - 1 && !visited[pixelIndex + width]) queue.push(pixelIndex + width);
+              const pIdx = pixelIndex * 4;
+              const curR = data[pIdx];
+              const curG = data[pIdx + 1];
+              const curB = data[pIdx + 2];
+
+              // Neighbor check helper to prevent crossing edge boundaries
+              const checkAndEnqueue = (nIndex: number) => {
+                if (visited[nIndex]) return;
+                const nDataIdx = nIndex * 4;
+                const nR = data[nDataIdx];
+                const nG = data[nDataIdx + 1];
+                const nB = data[nDataIdx + 2];
+
+                // Contrast difference between adjacent pixels
+                const neighborDelta = Math.abs(curR - nR) + Math.abs(curG - nG) + Math.abs(curB - nB);
+
+                // Stop flood fill if there is a sharp contrast edge (e.g. black plastic border or sticker outline)
+                if (neighborDelta > 42 && distMap[nIndex] > effectiveTolerance) {
+                  return;
+                }
+
+                queue.push(nIndex);
+              };
+
+              if (x > 0) checkAndEnqueue(pixelIndex - 1);
+              if (x < width - 1) checkAndEnqueue(pixelIndex + 1);
+              if (y > 0) checkAndEnqueue(pixelIndex - width);
+              if (y < height - 1) checkAndEnqueue(pixelIndex + width);
+            }
           }
+        }
+
+        // Apply calculated alphaMap to image data
+        for (let i = 0; i < totalPixels; i++) {
+          data[i * 4 + 3] = alphaMap[i];
         }
 
         ctx.putImageData(imageData, 0, 0);

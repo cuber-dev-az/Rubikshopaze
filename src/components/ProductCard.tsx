@@ -219,13 +219,13 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         </button>
       </div>
 
-      <div className="relative aspect-square w-full bg-[#FFFFFF]">
+      <div className="relative aspect-square w-full bg-[#FFFFFF] flex items-center justify-center p-2 overflow-hidden">
         <Image
           src={sanitizeImageUrl(product.image_url, product.id || 'default')}
           alt={productTitle}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
-          className="object-cover p-4 transition-transform duration-300 group-hover:scale-[1.03]"
+          className="object-contain p-1 transition-transform duration-300 group-hover:scale-[1.03]"
           priority={false}
           referrerPolicy="no-referrer"
         />
