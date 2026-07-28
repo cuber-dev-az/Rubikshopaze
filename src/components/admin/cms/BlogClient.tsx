@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Plus, Search, Edit3, Trash2, Check, X, Image as ImageIcon, Eye } from 'lucide-react';
 import { getBlogPosts, createBlogPost, updateBlogPost, deleteBlogPost } from '@/lib/actions/admin';
+import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
 interface BlogPost {
   id: string;
@@ -240,13 +241,14 @@ export default function BlogClient() {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Ön Şəkil URL (Featured Image)</label>
-                <input 
-                  type="text" 
+                <MediaUploadField
+                  label="Ön Şəkil (Cloudinary)"
                   value={featuredImage}
-                  onChange={e => setFeaturedImage(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-mono text-xs mb-3" 
-                  placeholder="https://images.unsplash.com/photo-..." 
+                  onChange={(url) => setFeaturedImage(url)}
+                  accept="image"
+                  folder="rubikshop_blog"
+                  placeholder="https://... məqalə şəkli URL-i yapışdırın və ya yükləyin"
+                  description="Məqalə örtük şəkli Cloudinary CDN-də saxlanılır."
                 />
                 
                 {featuredImage && (

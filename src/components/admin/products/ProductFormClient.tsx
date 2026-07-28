@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { removeBackgroundClient } from '@/lib/client-remove-bg';
+import { uploadMediaClient } from '@/lib/client-upload';
+import { MediaUploadField } from '@/components/admin/MediaUploadField';
 import { 
   createProduct, 
   updateProduct, 
@@ -94,8 +96,20 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
     try {
       const transparentDataUrl = await removeBackgroundClient(targetUrl);
-      applyFn(transparentDataUrl);
-      setRemoveBgSuccess('Fon intellektual AI (@imgly/background-removal) tərəfindən uğurla təmizləndi! ✨');
+      
+      // Upload transparent PNG to Cloudinary to save Supabase storage space
+      try {
+        const cloudRes = await uploadMediaClient(transparentDataUrl, {
+          folder: 'rubikshop_products',
+          resourceType: 'image',
+        });
+        applyFn(cloudRes.url);
+        setRemoveBgSuccess('Fon təmizləndi və şəffaf şəkil Cloudinary-yə yükləndi! ✨☁️');
+      } catch (cloudErr) {
+        // Fallback to base64 if Cloudinary API keys are not configured yet
+        applyFn(transparentDataUrl);
+        setRemoveBgSuccess('Fon intellektual AI (@imgly/background-removal) tərəfindən təmizləndi! ✨');
+      }
     } catch (clientErr: any) {
       console.error("AI remove bg error:", clientErr);
       setRemoveBgError('Fon silinərkən xəta baş verdi: ' + (clientErr.message || 'Lütfən URL-i yoxlayın'));
@@ -1139,31 +1153,15 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 )}
 
                 <div className="space-y-4">
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm font-mono"
-                      placeholder="https://... (Şəkil URL-i daxil edin və ya yapışdırın)"
-                      value={imageUrl.startsWith('data:image/') ? '✨ [Şəffaf AI Şəkli tətbiq olunub]' : imageUrl}
-                      readOnly={imageUrl.startsWith('data:image/')}
-                      onChange={e => setImageUrl(e.target.value)}
-                    />
-                    {imageUrl && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImageUrl('');
-                          setRemoveBgSuccess('');
-                          setRemoveBgError('');
-                        }}
-                        className="px-3.5 py-2 bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-300 font-bold text-xs rounded-xl transition-all border border-slate-700 hover:border-red-800 flex items-center gap-1.5 shrink-0"
-                        title="URL-i Sil / Təmizlə"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-400" />
-                        <span>Təmizlə</span>
-                      </button>
-                    )}
-                  </div>
+                  <MediaUploadField
+                    label=""
+                    value={imageUrl}
+                    onChange={(newUrl) => setImageUrl(newUrl)}
+                    accept="image"
+                    folder="rubikshop_products"
+                    placeholder="https://... şəkil URL-i yapışdırın və ya kompyuterdən Cloudinary-yə yükləyin"
+                    description="Məhsulun əsas görüntüsü Cloudinary CDN üzərində saxlanılacaq."
+                  />
 
                   {imageUrl ? (
                     <div className="mt-4">
@@ -1206,9 +1204,9 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3">
                         <ImageIcon className="w-6 h-6 text-slate-400" />
                       </div>
-                      <p className="text-xs font-bold text-white mb-1">Şəkil URL-i daxil edilməyib</p>
+                      <p className="text-xs font-bold text-white mb-1">Şəkil URL-i və ya fayl seçilməyib</p>
                       <p className="text-[11px] text-slate-500">
-                        Məhsulun əsas şəkil URL-ini daxil edin. Yüklədikdən sonra &quot;Fon Sil (BiRefNet HD AI)&quot; düyməsi aktivləşəcək.
+                        Şəkil URL-ini yapışdırın və ya &quot;Cloudinary-yə Yüklə&quot; düyməsini sıxaraq kompyuterinizdən şəkil yükləyin.
                       </p>
                     </div>
                   )}
@@ -1219,7 +1217,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                       <h4 className="text-xs font-black text-slate-300 uppercase tracking-wider">
-                        Qalereya Şəkilləri
+                        Qalereya Şəkilləri (Cloudinary CDN)
                       </h4>
                       <p className="text-xs text-slate-500 mt-0.5">Məhsul detalları səhifəsində mini karusel şəkilləri</p>
                     </div>
@@ -1228,7 +1226,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       onClick={() => setGalleryImages([...galleryImages, ''])}
                       className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-500 hover:text-amber-400 font-bold text-xs rounded-xl transition-colors border border-slate-700 shrink-0"
                     >
-                      <Plus className="w-4 h-4" /> + Əlavə Şəkil
+                      <Plus className="w-4 h-4" /> + Əlavə Şəkil Sətiri
                     </button>
                   </div>
 
@@ -1239,40 +1237,19 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   ) : (
                     <div className="space-y-3">
                       {galleryImages.map((imgUrl, index) => (
-                        <div key={index} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center gap-3">
-                          <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 shrink-0 flex items-center justify-center">
-                            {imgUrl ? (
-                              <Image
-                                src={imgUrl}
-                                alt={`Qalereya ${index + 1}`}
-                                fill
-                                className="object-cover"
-                                unoptimized={true}
-                                referrerPolicy="no-referrer"
-                              />
-                            ) : (
-                              <ImageIcon className="w-5 h-5 text-slate-600" />
-                            )}
-                          </div>
-                          <input
-                            type="url"
+                        <div key={index} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                          <MediaUploadField
+                            label={`Qalereya ${index + 1}`}
                             value={imgUrl}
-                            onChange={(e) => {
+                            onChange={(newUrl) => {
                               const updated = [...galleryImages];
-                              updated[index] = e.target.value;
+                              updated[index] = newUrl;
                               setGalleryImages(updated);
                             }}
-                            placeholder="Əlavə şəkil URL-i daxil edin (https://...)"
-                            className="flex-1 bg-slate-900 border border-slate-800 text-white rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+                            accept="image"
+                            folder="rubikshop_products"
+                            placeholder="Qalereya şəkil URL-i yapışdırın və ya yükləyin"
                           />
-                          <button
-                            type="button"
-                            onClick={() => setGalleryImages(galleryImages.filter((_, i) => i !== index))}
-                            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
-                            title="Şəkli Sil"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       ))}
                     </div>
@@ -1282,18 +1259,17 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
 
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-4">
                 <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <Video className="w-5 h-5 text-blue-400" /> Video Meneceri
+                  <Video className="w-5 h-5 text-blue-400" /> Video Və ya YouTube Meneceri (Cloudinary Video)
                 </h3>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">YouTube Video Linki</label>
-                  <input 
-                    type="url" 
-                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors"
-                    placeholder="https://youtube.com/watch?v=..."
-                    value={videoUrl}
-                    onChange={e => setVideoUrl(e.target.value)}
-                  />
-                </div>
+                <MediaUploadField
+                  label="Məhsul Videosu (Cloudinary / YouTube / MP4)"
+                  value={videoUrl}
+                  onChange={(newUrl) => setVideoUrl(newUrl)}
+                  accept="video"
+                  folder="rubikshop_videos"
+                  placeholder="https://youtube.com/... və ya kompyuterinizdən video (.mp4) yükləyin"
+                  description="Gamer kub videoları Cloudinary video serverinə yüklənib yayımlanacaq."
+                />
               </div>
             </div>
           )}

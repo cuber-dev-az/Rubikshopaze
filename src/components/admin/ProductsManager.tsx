@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
 export function ProductsManager() {
   const [products, setProducts] = useState<any[]>([]);
@@ -103,7 +104,16 @@ export function ProductsManager() {
             <option value="ball-core">Ball-Core</option>
           </select>
           
-          <input required placeholder="Şəkil URL (Supabase Storage)" value={formData.image_url} onChange={e => setFormData({...formData, image_url: e.target.value})} className="border border-gray-300 p-2.5 rounded-lg focus:ring-2 focus:ring-black outline-none" />
+          <div className="md:col-span-3">
+            <MediaUploadField
+              label="Məhsul Şəkli (Cloudinary)"
+              value={formData.image_url}
+              onChange={(url) => setFormData({ ...formData, image_url: url })}
+              accept="image"
+              folder="rubikshop_products"
+              placeholder="Şəkil URL-i daxil edin və ya kompyuterdən yükləyin"
+            />
+          </div>
           
           <div className="md:col-span-3 mt-2">
             <button type="submit" className="bg-rubik-primary text-black px-8 py-3 rounded-xl font-bold hover:bg-yellow-400 transition-colors active:scale-[0.98]">

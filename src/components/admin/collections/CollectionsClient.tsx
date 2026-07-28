@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Package, Plus, Search, Edit3, Trash2, Check, X, Image as ImageIcon, CheckSquare, Square } from 'lucide-react';
 import { getCollections, createCollection, updateCollection, deleteCollection } from '@/lib/actions/admin';
 import { getProducts } from '@/lib/actions/catalog';
+import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
 interface Collection {
   id: string;
@@ -271,13 +272,14 @@ export default function CollectionsClient() {
               </div>
               
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Kolleksiya Şəkli (URL)</label>
-                <input 
-                  type="text" 
+                <MediaUploadField
+                  label="Kolleksiya Şəkli (Cloudinary)"
                   value={imageUrl}
-                  onChange={e => setImageUrl(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-mono text-xs mb-3" 
-                  placeholder="https://images.unsplash.com/photo-..." 
+                  onChange={(url) => setImageUrl(url)}
+                  accept="image"
+                  folder="rubikshop_collections"
+                  placeholder="https://... kolleksiya şəkil URL-i yapışdırın və ya yükləyin"
+                  description="Kolleksiya örtük görüntüsü Cloudinary CDN-də saxlanılır."
                 />
                 
                 {imageUrl && (

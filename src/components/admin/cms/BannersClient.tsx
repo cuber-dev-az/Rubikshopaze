@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Image as ImageIcon, Plus, Edit3, Trash2, Check, X, MoveUp, MoveDown, LayoutTemplate } from 'lucide-react';
 import { getBanners, createBanner, updateBanner, deleteBanner } from '@/lib/actions/admin';
+import { MediaUploadField } from '@/components/admin/MediaUploadField';
 
 interface Banner {
   id: string;
@@ -303,14 +304,14 @@ export default function BannersClient() {
 
             <div className="space-y-6">
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Şəkil URL</label>
-                <input 
-                  id="banner-image"
-                  type="text" 
+                <MediaUploadField
+                  label="Banner Şəkli (Cloudinary)"
                   value={imageUrl}
-                  onChange={e => setImageUrl(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 font-mono text-xs mb-3" 
-                  placeholder="https://images.unsplash.com/photo-..." 
+                  onChange={(url) => setImageUrl(url)}
+                  accept="image"
+                  folder="rubikshop_banners"
+                  placeholder="https://... banner şəkil URL-i yapışdırın və ya kompyuterdən yükləyin"
+                  description="Yüksək keyfiyyətli banner şəkilləri Cloudinary CDN vasitəsilə sürətli yüklənəcək."
                 />
                 
                 {imageUrl && (
