@@ -1164,22 +1164,48 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                   <div className="flex gap-2">
                     <input 
                       type="text" 
-                      className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm truncate font-mono"
-                      placeholder="https://... (Şəkil URL-i daxil edin)"
-                      value={imageUrl.startsWith('data:image/') ? `✨ [Şəffaf AI Şəkli (Base64) - ${Math.round(imageUrl.length / 1024)} KB]` : imageUrl}
-                      readOnly={imageUrl.startsWith('data:image/')}
+                      className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm font-mono"
+                      placeholder="https://... (Şəkil URL-i daxil edin və ya yapışdırın)"
+                      value={imageUrl}
                       onChange={e => setImageUrl(e.target.value)}
                     />
-                    {imageUrl.startsWith('data:image/') && originalImageUrl && (
+                    {imageUrl && (
                       <button
                         type="button"
-                        onClick={() => setImageUrl(originalImageUrl)}
-                        className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition-all border border-slate-700 shrink-0"
+                        onClick={() => {
+                          setImageUrl('');
+                          setRemoveBgSuccess('');
+                          setRemoveBgError('');
+                        }}
+                        className="px-3.5 py-2 bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-red-300 font-bold text-xs rounded-xl transition-all border border-slate-700 hover:border-red-800 flex items-center gap-1.5 shrink-0"
+                        title="URL-i Sil / Təmizlə"
                       >
-                        Orijinal URL
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                        <span>Təmizlə</span>
                       </button>
                     )}
                   </div>
+
+                  {imageUrl.startsWith('data:image/') && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-purple-950/40 border border-purple-800/40 rounded-xl text-xs text-purple-300">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
+                        Şəffaf AI Şəkli (Base64) - ~{Math.round(imageUrl.length / 1024)} KB
+                      </span>
+                      {originalImageUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImageUrl(originalImageUrl);
+                            setRemoveBgSuccess('Orijinal şəkil bərpa olundu! ↩️');
+                          }}
+                          className="text-amber-400 hover:text-amber-300 underline font-bold transition-colors"
+                        >
+                          Orijinalı Bərpa Et ↩️
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {imageUrl ? (
                     <div className="mt-4">
