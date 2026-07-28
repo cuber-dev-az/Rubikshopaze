@@ -2,39 +2,176 @@
 @config "../../tailwind.config.ts";
 
 :root {
-  --background: #FAFAFA;
-  --foreground: #121212;
-  --primary: #D9383A;
+  /* A/B — Fon */
+  --bg-primary: #FFFFFF;        /* bütün sayt (hero xaric) */
+  --bg-secondary: #F6F6F8;      /* bölmə ayırıcıları */
+  --bg-header: #FFFFFF;
+  --border-header: #EDEDED;     /* header alt xətti */
+  --bg-hero: #0A0A0F;           /* YALNIZ hero banner */
+
+  /* C — Mətn */
+  --text-primary: #17181C;      /* başlıq, məhsul adı */
+  --text-secondary: #6B7280;    /* təsvir, alt yazı, çatdırılma qeydi */
+  --text-muted: #9CA3AF;        /* placeholder, əlçatmaz mətn */
+  --text-hero: #FFFFFF;         /* yalnız hero daxilində */
+
+  /* D — Əsas aksent (qırmızı) */
+  --accent: #D8232A;            /* CTA, qiymət, aktiv tab, endirim */
+  --accent-hover: #B31B21;      /* hover/basılı */
+  --accent-bg-light: #FDECEC;   /* rozetka fonu */
+  --accent-text-dark: #B31B21;  /* rozetka mətni (açıq fon üzərində) */
+
+  /* E — Sifariş statusları (3 ayrı məntiq) */
+  --status-instock-bg: #D8232A;
+  --status-instock-text: #FFFFFF;
+
+  --status-preorder-bg: #FFFFFF;
+  --status-preorder-border: #D8232A;
+  --status-preorder-text: #D8232A;
+
+  --status-unavailable-bg: #F3F4F6;
+  --status-unavailable-text: #9CA3AF;
+
+  /* F — Digər status rəngləri */
+  --badge-discount-bg: #D8232A;
+  --badge-discount-text: #FFFFFF;
+  --status-success-text: #16A34A; /* "stokda var" əlavə göstərici (opsional) */
+
+  /* G — Kateqoriya ikonları */
+  --icon-bg: #F3F4F6;
+  --icon-color: #17181C;
+
+  /* H — Sərhəd/kölgə */
+  --border-card: #E5E7EB;
+  --shadow-card: rgba(0, 0, 0, 0.06);
+
+  /* Radius (referans üçün, mövcud dəyərlərinizi saxlayın) */
+  --radius-card: 12px;
+  --radius-button: 8px;
+
+  /* Global Theme mappings */
+  --background: #FFFFFF;
+  --foreground: #17181C;
+  --primary: #D8232A;
   --primary-foreground: #FFFFFF;
-  --secondary: #1E1E1E;
-  --secondary-foreground: #FFFFFF;
-  --accent: #B27B00;
-  --accent-foreground: #1E1E1E;
+  --secondary: #F6F6F8;
+  --secondary-foreground: #17181C;
   --card: #FFFFFF;
-  --card-foreground: #121212;
+  --card-foreground: #17181C;
   --muted: #F3F4F6;
-  --muted-foreground: #374151;
+  --muted-foreground: #6B7280;
   --border: #E5E7EB;
   --input: #E5E7EB;
-  --ring: #D9383A;
+  --ring: #D8232A;
 }
 
-.dark {
-  --background: #121212;
-  --foreground: #F9FAFB;
-  --primary: #D9383A;
-  --primary-foreground: #FFFFFF;
-  --secondary: #1F2937;
-  --secondary-foreground: #F9FAFB;
-  --accent: #F2B705;
-  --accent-foreground: #121212;
-  --card: #1E1E1E;
-  --card-foreground: #F9FAFB;
-  --muted: #374151;
-  --muted-foreground: #9CA3AF;
-  --border: #374151;
-  --input: #374151;
-  --ring: #D9383A;
+/* ============================================
+   NÜMUNƏ TƏTBİQLƏR (AI Studio üçün istinad)
+   ============================================ */
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.section-alt {
+  background: var(--bg-secondary);
+}
+
+.header {
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-header);
+}
+
+.hero {
+  background: var(--bg-hero);
+  color: var(--text-hero);
+}
+
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+
+/* Əsas CTA / Səbətə at */
+.btn-primary {
+  background: var(--accent);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-button);
+}
+.btn-primary:hover,
+.btn-primary:active {
+  background: var(--accent-hover);
+}
+
+/* Rozetka (Flaqman və s.) */
+.badge {
+  background: var(--accent-bg-light);
+  color: var(--accent-text-dark);
+  border-radius: 999px;
+}
+
+/* --- Sifariş statusu düymələri (3 ayrı vəziyyət) --- */
+
+/* 1. Stokda var */
+.btn-instock {
+  background: var(--status-instock-bg);
+  color: var(--status-instock-text);
+  border: none;
+  border-radius: var(--radius-button);
+}
+
+/* 2. Ön sifariş et — aktiv, outline */
+.btn-preorder {
+  background: var(--status-preorder-bg);
+  color: var(--status-preorder-text);
+  border: 1.5px solid var(--status-preorder-border);
+  border-radius: var(--radius-button);
+}
+.btn-preorder:hover {
+  background: var(--accent-bg-light);
+}
+.preorder-note {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* 3. Tamamilə əlçatmaz — nadir hal */
+.btn-unavailable {
+  background: var(--status-unavailable-bg);
+  color: var(--status-unavailable-text);
+  border: none;
+  border-radius: var(--radius-button);
+  cursor: not-allowed;
+}
+
+/* Endirim nişanı */
+.badge-discount {
+  background: var(--badge-discount-bg);
+  color: var(--badge-discount-text);
+  border-radius: 4px;
+}
+
+/* Kateqoriya ikon dairələri */
+.category-icon {
+  background: var(--icon-bg);
+  color: var(--icon-color);
+}
+
+/* Kartlar */
+.card {
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  box-shadow: 0 1px 3px var(--shadow-card);
+  background: var(--bg-primary);
+}
+
+/* Aktiv tab (bottom nav / header) */
+.tab-active {
+  color: var(--accent);
+}
+.tab-inactive {
+  color: var(--text-muted);
 }
 
 @layer base {

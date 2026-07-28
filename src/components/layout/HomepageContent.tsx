@@ -751,24 +751,24 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { id: '3x3', slug: '3x3', icon: Grid3X3, title: { az: '3x3 Kublar', en: '3x3 Cubes', ru: 'Кубы 3x3' }, bg: 'bg-rubik-brand/10 hover:bg-rubik-brand/20 text-rubik-brand' },
-            { id: 'big-cubes', slug: '4x4', icon: Layers, title: { az: 'Böyük Kublar', en: 'Big Cubes', ru: 'Большие кубики' }, bg: 'bg-rubik-green/10 hover:bg-rubik-green/20 text-rubik-green' },
-            { id: 'minx-skewb', slug: 'pyraminx', icon: Award, title: { az: 'Piramida / Skewb', en: 'Pyraminx & Skewb', ru: 'Пирамидка / Скьюб' }, bg: 'bg-rubik-yellow/10 hover:bg-rubik-yellow/20 text-rubik-yellow' },
-            { id: 'lubes', slug: 'lubes', icon: Droplet, title: { az: 'Kub Yağları', en: 'Silicone Lubes', ru: 'Смазки для куба' }, bg: 'bg-rubik-blue-light/10 hover:bg-rubik-blue-light/20 text-rubik-blue-light' },
-            { id: 'timers-mats', slug: 'timers', icon: Timer, title: { az: 'Taymer & Mat', en: 'Timer & Mats', ru: 'Таймеры и маты' }, bg: 'bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-500' },
-            { id: 'bundles', slug: 'bundles', icon: Gift, title: { az: 'Endirimli Dəstlər', en: 'Special Bundles', ru: 'Наборы со скидкой' }, bg: 'bg-pink-500/10 hover:bg-pink-500/20 text-pink-500' }
+            { id: '3x3', slug: '3x3', icon: Grid3X3, title: { az: '3x3 Kublar', en: '3x3 Cubes', ru: 'Кубы 3x3' } },
+            { id: 'big-cubes', slug: '4x4', icon: Layers, title: { az: 'Böyük Kublar', en: 'Big Cubes', ru: 'Большие кубики' } },
+            { id: 'minx-skewb', slug: 'pyraminx', icon: Award, title: { az: 'Piramida / Skewb', en: 'Pyraminx & Skewb', ru: 'Пирамидка / Скьюб' } },
+            { id: 'lubes', slug: 'lubes', icon: Droplet, title: { az: 'Kub Yağları', en: 'Silicone Lubes', ru: 'Смазки для куба' } },
+            { id: 'timers-mats', slug: 'timers', icon: Timer, title: { az: 'Taymer & Mat', en: 'Timer & Mats', ru: 'Таймеры и маты' } },
+            { id: 'bundles', slug: 'bundles', icon: Gift, title: { az: 'Endirimli Dəstlər', en: 'Special Bundles', ru: 'Наборы со скидкой' } }
           ].map((cat) => {
             const IconComponent = cat.icon;
             return (
               <Link
                 key={cat.id}
                 href={`/${locale}?category=${cat.slug}`}
-                className="group flex flex-col items-center justify-center p-6 bg-card border border-border hover:border-foreground/20 rounded-2xl shadow-soft-sm hover:shadow-soft-md transition-all duration-300 text-center space-y-4"
+                className="group flex flex-col items-center justify-center p-6 bg-[#FFFFFF] border border-[#E5E7EB] hover:border-[#17181C]/20 rounded-[12px] shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-md transition-all duration-300 text-center space-y-4"
               >
-                <div className={`p-4 rounded-xl ${cat.bg} transition-transform duration-300 group-hover:scale-110`}>
+                <div className="p-4 rounded-full bg-[#F3F4F6] text-[#17181C] transition-transform duration-300 group-hover:scale-110">
                   <IconComponent className="h-6 w-6" />
                 </div>
-                <span className="text-sm font-bold text-foreground group-hover:text-rubik-brand transition-colors">
+                <span className="text-sm font-bold text-[#17181C] group-hover:text-[#D8232A] transition-colors">
                   {t(cat.title)}
                 </span>
               </Link>

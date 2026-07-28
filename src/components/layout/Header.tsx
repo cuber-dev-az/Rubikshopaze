@@ -117,26 +117,29 @@ export function Header({ dict, locale }: HeaderProps) {
         <span>{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
       </div>
 
-      <header className={`sticky top-0 w-full bg-card border-b border-border shadow-soft-sm backdrop-blur-md bg-opacity-95 dark:bg-opacity-90 ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>
+      <header className={`sticky top-0 w-full bg-[#FFFFFF] border-b border-[#EDEDED] shadow-sm backdrop-blur-md ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>
         
-        {/* DESKTOP LAYOUT ARCHITECTURE RULES (hidden md:flex structural layer) */}
-        <div className="hidden md:flex items-center justify-between bg-[#0d1117] border-b border-gray-800 px-6 py-4 w-full gap-6">
+        {/* DESKTOP LAYOUT ARCHITECTURE RULES */}
+        <div className="hidden md:flex items-center justify-between bg-[#FFFFFF] border-b border-[#EDEDED] px-6 py-3.5 w-full gap-6">
           
           {/* LEFT SECTION */}
           <div className="flex items-center gap-4 shrink-0">
-            {/* Standalone 3-lines hamburger menu drawer toggle button component */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-2.5 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Desktop Menu Toggle"
             >
               <Menu className="h-6 w-6" />
             </button>
 
-            {/* Brand Logo Link */}
+            {/* Brand Logo Link per Section I */}
             <Link href={`/${locale}`} className="flex items-center gap-2 group">
-              <span className="text-xl md:text-2xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg shadow-soft-sm group-hover:bg-rubik-brand-dark transition-all duration-300 tracking-tight">
-                RubikShop<span className="text-rubik-yellow">.az</span>
+              {/* Mascot Icon */}
+              <div className="w-8 h-8 rounded-lg bg-[#D8232A] text-white flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition-transform">
+                <Package className="w-5 h-5" />
+              </div>
+              <span className="font-sans font-black text-[#D8232A] text-xl md:text-2xl tracking-tight">
+                RubikShop<span className="text-[#17181C] text-sm md:text-base font-bold ml-0.5">.az</span>
               </span>
             </Link>
           </div>
@@ -144,17 +147,17 @@ export function Header({ dict, locale }: HeaderProps) {
           {/* MIDDLE SECTION */}
           <div className="flex-1 max-w-xl mx-auto">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
-              <Search className="absolute left-4 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-4 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
               <input
                 type="search"
                 placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-24 py-2.5 bg-[#161b22] border border-gray-800 rounded-xl text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+                className="w-full pl-11 pr-24 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-xl text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#D8232A] focus:bg-white transition-all"
               />
               <button
                 type="submit"
-                className="absolute right-2 px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs font-black rounded-lg transition-colors cursor-pointer h-[34px] flex items-center justify-center"
+                className="absolute right-2 px-4 py-1.5 bg-[#D8232A] hover:bg-[#B31B21] text-white text-xs font-black rounded-lg transition-colors cursor-pointer h-[34px] flex items-center justify-center"
               >
                 {dict.header?.search_button || "Axtar"}
               </button>
@@ -162,11 +165,11 @@ export function Header({ dict, locale }: HeaderProps) {
           </div>
 
           {/* RIGHT SECTION */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Account Shortcut */}
             <button
               onClick={handleAccountClick}
-              className="p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label={dict.navigation.account || "Kabinet"}
             >
               <User className="h-5 w-5" />
@@ -175,7 +178,7 @@ export function Header({ dict, locale }: HeaderProps) {
             {/* Wishlist Shortcut */}
             <Link
               href={`/${locale}/wishlist`}
-              className="p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label={dict.navigation.wishlist || "Seçilmişlər"}
             >
               <Heart className="h-5 w-5" />
@@ -184,12 +187,12 @@ export function Header({ dict, locale }: HeaderProps) {
             {/* Səbət Shortcut */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-3 text-gray-300 hover:text-white hover:bg-gray-800 rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
+              className="relative p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
               aria-label={dict.navigation.cart || "Səbət"}
             >
               <ShoppingCart className="h-5 w-5" />
               {mounted && totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-5 h-5 px-1 text-[10px] font-black text-white bg-red-500 border-2 border-[#0d1117] rounded-full animate-bounce">
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-5 h-5 px-1 text-[10px] font-black text-white bg-[#D8232A] border-2 border-[#FFFFFF] rounded-full">
                   {totalItems}
                 </span>
               )}
@@ -198,19 +201,22 @@ export function Header({ dict, locale }: HeaderProps) {
 
         </div>
 
-        {/* MOBILE LAYOUT ARCHITECTURE RULES (flex md:hidden structural layer) */}
-        <div className="flex md:hidden items-center justify-between bg-[#0d1117] border-b border-gray-800 px-4 py-3 w-full">
+        {/* MOBILE LAYOUT ARCHITECTURE RULES */}
+        <div className="flex md:hidden items-center justify-between bg-[#FFFFFF] border-b border-[#EDEDED] px-4 py-3 w-full">
           {/* Left: Brand logo */}
           <Link href={`/${locale}`} className="flex items-center gap-2 group">
-            <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg shadow-soft-sm group-hover:bg-rubik-brand-dark transition-all duration-300 tracking-tight">
-              RubikShop<span className="text-rubik-yellow">.az</span>
+            <div className="w-7 h-7 rounded-lg bg-[#D8232A] text-white flex items-center justify-center font-black text-xs shadow-sm">
+              <Package className="w-4 h-4" />
+            </div>
+            <span className="font-sans font-black text-[#D8232A] text-xl tracking-tight">
+              RubikShop<span className="text-[#17181C] text-xs font-bold ml-0.5">.az</span>
             </span>
           </Link>
 
           {/* Right: Hamburger navigation toggle trigger */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="p-2.5 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="p-2.5 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label={t({ az: 'Menyu', en: 'Menu', ru: 'Меню' })}
           >
             <Menu className="h-6 w-6" />
@@ -219,15 +225,15 @@ export function Header({ dict, locale }: HeaderProps) {
 
         {/* Conditional Sub-Row Search visibility (Mobile only) */}
         {showMobileSearch && (
-          <div className="md:hidden px-4 pb-4 pt-1 bg-[#0d1117]">
+          <div className="md:hidden px-4 pb-3 pt-1 bg-[#FFFFFF]">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
-              <Search className="absolute left-3.5 h-4 w-4 text-gray-500 pointer-events-none" />
+              <Search className="absolute left-3.5 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
               <input
                 type="search"
                 placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#161b22] border border-gray-800 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-red-500 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-lg text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#D8232A] transition-all"
               />
             </form>
           </div>

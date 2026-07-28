@@ -190,15 +190,15 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   return (
     <Link 
       href={productUrl} 
-      className="flex flex-col bg-white border border-gray-100 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 relative group cursor-pointer block"
+      className="flex flex-col bg-white border border-[#E5E7EB] rounded-[12px] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow duration-300 relative group cursor-pointer block"
     >
       {isPreorder ? (
-        <div className="absolute top-2.5 left-2.5 z-20 bg-amber-500 text-slate-950 text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 sm:py-1 rounded-lg tracking-wider shadow-md pointer-events-none flex items-center gap-1 max-w-[calc(100%-3.2rem)]">
+        <div className="absolute top-2.5 left-2.5 z-20 bg-[#FDECEC] text-[#B31B21] text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider shadow-sm pointer-events-none flex items-center gap-1 max-w-[calc(100%-3.2rem)]">
           <Clock className="w-3 h-3 shrink-0" />
           <span className="truncate">Ön Sifariş ({product.preorder_lead_time || '14-28 iş günü'})</span>
         </div>
       ) : hasDiscount && discountPercent > 0 ? (
-        <div className="absolute top-2.5 left-2.5 z-20 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wider shadow-md pointer-events-none flex items-center gap-1">
+        <div className="absolute top-2.5 left-2.5 z-20 bg-[#D8232A] text-white text-[10px] font-bold px-2.5 py-1 rounded tracking-wider shadow-sm pointer-events-none flex items-center gap-1">
           <Sparkles className="w-3 h-3 animate-bounce" />
           <span>-{discountPercent}% ENDİRİM</span>
         </div>
@@ -208,7 +208,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         <button
           onClick={handleWishlistToggle}
           disabled={isWishlistLoading}
-          className="p-1.5 sm:p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-rubik-brand cursor-pointer relative z-20"
+          className="p-1.5 sm:p-2 bg-white/80 backdrop-blur-md rounded-full shadow hover:scale-110 transition-transform flex items-center justify-center text-[#D8232A] cursor-pointer relative z-20"
           aria-label={isWishlisted ? "Seçilmişlərdən sil" : "Seçilmişlərə əlavə et"}
         >
           {isWishlistLoading ? (
@@ -219,7 +219,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         </button>
       </div>
 
-      <div className="relative aspect-square w-full bg-gray-50">
+      <div className="relative aspect-square w-full bg-[#FFFFFF]">
         <Image
           src={sanitizeImageUrl(product.image_url, product.id || 'default')}
           alt={productTitle}
@@ -231,7 +231,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
         />
         {isTrulyOutOfStock && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px] z-20 pointer-events-none">
-            <span className="text-white font-bold tracking-wider px-3 py-1 bg-rubik-brand rounded-xl">
+            <span className="text-white font-bold tracking-wider px-3 py-1 bg-[#D8232A] rounded-xl">
               {dict.product.out_of_stock}
             </span>
           </div>
@@ -239,54 +239,62 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       </div>
       
       <div className="p-4 flex flex-col flex-grow relative">
-        <div className="text-[10px] uppercase font-bold text-rubik-brand tracking-wider mb-1 line-clamp-1">
+        <div className="text-[10px] uppercase font-bold text-[#6B7280] tracking-wider mb-1 line-clamp-1">
           {badgeSubtitle}
         </div>
 
-        <h2 className="text-xs sm:text-sm md:text-base font-semibold text-gray-900 line-clamp-3 min-h-[3rem] sm:min-h-[2.5rem] md:min-h-[3rem] group-hover:text-rubik-brand transition-colors leading-snug">
+        <h2 className="text-xs sm:text-sm md:text-base font-semibold text-[#17181C] line-clamp-3 min-h-[3rem] sm:min-h-[2.5rem] md:min-h-[3rem] group-hover:text-[#D8232A] transition-colors leading-snug">
           {productTitle}
         </h2>
         
         <div className="mt-2 space-y-0.5">
           <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className={`text-lg font-black font-mono ${hasDiscount ? 'text-red-600' : 'text-gray-900'}`}>
+            <span className="text-lg font-black font-mono text-[#D8232A]">
               {currentPrice.toFixed(2)} AZN
             </span>
             {hasDiscount && (
-              <span className="line-through text-gray-400 text-xs font-mono ml-1">
+              <span className="line-through text-[#9CA3AF] text-xs font-mono ml-1">
                 {oldPrice.toFixed(2)} AZN
               </span>
             )}
           </div>
           {hasDiscount && (
-            <span className="block text-[10px] font-bold text-emerald-600 font-mono">
+            <span className="block text-[10px] font-bold text-[#16A34A] font-mono">
               Qənaət: {(oldPrice - currentPrice).toFixed(2)} AZN
             </span>
           )}
         </div>
         
-        <button
-          onClick={handleAddToCart}
-          disabled={isTrulyOutOfStock}
-          className={`mt-4 w-full py-2.5 rounded-xl text-sm font-black transition-all duration-200 relative z-20 cursor-pointer flex items-center justify-center gap-1.5 ${
-            isTrulyOutOfStock
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed font-semibold'
-              : isPreorder
-              ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 active:scale-[0.98] shadow-md shadow-amber-500/20'
-              : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark active:scale-[0.98]'
-          }`}
-        >
-          {isTrulyOutOfStock ? (
-            dict.product.out_of_stock
-          ) : isPreorder ? (
-            <>
-              <Clock className="w-4 h-4" />
-              Öncədən Sifariş Et
-            </>
-          ) : (
-            dict.product.add_to_cart
+        <div className="mt-4 flex flex-col">
+          <button
+            onClick={handleAddToCart}
+            disabled={isTrulyOutOfStock}
+            className={`w-full py-2.5 rounded-[8px] text-sm font-black transition-all duration-200 relative z-20 cursor-pointer flex items-center justify-center gap-1.5 ${
+              isTrulyOutOfStock
+                ? 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed border-none font-semibold'
+                : isPreorder
+                ? 'bg-[#FFFFFF] text-[#D8232A] border-[1.5px] border-[#D8232A] hover:bg-[#FDECEC] active:scale-[0.98]'
+                : 'bg-[#D8232A] text-white hover:bg-[#B31B21] active:scale-[0.98]'
+            }`}
+          >
+            {isTrulyOutOfStock ? (
+              dict.product.out_of_stock
+            ) : isPreorder ? (
+              <>
+                <Clock className="w-4 h-4" />
+                Öncədən Sifariş Et
+              </>
+            ) : (
+              dict.product.add_to_cart
+            )}
+          </button>
+
+          {isPreorder && (
+            <p className="text-[12px] text-[#6B7280] text-center mt-1 font-normal">
+              14-28 iş günü ərzində çatdırılacaq
+            </p>
           )}
-        </button>
+        </div>
       </div>
     </Link>
   );

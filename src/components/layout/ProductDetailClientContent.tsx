@@ -1670,12 +1670,12 @@ function ProductDetailClientContentInner({
                     type="button"
                     onClick={() => handleAddToCart(false)}
                     disabled={isTrulyOutOfStock}
-                    className={`w-full py-3 px-3 sm:py-4 sm:px-4 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`w-full py-3 px-3 sm:py-4 sm:px-4 font-black rounded-[8px] text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
                       isTrulyOutOfStock
-                        ? 'bg-muted text-muted-foreground cursor-not-allowed border border-border'
+                        ? 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed border-none'
                         : isPreorder
-                        ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-lg shadow-amber-500/20 active:scale-98'
-                        : 'bg-foreground text-card hover:bg-rubik-brand hover:text-white hover:shadow-soft-lg active:scale-98'
+                        ? 'bg-[#FFFFFF] text-[#D8232A] border-[1.5px] border-[#D8232A] hover:bg-[#FDECEC] active:scale-98'
+                        : 'bg-[#D8232A] text-white hover:bg-[#B31B21] active:scale-98'
                     }`}
                   >
                     {isPreorder ? (
@@ -1691,8 +1691,8 @@ function ProductDetailClientContentInner({
                     )}
                   </button>
                   {isPreorder && (
-                    <span className="text-[10px] sm:text-[11px] text-amber-800 dark:text-amber-200 font-medium mt-0.5 sm:mt-1 text-center">
-                      Səbətə əlavə edir, sonra da alış-verişə davam edə bilərsiniz
+                    <span className="text-[12px] text-[#6B7280] font-normal mt-1 text-center">
+                      14-28 iş günü ərzində çatdırılacaq
                     </span>
                   )}
                 </div>
@@ -1702,20 +1702,20 @@ function ProductDetailClientContentInner({
                     type="button"
                     onClick={() => handleAddToCart(true)}
                     disabled={isTrulyOutOfStock}
-                    className={`w-full py-3 px-3 sm:py-4 sm:px-4 font-black rounded-2xl text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`w-full py-3 px-3 sm:py-4 sm:px-4 font-black rounded-[8px] text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
                       isTrulyOutOfStock
-                        ? 'bg-muted/50 text-muted-foreground cursor-not-allowed border border-border'
+                        ? 'bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed border-none'
                         : isPreorder
-                        ? 'bg-slate-900 text-amber-400 border border-amber-500/30 hover:bg-slate-800 active:scale-98'
-                        : 'bg-rubik-brand text-white hover:bg-rubik-brand-dark hover:shadow-soft-lg active:scale-98'
+                        ? 'bg-[#FFFFFF] text-[#D8232A] border-[1.5px] border-[#D8232A] hover:bg-[#FDECEC] active:scale-98'
+                        : 'bg-[#17181C] text-white hover:bg-[#D8232A] active:scale-98'
                     }`}
                   >
-                    <Zap className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 text-amber-400" />
+                    <Zap className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 text-[#D8232A]" />
                     <span>{isPreorder ? 'İndi Ön Sifariş Et' : 'İndi Al (Sifariş et)'}</span>
                   </button>
                   {isPreorder && (
-                    <span className="text-[10px] sm:text-[11px] text-muted-foreground font-medium mt-0.5 sm:mt-1 text-center">
-                      Dərhal rəsmiləşdirməyə keçir
+                    <span className="text-[12px] text-[#6B7280] font-normal mt-1 text-center">
+                      14-28 iş günü ərzində çatdırılacaq
                     </span>
                   )}
                 </div>
