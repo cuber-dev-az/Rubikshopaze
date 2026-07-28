@@ -620,7 +620,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
         ) : (
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
             <div className={`${heroProduct ? 'lg:col-span-7' : 'lg:col-span-12 text-center flex flex-col items-center justify-center'} space-y-6 md:space-y-8`}>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rubik-brand/20 border border-rubik-brand/40 text-rubik-brand text-xs font-bold uppercase tracking-wider animate-pulse">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#D8232A]/20 border border-[#D8232A]/40 text-[#D8232A] text-xs font-bold uppercase tracking-wider animate-pulse">
                 <Sparkles className="h-4 w-4" />
                 <span>{t({ az: 'Azərbaycan Speedcubing Flaqmanı', en: 'Azerbaijan Speedcubing Flagship', ru: 'Флагман Спидкубинга в Азербайджане' })}</span>
               </div>
@@ -634,7 +634,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                 </span>
                 {" "}
                 <br />
-                <span className="bg-gradient-to-r from-rubik-brand via-rubik-yellow to-rubik-green bg-clip-text text-transparent">
+                <span className="text-[#D8232A]">
                   RubikShop.az
                 </span>
               </h1>
@@ -652,7 +652,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                     const element = document.getElementById('catalog-grid');
                     element?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-8 py-4 bg-rubik-brand text-white font-bold rounded-xl shadow-lg hover:bg-rubik-brand-dark hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 group cursor-pointer"
+                  className="px-8 py-4 bg-[#D8232A] hover:bg-[#B31B21] text-white font-bold rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-2 group cursor-pointer"
                 >
                   <span>{t({ az: 'Kataloqu Kəşf Et', en: 'Explore Catalog', ru: 'Исследовать каталог' })}</span>
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1.5 transition-transform" />
@@ -662,43 +662,43 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                     const element = document.getElementById('learning-section');
                     element?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="px-8 py-4 bg-rubik-charcoal-light/60 border border-border/20 hover:border-rubik-brand/40 text-gray-200 font-bold rounded-xl hover:bg-rubik-charcoal transition-all duration-300 flex items-center gap-2 cursor-pointer"
+                  className="px-8 py-4 bg-white/10 border border-white/20 hover:border-white/40 text-white font-bold rounded-xl hover:bg-white/20 transition-all duration-300 flex items-center gap-2 cursor-pointer"
                 >
                   <span>{t({ az: 'Alqoritmlər & Öyrənmə', en: 'Learn Algorithms', ru: 'Изучить алгоритмы' })}</span>
                 </button>
               </div>
 
-              {/* Quick Stats Banner */}
-              <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border/10 max-w-lg w-full">
+              {/* Quick Stats Banner on White Background */}
+              <div className="grid grid-cols-3 gap-4 p-5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] max-w-lg w-full text-[#17181C]">
                 <div>
-                  <span className="block text-2xl md:text-3xl font-black text-rubik-brand font-mono">24h</span>
-                  <span className="text-xs text-gray-400 font-sans">{t({ az: 'Sürətli Çatdırılma', en: 'Fast Delivery', ru: 'Быстрая доставка' })}</span>
+                  <span className="block text-2xl md:text-3xl font-black text-[#D8232A] font-mono">24h</span>
+                  <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Sürətli Çatdırılma', en: 'Fast Delivery', ru: 'Быстрая доставка' })}</span>
                 </div>
                 <div>
-                  <span className="block text-2xl md:text-3xl font-black text-rubik-yellow font-mono">100%</span>
-                  <span className="text-xs text-gray-400 font-sans">{t({ az: 'Orijinal Brendlər', en: 'Genuine Brand', ru: 'Оригинальные бренды' })}</span>
+                  <span className="block text-2xl md:text-3xl font-black text-[#D8232A] font-mono">100%</span>
+                  <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Orijinal Brendlər', en: 'Genuine Brand', ru: 'Оригинальные бренды' })}</span>
                 </div>
                 <div>
-                  <span className="block text-2xl md:text-3xl font-black text-rubik-green font-mono">5k+</span>
-                  <span className="text-xs text-gray-400 font-sans">{t({ az: 'Məmnun Müştəri', en: 'Happy Cubers', ru: 'Довольные клиенты' })}</span>
+                  <span className="block text-2xl md:text-3xl font-black text-[#16A34A] font-mono">5k+</span>
+                  <span className="text-xs text-[#6B7280] font-sans font-medium">{t({ az: 'Məmnun Müştəri', en: 'Happy Cubers', ru: 'Довольные клиенты' })}</span>
                 </div>
               </div>
             </div>
 
-            {/* Dynamic Featured Hero Product Card slot */}
+            {/* Dynamic Featured Hero Product Card slot - Transferred to White Background */}
             {heroProduct ? (
               <div className="lg:col-span-5 flex justify-center">
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ duration: 0.8, type: 'spring' }}
-                  className="w-full max-w-sm bg-gradient-to-b from-rubik-charcoal-light to-rubik-charcoal border border-border/20 rounded-3xl p-6 shadow-soft-2xl relative"
+                  className="w-full max-w-sm bg-[#FFFFFF] border border-[#E5E7EB] rounded-[16px] p-6 shadow-[0_4px_16px_rgba(0,0,0,0.08)] relative text-[#17181C]"
                 >
-                  <div className="absolute top-4 right-4 bg-rubik-yellow/15 border border-rubik-yellow/40 text-rubik-yellow text-[10px] font-black uppercase px-2 py-1 rounded-md">
+                  <div className="absolute top-4 right-4 bg-[#FDECEC] border border-[#D8232A]/30 text-[#B31B21] text-[10px] font-bold uppercase px-2.5 py-1 rounded-full tracking-wider shadow-sm">
                     {t({ az: 'FLAQMAN', en: 'FLAGSHIP', ru: 'ФЛАГМАН' })}
                   </div>
 
-                  <div className="relative aspect-square w-full bg-black/30 rounded-2xl overflow-hidden p-4 mb-5 flex items-center justify-center">
+                  <div className="relative aspect-square w-full bg-[#F9FAFB] border border-[#F3F4F6] rounded-xl overflow-hidden p-4 mb-5 flex items-center justify-center">
                     <Image
                       src={sanitizeImageUrl(heroProduct.image_url, heroProduct.id)}
                       alt={heroProduct.title}
@@ -711,15 +711,15 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                   <div className="space-y-3">
                     <div className="flex justify-between items-start gap-2">
                       <div>
-                        <h3 className="text-lg font-bold text-white leading-tight line-clamp-1">{heroProduct.title}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                        <h3 className="text-lg font-bold text-[#17181C] leading-tight line-clamp-1">{heroProduct.title}</h3>
+                        <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-1">
                           {heroProduct.description || t({ az: 'Premium Sürət Kubu', en: 'Premium Speedcube', ru: 'Премиум кубик' })}
                         </p>
                       </div>
-                      <span className="text-xl font-black text-rubik-brand shrink-0">{heroProduct.price_azn.toFixed(2)} AZN</span>
+                      <span className="text-xl font-black text-[#D8232A] shrink-0">{heroProduct.price_azn.toFixed(2)} AZN</span>
                     </div>
 
-                    {heroProduct.allow_preorder && heroProduct.stock_quantity <= 0 ? (
+                    {(heroProduct.allow_preorder !== false && heroProduct.allow_preorder !== 0) && heroProduct.stock_quantity <= 0 ? (
                       <div className="flex flex-col w-full mt-3">
                         <button
                           onClick={() => handleAddToCart(heroProduct)}
