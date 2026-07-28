@@ -17,8 +17,11 @@ export function AuthModal() {
   const { isOpen, view, closeModal, setView } = useAuthModalStore();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [name, setName] = React.useState('');
+  const [termsAccepted, setTermsAccepted] = React.useState(true);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
@@ -50,7 +53,9 @@ export function AuthModal() {
     closeModal();
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setShowPassword(false);
+    setShowConfirmPassword(false);
     setName('');
     setOtp('');
     setToken('');
@@ -64,11 +69,14 @@ export function AuthModal() {
   React.useEffect(() => {
     setError('');
     setSuccess('');
+    setPassword('');
+    setConfirmPassword('');
     setOtp('');
     setToken('');
     setStep(1);
     setResendTimer(0);
     setShowPassword(false);
+    setShowConfirmPassword(false);
   }, [view]);
 
   const getErrorMessage = (err: any): string => {
@@ -103,7 +111,7 @@ export function AuthModal() {
       return 'Bu e-poçt ünvanı ilə artıq hesab yaradılıb. Zəhmət olmasa daxil olun.';
     }
     if (lower.includes('password should be') || lower.includes('signup_failed') || lower.includes('weak password')) {
-      return 'Şifrə çox sadədir. Şifrə ən azı 6 simvoldan ibarət olmalıdır.';
+      return 'Şifrə çox sadədir. Şifrə ən azı 8 simvoldan ibarət olmalıdır.';
     }
     if (lower.includes('invalid login credentials') || lower.includes('invalid_credentials')) {
       return 'E-poçt ünvanı və ya şifrə yanlışdır.';
@@ -164,6 +172,18 @@ export function AuthModal() {
   // Register Step 1: Send OTP code
   const handleRegisterStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8) {
+      setError('Şifrə ən azı 8 simvoldan ibarət olmalıdır.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Daxil etdiyiniz şifrələr təsdiqlə uyğun gəlmir.');
+      return;
+    }
+    if (!termsAccepted) {
+      setError('Qeydiyyatdan keçmək üçün istifadə şərtlərini qəbul etməlisiniz.');
+      return;
+    }
     setLoading(true);
     setError('');
     setSuccess('');
@@ -286,6 +306,14 @@ export function AuthModal() {
   // Forgot Password Step 2: Verify reset OTP & apply new password
   const handleForgotPasswordStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8) {
+      setError('Şifrə ən azı 8 simvoldan ibarət olmalıdır.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Daxil etdiyiniz şifrələr təsdiqlə uyğun gəlmir.');
+      return;
+    }
     setLoading(true);
     setError('');
     setSuccess('');
@@ -461,47 +489,96 @@ export function AuthModal() {
 
               {/* Standard Password field for login & step 1 of register */}
               {((view === 'login') || (view === 'register' && step === 1)) && (
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-foreground">Şifrə</label>
-                    {view === 'login' && (
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-bold text-foreground">Şifrə</label>
+                      {view === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => setView('forgot_password')}
+                          className="text-xs font-bold text-rubik-brand hover:underline cursor-pointer"
+                        >
+                          Şifrəni unutmusunuz?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (error) setError('');
+                        }}
+                        className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                          error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                        }`}
+                        placeholder={view === 'register' ? 'Şifrəniz (min. 8 simvol)' : '••••••••'}
+                      />
                       <button
                         type="button"
-                        onClick={() => setView('forgot_password')}
-                        className="text-xs font-bold text-rubik-brand hover:underline"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                        title={showPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
                       >
-                        Şifrəni unutmusunuz?
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
-                    )}
+                    </div>
                   </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                        if (error) setError('');
-                      }}
-                      className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
-                        error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
-                      }`}
-                      placeholder={view === 'register' ? 'Şifrəniz (min. 6 simvol)' : '••••••••'}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-                      title={showPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
+
                   {view === 'register' && (
-                    <p className="text-[11px] text-muted-foreground font-medium pl-1">
-                      * Şifrə ən azı 6 simvoldan ibarət olmalıdır.
-                    </p>
+                    <>
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-foreground">Şifrənin Təkrarı</label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            required
+                            value={confirmPassword}
+                            onChange={(e) => {
+                              setConfirmPassword(e.target.value);
+                              if (error) setError('');
+                            }}
+                            className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                              error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                            }`}
+                            placeholder="Şifrənizi yenidən daxil edin"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                            title={showConfirmPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground font-medium pl-1">
+                        * Şifrə ən azı 8 simvoldan ibarət olmalıdır.
+                      </p>
+
+                      <div className="flex items-start gap-2.5 pt-1">
+                        <input
+                          type="checkbox"
+                          id="terms-checkbox"
+                          checked={termsAccepted}
+                          onChange={(e) => {
+                            setTermsAccepted(e.target.checked);
+                            if (error) setError('');
+                          }}
+                          className="mt-0.5 h-4 w-4 rounded border-border text-rubik-brand focus:ring-rubik-brand accent-rubik-brand cursor-pointer shrink-0"
+                        />
+                        <label htmlFor="terms-checkbox" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
+                          <span className="font-medium">İstifadə şərtləri və Məxfilik siyasəti</span> ilə razıyam.
+                        </label>
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -542,32 +619,66 @@ export function AuthModal() {
 
                   {/* Password entry during reset password step 2 */}
                   {view === 'forgot_password' && (
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-bold text-foreground">Yeni Şifrə</label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          value={password}
-                          onChange={(e) => {
-                            setPassword(e.target.value);
-                            if (error) setError('');
-                          }}
-                          className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
-                            error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
-                          }`}
-                          placeholder="Yaxşı bir şifrə yazın (min. 6 simvol)"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-                          title={showPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-foreground">Yeni Şifrə</label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            required
+                            value={password}
+                            onChange={(e) => {
+                              setPassword(e.target.value);
+                              if (error) setError('');
+                            }}
+                            className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                              error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                            }`}
+                            placeholder="Yeni şifrəniz (min. 8 simvol)"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                            title={showPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-sm font-bold text-foreground">Yeni Şifrənin Təkrarı</label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            required
+                            value={confirmPassword}
+                            onChange={(e) => {
+                              setConfirmPassword(e.target.value);
+                              if (error) setError('');
+                            }}
+                            className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
+                              error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                            }`}
+                            placeholder="Yeni şifrənizi təkrar yazın"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                            title={showConfirmPassword ? 'Şifrəni gizlət' : 'Şifrəni göstər'}
+                          >
+                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-muted-foreground font-medium pl-1">
+                        * Şifrə ən azı 8 simvoldan ibarət olmalıdır.
+                      </p>
                     </div>
                   )}
 
