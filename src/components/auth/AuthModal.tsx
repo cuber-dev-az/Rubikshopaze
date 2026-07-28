@@ -21,7 +21,7 @@ export function AuthModal() {
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [name, setName] = React.useState('');
-  const [termsAccepted, setTermsAccepted] = React.useState(true);
+  const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState('');
@@ -57,6 +57,7 @@ export function AuthModal() {
     setShowPassword(false);
     setShowConfirmPassword(false);
     setName('');
+    setTermsAccepted(false);
     setOtp('');
     setToken('');
     setStep(1);
@@ -71,6 +72,7 @@ export function AuthModal() {
     setSuccess('');
     setPassword('');
     setConfirmPassword('');
+    setTermsAccepted(false);
     setOtp('');
     setToken('');
     setStep(1);
@@ -516,7 +518,7 @@ export function AuthModal() {
                         className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
                           error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
                         }`}
-                        placeholder={view === 'register' ? 'Şifrəniz (min. 8 simvol)' : '••••••••'}
+                        placeholder={view === 'register' ? 'Şifrəniz' : '••••••••'}
                       />
                       <button
                         type="button"
@@ -544,7 +546,11 @@ export function AuthModal() {
                               if (error) setError('');
                             }}
                             className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
-                              error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                              confirmPassword && password !== confirmPassword
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                : error
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
                             }`}
                             placeholder="Şifrənizi yenidən daxil edin"
                           />
@@ -557,6 +563,11 @@ export function AuthModal() {
                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
+                        {confirmPassword && password !== confirmPassword && (
+                          <p className="text-[11px] text-red-500 font-semibold pl-1">
+                            ⚠️ Şifrələr uyğun gəlmir.
+                          </p>
+                        )}
                       </div>
 
                       <p className="text-[11px] text-muted-foreground font-medium pl-1">
@@ -575,7 +586,10 @@ export function AuthModal() {
                           className="mt-0.5 h-4 w-4 rounded border-border text-rubik-brand focus:ring-rubik-brand accent-rubik-brand cursor-pointer shrink-0"
                         />
                         <label htmlFor="terms-checkbox" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
-                          <span className="font-medium">İstifadə şərtləri və Məxfilik siyasəti</span> ilə razıyam.
+                          <span className="text-rubik-brand font-bold underline hover:opacity-80 transition-opacity">İstifadə şərtləri</span>
+                          {' və '}
+                          <span className="text-rubik-brand font-bold underline hover:opacity-80 transition-opacity">Məxfilik siyasəti</span>
+                          {' ilə razıyam.'}
                         </label>
                       </div>
                     </>
@@ -635,7 +649,7 @@ export function AuthModal() {
                             className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
                               error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
                             }`}
-                            placeholder="Yeni şifrəniz (min. 8 simvol)"
+                            placeholder="Yeni şifrəniz"
                           />
                           <button
                             type="button"
@@ -661,7 +675,11 @@ export function AuthModal() {
                               if (error) setError('');
                             }}
                             className={`w-full pl-10 pr-11 py-3 bg-muted border rounded-xl text-foreground focus:outline-none focus:ring-1 transition-all ${
-                              error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
+                              confirmPassword && password !== confirmPassword
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                : error
+                                ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                                : 'border-border focus:border-rubik-brand focus:ring-rubik-brand'
                             }`}
                             placeholder="Yeni şifrənizi təkrar yazın"
                           />
@@ -674,6 +692,11 @@ export function AuthModal() {
                             {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
+                        {confirmPassword && password !== confirmPassword && (
+                          <p className="text-[11px] text-red-500 font-semibold pl-1">
+                            ⚠️ Şifrələr uyğun gəlmir.
+                          </p>
+                        )}
                       </div>
 
                       <p className="text-[11px] text-muted-foreground font-medium pl-1">
