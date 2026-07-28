@@ -4,6 +4,11 @@ export function sanitizeImageUrl(url?: string | null, fallbackSeed = 'default'):
   }
   const trimmed = url.trim();
 
+  // Support base64 data URIs
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+
   // If it's a dummy or unresolvable domain (example.com, rubikshop.az, placeholder, etc.)
   if (
     trimmed.includes('rubikshop.az') ||

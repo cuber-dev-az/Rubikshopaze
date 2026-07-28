@@ -1,10 +1,12 @@
 /**
- * Client-side Smart Background Removal for Product Photos
- * Auto-detects white/light studio background and turns it 100% transparent PNG.
+ * Client-side Smart Edge-Connected Flood Fill Background Removal.
+ * Starts from outer borders and floods inward along matching background pixels.
+ * STOPS at product borders (e.g., black lines, colored plastic), preserving internal
+ * white faces (such as Rubik's cube white sides) completely intact!
  */
 export async function removeBackgroundClient(
   imageUrl: string,
-  tolerance: number = 32
+  tolerance: number = 35
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -32,54 +34,80 @@ export async function removeBackgroundClient(
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
 
-        // Sample corner and edge pixels to determine background RGB
-        const samplePoints = [
+        // Sample 4 corners to determine background color
+        const corners = [
           0, // Top-Left
           (width - 1) * 4, // Top-Right
           (height - 1) * width * 4, // Bottom-Left
           ((height - 1) * width + (width - 1)) * 4, // Bottom-Right
-          Math.floor(width / 2) * 4, // Top-Center
-          (height - 1) * width * 4 + Math.floor(width / 2) * 4, // Bottom-Center
         ];
 
-        let totalR = 0, totalG = 0, totalB = 0;
-        let validSamples = 0;
-
-        samplePoints.forEach((idx) => {
-          if (idx < data.length - 3) {
-            totalR += data[idx];
-            totalG += data[idx + 1];
-            totalB += data[idx + 2];
-            validSamples++;
-          }
+        let bgR = 0, bgG = 0, bgB = 0;
+        corners.forEach((idx) => {
+          bgR += data[idx];
+          bgG += data[idx + 1];
+          bgB += data[idx + 2];
         });
+        bgR = Math.round(bgR / 4);
+        bgG = Math.round(bgG / 4);
+        bgB = Math.round(bgB / 4);
 
-        const bgR = validSamples > 0 ? Math.round(totalR / validSamples) : 255;
-        const bgG = validSamples > 0 ? Math.round(totalG / validSamples) : 255;
-        const bgB = validSamples > 0 ? Math.round(totalB / validSamples) : 255;
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          // Distance from detected background color
+        // Helper function to test if pixel (r,g,b) matches background
+        const isBackground = (r: number, g: number, b: number): boolean => {
           const diffR = Math.abs(r - bgR);
           const diffG = Math.abs(g - bgG);
           const diffB = Math.abs(b - bgB);
-          const dist = Math.max(diffR, diffG, diffB);
+          const maxDiff = Math.max(diffR, diffG, diffB);
 
-          // Near-white studio light check (e.g., RGB > 225)
-          const isStudioWhite = r >= 225 && g >= 225 && b >= 225;
+          // Near background color OR studio white/light gray
+          if (maxDiff <= tolerance) return true;
+          if (bgR >= 210 && bgG >= 210 && bgB >= 210 && r >= 235 && g >= 235 && b >= 235) {
+            return true;
+          }
+          return false;
+        };
 
-          if (dist <= tolerance || isStudioWhite) {
-            if (dist <= tolerance / 2 || (r >= 240 && g >= 240 && b >= 240)) {
-              data[i + 3] = 0; // Fully transparent
-            } else {
-              // Smooth edge feathering
-              const alphaRatio = (dist - tolerance / 2) / (tolerance / 2);
-              data[i + 3] = Math.min(data[i + 3], Math.floor(alphaRatio * 255));
-            }
+        const totalPixels = width * height;
+        const visited = new Uint8Array(totalPixels);
+        const queue: number[] = [];
+
+        // Add all border pixels to queue (top, bottom, left, right)
+        for (let x = 0; x < width; x++) {
+          // Top row (y = 0)
+          queue.push(x); // index = 0 * width + x
+          // Bottom row (y = height - 1)
+          queue.push((height - 1) * width + x);
+        }
+        for (let y = 1; y < height - 1; y++) {
+          // Left col (x = 0)
+          queue.push(y * width);
+          // Right col (x = width - 1)
+          queue.push(y * width + (width - 1));
+        }
+
+        let head = 0;
+        while (head < queue.length) {
+          const pixelIndex = queue[head++];
+          if (visited[pixelIndex]) continue;
+          visited[pixelIndex] = 1;
+
+          const dataIdx = pixelIndex * 4;
+          const r = data[dataIdx];
+          const g = data[dataIdx + 1];
+          const b = data[dataIdx + 2];
+
+          if (isBackground(r, g, b)) {
+            // Make background pixel transparent
+            data[dataIdx + 3] = 0;
+
+            const x = pixelIndex % width;
+            const y = Math.floor(pixelIndex / width);
+
+            // Enqueue 4 neighbors
+            if (x > 0 && !visited[pixelIndex - 1]) queue.push(pixelIndex - 1);
+            if (x < width - 1 && !visited[pixelIndex + 1]) queue.push(pixelIndex + 1);
+            if (y > 0 && !visited[pixelIndex - width]) queue.push(pixelIndex - width);
+            if (y < height - 1 && !visited[pixelIndex + width]) queue.push(pixelIndex + width);
           }
         }
 
