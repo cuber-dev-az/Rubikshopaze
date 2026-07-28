@@ -19,7 +19,10 @@ import {
   Sliders,
   FileJson,
   Copy,
-  Check
+  Check,
+  Wand2,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import Image from 'next/image';
 import { 
@@ -68,6 +71,41 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [loadingProduct, setLoadingProduct] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Background removal state
+  const [removingBg, setRemovingBg] = useState(false);
+  const [removeBgError, setRemoveBgError] = useState('');
+  const [removeBgSuccess, setRemoveBgSuccess] = useState('');
+
+  const handleRemoveBg = async (targetUrl: string, applyFn: (newUrl: string) => void) => {
+    if (!targetUrl || !targetUrl.startsWith('http')) {
+      alert("Zəhmət olmasa düzgün və aktiv şəkil URL-i daxil edin.");
+      return;
+    }
+    setRemovingBg(true);
+    setRemoveBgError('');
+    setRemoveBgSuccess('');
+
+    try {
+      const res = await fetch('/api/admin/remove-bg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: targetUrl }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        setRemoveBgError(data.error || 'Fon silinərkən xəta baş verdi.');
+      } else if (data.transparentUrl) {
+        applyFn(data.transparentUrl);
+        setRemoveBgSuccess('Fon AI (RMBG-2.0) vasitəsilə uğurla silindi və yeni şəffaf şəkil tətbiq olundu! ✨');
+      }
+    } catch (err: any) {
+      setRemoveBgError(err.message || 'Gözlənilməz xəta baş verdi.');
+    } finally {
+      setRemovingBg(false);
+    }
+  };
 
   // Categories and Brands lists from Database
   const [categoriesList, setCategoriesList] = useState<any[]>([]);
@@ -1048,15 +1086,51 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
           {activeTab === 'media' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-soft-md space-y-5">
-                <h3 className="text-base font-black text-white flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-amber-500" /> Əsas Məhsul Şəkli
-                </h3>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                  <h3 className="text-base font-black text-white flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5 text-amber-500" /> Əsas Məhsul Şəkli
+                  </h3>
+                  {imageUrl && (
+                    <button
+                      type="button"
+                      disabled={removingBg}
+                      onClick={() => handleRemoveBg(imageUrl, (newUrl) => setImageUrl(newUrl))}
+                      className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-purple-900/30 shrink-0"
+                    >
+                      {removingBg ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>AI Fon Silinir...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4 text-purple-200" />
+                          <span>✨ Fonu Sil (RMBG-2.0 AI)</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {removeBgSuccess && (
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-xs font-bold flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>{removeBgSuccess}</span>
+                  </div>
+                )}
+
+                {removeBgError && (
+                  <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{removeBgError}</span>
+                  </div>
+                )}
 
                 <div className="space-y-4">
-                  <div>
+                  <div className="flex gap-2">
                     <input 
                       type="url" 
-                      className="w-full bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm"
+                      className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm"
                       placeholder="https://... (Şəkil URL-i daxil edin)"
                       value={imageUrl}
                       onChange={e => setImageUrl(e.target.value)}
@@ -1071,18 +1145,28 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                           src={imageUrl} 
                           alt="Önizləmə" 
                           fill 
-                          className="object-cover" 
+                          className="object-contain p-2" 
                           unoptimized={true}
                           referrerPolicy="no-referrer"
                         />
                         <div className="absolute top-2 left-2 px-2 py-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded uppercase tracking-wider shadow-md">
                           Əsas Şəkil
                         </div>
-                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            disabled={removingBg}
+                            onClick={() => handleRemoveBg(imageUrl, (newUrl) => setImageUrl(newUrl))}
+                            className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                            title="Fonu Sil (RMBG-2.0)"
+                          >
+                            <Wand2 className="w-4 h-4" />
+                          </button>
                           <button 
                             type="button"
                             onClick={() => setImageUrl('')}
                             className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                            title="Şəkli Sil"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -1096,7 +1180,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       </div>
                       <p className="text-xs font-bold text-white mb-1">Şəkil URL-i daxil edilməyib</p>
                       <p className="text-[11px] text-slate-500">
-                        Məhsulun əsas şəkil URL-ini daxil edin.
+                        Məhsulun əsas şəkil URL-ini daxil edin. Yüklədikdən sonra &quot;Fon Sil (RMBG-2.0 AI)&quot; düyməsi aktivləşəcək.
                       </p>
                     </div>
                   )}
