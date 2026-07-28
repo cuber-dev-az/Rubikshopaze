@@ -81,46 +81,24 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
   const [removeBgSuccess, setRemoveBgSuccess] = useState('');
 
   const handleRemoveBg = async (targetUrl: string, applyFn: (newUrl: string) => void) => {
-    if (!targetUrl || (!targetUrl.startsWith('http') && !targetUrl.startsWith('data:image/'))) {
+    if (!targetUrl) {
       alert("Zəhmət olmasa düzgün və aktiv şəkil URL-i daxil edin.");
       return;
     }
-    if (!originalImageUrl) {
+    if (!originalImageUrl && !targetUrl.startsWith('data:image/')) {
       setOriginalImageUrl(targetUrl);
     }
     setRemovingBg(true);
     setRemoveBgError('');
     setRemoveBgSuccess('');
 
-    let serverSuccess = false;
-
     try {
-      // 1. First attempt Server AI endpoint
-      const res = await fetch('/api/admin/remove-bg', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: targetUrl }),
-      });
-      const data = await res.json();
-
-      if (data.transparentUrl && !data.use_fallback) {
-        applyFn(data.transparentUrl);
-        setRemoveBgSuccess('Fon AI (BiRefNet HD) vasitəsilə uğurla silindi və şəffaf şəkil tətbiq olundu! ✨');
-        serverSuccess = true;
-      }
-    } catch (err) {
-      console.warn("Server AI remove bg call error, falling back to client engine:", err);
-    }
-
-    // 2. If Server AI is not configured or fails, run Instant Client Canvas Engine
-    if (!serverSuccess) {
-      try {
-        const transparentDataUrl = await removeBackgroundClient(targetUrl);
-        applyFn(transparentDataUrl);
-        setRemoveBgSuccess('Fon intellektual olaraq təmizləndi və şəffaf PNG yaradılaraq tətbiq edildi! ✨');
-      } catch (clientErr: any) {
-        setRemoveBgError('Fon silinərkən xəta baş verdi: ' + (clientErr.message || 'Lütfən URL-i yoxlayın'));
-      }
+      const transparentDataUrl = await removeBackgroundClient(targetUrl);
+      applyFn(transparentDataUrl);
+      setRemoveBgSuccess('Fon intellektual AI (@imgly/background-removal) tərəfindən uğurla təmizləndi! ✨');
+    } catch (clientErr: any) {
+      console.error("AI remove bg error:", clientErr);
+      setRemoveBgError('Fon silinərkən xəta baş verdi: ' + (clientErr.message || 'Lütfən URL-i yoxlayın'));
     }
 
     setRemovingBg(false);
@@ -1138,7 +1116,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                         ) : (
                           <>
                             <Wand2 className="w-4 h-4 text-purple-200" />
-                            <span>✨ Fonu Sil (BiRefNet HD AI)</span>
+                            <span>✨ Fonu Sil (@imgly AI)</span>
                           </>
                         )}
                       </button>
@@ -1166,7 +1144,8 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       type="text" 
                       className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm font-mono"
                       placeholder="https://... (Şəkil URL-i daxil edin və ya yapışdırın)"
-                      value={imageUrl}
+                      value={imageUrl.startsWith('data:image/') ? '✨ [Şəffaf AI Şəkli tətbiq olunub]' : imageUrl}
+                      readOnly={imageUrl.startsWith('data:image/')}
                       onChange={e => setImageUrl(e.target.value)}
                     />
                     {imageUrl && (
@@ -1185,27 +1164,6 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       </button>
                     )}
                   </div>
-
-                  {imageUrl.startsWith('data:image/') && (
-                    <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-purple-950/40 border border-purple-800/40 rounded-xl text-xs text-purple-300">
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <Sparkles className="w-4 h-4 text-purple-400 shrink-0" />
-                        Şəffaf AI Şəkli (Base64) - ~{Math.round(imageUrl.length / 1024)} KB
-                      </span>
-                      {originalImageUrl && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setImageUrl(originalImageUrl);
-                            setRemoveBgSuccess('Orijinal şəkil bərpa olundu! ↩️');
-                          }}
-                          className="text-amber-400 hover:text-amber-300 underline font-bold transition-colors"
-                        >
-                          Orijinalı Bərpa Et ↩️
-                        </button>
-                      )}
-                    </div>
-                  )}
 
                   {imageUrl ? (
                     <div className="mt-4">
@@ -1228,7 +1186,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                             disabled={removingBg}
                             onClick={() => handleRemoveBg(imageUrl, (newUrl) => setImageUrl(newUrl))}
                             className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                            title="Fonu Sil (BiRefNet HD AI)"
+                            title="Fonu Sil (@imgly AI)"
                           >
                             <Wand2 className="w-4 h-4" />
                           </button>
