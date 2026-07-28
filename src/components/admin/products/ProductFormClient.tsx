@@ -25,6 +25,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import Image from 'next/image';
+import { removeBackgroundClient } from '@/lib/client-remove-bg';
 import { 
   createProduct, 
   updateProduct, 
@@ -86,7 +87,10 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
     setRemoveBgError('');
     setRemoveBgSuccess('');
 
+    let serverSuccess = false;
+
     try {
+      // 1. First attempt Server AI endpoint
       const res = await fetch('/api/admin/remove-bg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -94,17 +98,27 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
       });
       const data = await res.json();
 
-      if (!res.ok || data.error) {
-        setRemoveBgError(data.error || 'Fon silinərkən xəta baş verdi.');
-      } else if (data.transparentUrl) {
+      if (data.transparentUrl && !data.use_fallback) {
         applyFn(data.transparentUrl);
-        setRemoveBgSuccess('Fon AI (RMBG-2.0) vasitəsilə uğurla silindi və yeni şəffaf şəkil tətbiq olundu! ✨');
+        setRemoveBgSuccess('Fon AI (RMBG-2.0) vasitəsilə uğurla silindi və şəffaf şəkil tətbiq olundu! ✨');
+        serverSuccess = true;
       }
-    } catch (err: any) {
-      setRemoveBgError(err.message || 'Gözlənilməz xəta baş verdi.');
-    } finally {
-      setRemovingBg(false);
+    } catch (err) {
+      console.warn("Server AI remove bg call error, falling back to client engine:", err);
     }
+
+    // 2. If Server AI is not configured or fails, run Instant Client Canvas Engine
+    if (!serverSuccess) {
+      try {
+        const transparentDataUrl = await removeBackgroundClient(targetUrl);
+        applyFn(transparentDataUrl);
+        setRemoveBgSuccess('Fon intellektual olaraq təmizləndi və şəffaf PNG yaradılaraq tətbiq edildi! ✨');
+      } catch (clientErr: any) {
+        setRemoveBgError('Fon silinərkən xəta baş verdi: ' + (clientErr.message || 'Lütfən URL-i yoxlayın'));
+      }
+    }
+
+    setRemovingBg(false);
   };
 
   // Categories and Brands lists from Database
