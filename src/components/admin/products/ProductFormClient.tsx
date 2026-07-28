@@ -1163,12 +1163,22 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                 <div className="space-y-4">
                   <div className="flex gap-2">
                     <input 
-                      type="url" 
-                      className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm"
+                      type="text" 
+                      className="flex-1 bg-slate-950 border border-slate-800 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-amber-500 transition-colors text-xs sm:text-sm truncate font-mono"
                       placeholder="https://... (Şəkil URL-i daxil edin)"
-                      value={imageUrl}
+                      value={imageUrl.startsWith('data:image/') ? `✨ [Şəffaf AI Şəkli (Base64) - ${Math.round(imageUrl.length / 1024)} KB]` : imageUrl}
+                      readOnly={imageUrl.startsWith('data:image/')}
                       onChange={e => setImageUrl(e.target.value)}
                     />
+                    {imageUrl.startsWith('data:image/') && originalImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setImageUrl(originalImageUrl)}
+                        className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl transition-all border border-slate-700 shrink-0"
+                      >
+                        Orijinal URL
+                      </button>
+                    )}
                   </div>
 
                   {imageUrl ? (
@@ -1192,7 +1202,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                             disabled={removingBg}
                             onClick={() => handleRemoveBg(imageUrl, (newUrl) => setImageUrl(newUrl))}
                             className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                            title="Fonu Sil (RMBG-2.0)"
+                            title="Fonu Sil (BiRefNet HD AI)"
                           >
                             <Wand2 className="w-4 h-4" />
                           </button>
@@ -1214,7 +1224,7 @@ export default function ProductFormClient({ isNew, productId }: ProductFormClien
                       </div>
                       <p className="text-xs font-bold text-white mb-1">Şəkil URL-i daxil edilməyib</p>
                       <p className="text-[11px] text-slate-500">
-                        Məhsulun əsas şəkil URL-ini daxil edin. Yüklədikdən sonra &quot;Fon Sil (RMBG-2.0 AI)&quot; düyməsi aktivləşəcək.
+                        Məhsulun əsas şəkil URL-ini daxil edin. Yüklədikdən sonra &quot;Fon Sil (BiRefNet HD AI)&quot; düyməsi aktivləşəcək.
                       </p>
                     </div>
                   )}
