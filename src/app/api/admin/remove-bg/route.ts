@@ -1,5 +1,93 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import sharp from "sharp";
+
+/**
+ * Post-processes the AI-generated alpha mask using an Outer Flood-Fill algorithm.
+ * Starts from outer canvas borders and floods along transparent/semi-transparent pixels.
+ * Any transparent pixels inside the object (e.g., white faces of a Rubik's cube) that
+ * are NOT reachable from the outer background flood are restored to 100% Opaque (Alpha = 255).
+ */
+async function postProcessMask(inputBuffer: Buffer): Promise<Buffer> {
+  try {
+    const { data, info } = await sharp(inputBuffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const { width, height, channels } = info;
+    if (channels !== 4) return inputBuffer;
+
+    const totalPixels = width * height;
+    const isExteriorBg = new Uint8Array(totalPixels); // 0 = false, 1 = true
+    const queue: number[] = [];
+
+    // Alpha threshold level: below 200 is considered candidate for background
+    const ALPHA_THRESHOLD = 200;
+
+    const enqueueIfTransparent = (x: number, y: number) => {
+      const idx = y * width + x;
+      if (isExteriorBg[idx] === 0) {
+        const alpha = data[idx * 4 + 3];
+        if (alpha < ALPHA_THRESHOLD) {
+          isExteriorBg[idx] = 1;
+          queue.push(idx);
+        }
+      }
+    };
+
+    // 1. Enqueue all 4 corners and outer frame pixels (top, bottom, left, right borders)
+    for (let x = 0; x < width; x++) {
+      enqueueIfTransparent(x, 0);
+      enqueueIfTransparent(x, height - 1);
+    }
+    for (let y = 1; y < height - 1; y++) {
+      enqueueIfTransparent(0, y);
+      enqueueIfTransparent(width - 1, y);
+    }
+
+    // 2. BFS Flood-Fill from outer borders inward
+    let head = 0;
+    while (head < queue.length) {
+      const idx = queue[head++];
+      const x = idx % width;
+      const y = Math.floor(idx / width);
+
+      if (x > 0) enqueueIfTransparent(x - 1, y);
+      if (x < width - 1) enqueueIfTransparent(x + 1, y);
+      if (y > 0) enqueueIfTransparent(x, y - 1);
+      if (y < height - 1) enqueueIfTransparent(x, y + 1);
+    }
+
+    // 3. Re-evaluate pixels:
+    // - Unreachable from exterior background = Internal object area -> Force 100% Opaque (Alpha = 255)
+    // - Reachable from exterior background = True background / drop shadow -> Set Alpha = 0 if < ALPHA_THRESHOLD
+    for (let i = 0; i < totalPixels; i++) {
+      const pixelOffset = i * 4;
+      const isExt = isExteriorBg[i] === 1;
+
+      if (!isExt) {
+        // Restore internal transparent holes (e.g. white Rubik's cube faces)
+        data[pixelOffset + 3] = 255;
+      } else {
+        // Clear background and remove dark drop shadows under objects
+        const alpha = data[pixelOffset + 3];
+        if (alpha < ALPHA_THRESHOLD) {
+          data[pixelOffset + 3] = 0;
+        }
+      }
+    }
+
+    return await sharp(data, {
+      raw: { width, height, channels: 4 },
+    })
+      .png()
+      .toBuffer();
+  } catch (err) {
+    console.warn("Mask post-processing warning:", err);
+    return inputBuffer;
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -59,10 +147,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. Hugging Face RMBG-2.0 AI modelinə sorğu göndərilir
+    // 3. Hugging Face ZhengPeng7/BiRefNet AI modelinə sorğu göndərilir
     try {
       const hfResponse = await fetch(
-        "https://api-inference.huggingface.co/models/briaai/RMBG-2.0",
+        "https://api-inference.huggingface.co/models/ZhengPeng7/BiRefNet",
         {
           method: "POST",
           headers: {
@@ -85,11 +173,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const transparentArrayBuffer = await hfResponse.arrayBuffer();
-      const transparentBuffer = Buffer.from(transparentArrayBuffer);
-      const base64DataUri = `data:image/png;base64,${transparentBuffer.toString("base64")}`;
+      const rawTransparentArrayBuffer = await hfResponse.arrayBuffer();
+      const rawTransparentBuffer = Buffer.from(rawTransparentArrayBuffer);
 
-      // 4. Cloudinary təyin edilibsə yükləyirik
+      // 4. Outer Flood-Fill Post-Processing ilə daxili dəlikləri və ağ üzləri 100% bərpa edirik
+      const processedBuffer = await postProcessMask(rawTransparentBuffer);
+      const base64DataUri = `data:image/png;base64,${processedBuffer.toString("base64")}`;
+
+      // 5. Cloudinary təyin edilibsə yükləyirik
       const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
       const apiKey = process.env.CLOUDINARY_API_KEY;
       const apiSecret = process.env.CLOUDINARY_API_SECRET;
@@ -109,20 +200,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           success: true,
           transparentUrl: uploadResult.secure_url,
-          method: "AI (RMBG-2.0)",
+          method: "AI (BiRefNet + FloodFill)",
         });
       } else {
         return NextResponse.json({
           success: true,
           transparentUrl: base64DataUri,
-          method: "AI (RMBG-2.0) - Base64 Data URI",
+          method: "AI (BiRefNet + FloodFill) - Base64 Data URI",
         });
       }
     } catch (hfErr: any) {
       console.warn("Hugging Face bağlantı xətası:", hfErr);
       return NextResponse.json(
         {
-          error: "Hugging Face AI serverinə qoşulmaq mümkün olmadı. Brauzer daxili intellektual modula keçid edilir...",
+          error: "Hugging Face AI serverinə qoşulmaq münkün olmadı. Brauzer daxili intellektual modula keçid edilir...",
           use_fallback: true,
         },
         { status: 200 }
