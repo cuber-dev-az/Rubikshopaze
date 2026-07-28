@@ -3,7 +3,7 @@
  * Dynamically imported on the client side to avoid Next.js SSR build bundling issues with ONNX WASM.
  */
 export async function removeBackgroundClient(
-  imageUrl: string,
+  imageUrl: string | Blob | File,
   _tolerance: number = 30
 ): Promise<string> {
   try {
@@ -11,15 +11,40 @@ export async function removeBackgroundClient(
       throw new Error("Fon silmə yalnız brauzerdə dəstəklənir.");
     }
 
+    let inputBlob: Blob;
+
+    if (imageUrl instanceof Blob) {
+      inputBlob = imageUrl;
+    } else if (typeof imageUrl === "string" && imageUrl.startsWith("data:")) {
+      // Base64 Data URL -> convert to Blob
+      const res = await fetch(imageUrl);
+      inputBlob = await res.blob();
+    } else if (typeof imageUrl === "string" && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))) {
+      // Remote URL -> Proxy -> Blob
+      const proxyUrl = `/api/admin/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+      const res = await fetch(proxyUrl);
+      
+      if (!res.ok) {
+        throw new Error("Mənbə sayt şəkli təqdim etmədi və ya girişi blokladı. Şəkli kompyuterinizə endirib birbaşa yükləməyinizi tövsiyə edirik.");
+      }
+
+      const contentType = res.headers.get("content-type") || "";
+      if (contentType.includes("text/html") || contentType.includes("application/json")) {
+        throw new Error("Daxil etdiyiniz keçid düzgün şəkil faylı deyil (HTML/Veb səhifədir). Şəklin özünün düzgün keçidini daxil edin və ya faylı kompyuterinizdən yükləyin.");
+      }
+
+      inputBlob = await res.blob();
+    } else if (typeof imageUrl === "string" && imageUrl.startsWith("blob:")) {
+      const res = await fetch(imageUrl);
+      inputBlob = await res.blob();
+    } else {
+      throw new Error("Düzgün şəkil faylı və ya şəkil URL-i seçilməyib.");
+    }
+
     // Dynamic client-side import of @imgly/background-removal
     const { removeBackground } = await import("@imgly/background-removal");
 
-    let targetSrc = imageUrl;
-    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-      targetSrc = `/api/admin/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-    }
-
-    const blob = await removeBackground(targetSrc, {
+    const blob = await removeBackground(inputBlob, {
       progress: (key: string, current: number, total: number) => {
         if (total > 0) {
           console.log(`[AI Model] ${key}: ${Math.round((current / total) * 100)}%`);
@@ -41,6 +66,11 @@ export async function removeBackgroundClient(
     });
   } catch (err: any) {
     console.error("Client background removal error:", err);
-    throw new Error(err?.message || "AI Fon Silmə zamanı xəta baş verdi.");
+    let message = err?.message || "AI Fon Silmə zamanı xəta baş verdi.";
+    if (message.includes("Invalid format") || message.includes("text/html")) {
+      message = "Şəkil formatı düzgün deyil və ya veb səhifə linkidir. Lütfən birbaşa JPG/PNG şəklinin özünü yükləyin.";
+    }
+    throw new Error(message);
   }
 }
+
