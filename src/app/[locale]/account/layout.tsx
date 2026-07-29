@@ -15,7 +15,7 @@ export default async function AccountLayout({ children, params }: AccountLayoutP
   const dict = await getDictionary(locale);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="bg-background pb-6 md:pb-10">
       {/* Breadcrumbs Banner */}
       <div className="bg-muted/40 py-4 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs font-medium text-muted-foreground">

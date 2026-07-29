@@ -635,13 +635,23 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                       <span className="text-xs text-muted-foreground">{activeOrdersCount > 0 ? 'yoldadır' : 'aktiv'}</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setActiveTab('orders')}
-                    className="text-xs font-bold text-rubik-brand hover:underline mt-4 text-left flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Sifarişimi canlı izlə</span>
-                    <ChevronRight className="h-3 w-3" />
-                  </button>
+                  {activeOrdersCount > 0 ? (
+                    <button
+                      onClick={() => setActiveTab('orders')}
+                      className="text-xs font-bold text-rubik-brand hover:underline mt-4 text-left flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Sifarişimi canlı izlə</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setActiveTab('orders')}
+                      className="text-xs font-bold text-muted-foreground hover:text-foreground hover:underline mt-4 text-left flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Sifariş tarixçəsinə bax</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Support tickets card */}
@@ -663,7 +673,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                     }}
                     className="text-xs font-bold text-rubik-brand hover:underline mt-4 text-left flex items-center gap-1 cursor-pointer"
                   >
-                    <span>Müraciət yaradın</span>
+                    <span>{openTicketsCount > 0 ? 'Müraciətlərimə bax' : 'Dəstək formuna keç'}</span>
                     <ChevronRight className="h-3 w-3" />
                   </button>
                 </div>

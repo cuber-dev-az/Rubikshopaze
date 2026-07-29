@@ -32,7 +32,9 @@ export function Footer({ dict, locale }: FooterProps) {
         const { getSettings } = await import('@/lib/actions/settings');
         const res = await getSettings('general');
         if (res.success && res.data) {
-          if (res.data.contactPhone) setPhone(res.data.contactPhone);
+          if (res.data.contactPhone && !res.data.contactPhone.includes('000 00') && res.data.contactPhone !== '+994 50 000 00 00') {
+            setPhone(res.data.contactPhone);
+          }
           if (res.data.contactEmail) setEmailVal(res.data.contactEmail);
           if (res.data.address) setAddressVal(res.data.address);
         }
@@ -136,7 +138,7 @@ export function Footer({ dict, locale }: FooterProps) {
           <ul className="space-y-2.5 text-xs md:text-sm">
             <li>
               <Link href={`/${locale}`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <span>{dict.navigation?.home || t({ az: 'Ana Səhifə', en: 'Home', ru: 'Главная' })}</span>
+                <span>{locale === 'en' ? 'Home' : (locale === 'ru' ? 'Главная' : (dict.navigation?.home || 'Ana Səhifə'))}</span>
               </Link>
             </li>
             {(userRole === 'admin' || userRole === 'manager') && (
@@ -148,7 +150,7 @@ export function Footer({ dict, locale }: FooterProps) {
             )}
             <li>
               <Link href={`/${locale}/track-order`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <span>{t({ az: 'Sifarişi İzlə', en: 'Track Order', ru: 'Отследить заказ' })}</span>
+                <span>{locale === 'en' ? 'Track Order' : (locale === 'ru' ? 'Отследить заказ' : 'Sifarişi İzlə')}</span>
               </Link>
             </li>
             <li>
@@ -158,7 +160,7 @@ export function Footer({ dict, locale }: FooterProps) {
             </li>
             <li>
               <Link href={`/${locale}?category=bundles`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <span>{t({ az: 'Endirimli Dəstlər', en: 'Discount Bundles', ru: 'Наборы со скидкой' })}</span>
+                <span>{locale === 'en' ? 'Discount Bundles' : (locale === 'ru' ? 'Наборы со скидкой' : 'Endirimli Dəstlər')}</span>
               </Link>
             </li>
           </ul>
