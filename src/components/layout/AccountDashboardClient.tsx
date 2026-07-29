@@ -31,7 +31,8 @@ import {
   ExternalLink,
   ChevronDown,
   Calendar,
-  Trash2
+  Trash2,
+  Camera
 } from 'lucide-react';
 import { OrderTracker } from '@/components/account/OrderTracker';
 import Link from 'next/link';
@@ -62,7 +63,8 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
   const [fullName, setFullName] = React.useState(initialProfile?.fullName || '');
   const [phone, setPhone] = React.useState(initialProfile?.phone || '');
   const [email, setEmail] = React.useState(initialProfile?.email || '');
-  const [instagram, setInstagram] = React.useState('mirselim.sh');
+  const [instagram, setInstagram] = React.useState(initialProfile?.instagram || '');
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (user) {
@@ -72,8 +74,38 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
       if (!email && user.email) {
         setEmail(user.email);
       }
+      const savedAvatar = localStorage.getItem(`user_avatar_${user.id}`);
+      if (savedAvatar) {
+        setAvatarUrl(savedAvatar);
+      } else if (user.user_metadata?.avatar_url) {
+        setAvatarUrl(user.user_metadata.avatar_url);
+      }
+    } else {
+      const savedGuestAvatar = localStorage.getItem('user_avatar_guest');
+      if (savedGuestAvatar) setAvatarUrl(savedGuestAvatar);
     }
   }, [user, fullName, email]);
+
+  const handleAvatarChange = (newUrl: string) => {
+    setAvatarUrl(newUrl);
+    if (user) {
+      localStorage.setItem(`user_avatar_${user.id}`, newUrl);
+    } else {
+      localStorage.setItem('user_avatar_guest', newUrl);
+    }
+  };
+
+  const handleAvatarFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        handleAvatarChange(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const [selectedAddressIndex, setSelectedAddressIndex] = React.useState(0);
   const [addresses, setAddresses] = React.useState<{ id: string; label: string; address: string; city: string }[]>([]);
@@ -448,15 +480,34 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
       <div className="lg:col-span-3 space-y-4">
         {/* User Card */}
         <div className="bg-card border border-border rounded-3xl p-5 shadow-soft-sm text-center space-y-3">
-          <div className="relative w-16 h-16 rounded-full bg-rubik-brand/10 border border-rubik-brand/20 flex items-center justify-center mx-auto">
-            <User className="h-8 w-8 text-rubik-brand" />
-            <span className="absolute bottom-0 right-0 bg-green-500 border-2 border-card w-4 h-4 rounded-full" />
+          <div className="relative w-20 h-20 rounded-full bg-rubik-brand/10 border-2 border-rubik-brand/20 flex items-center justify-center mx-auto overflow-hidden group shadow-soft-sm">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={fullName || 'Profil'} className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-9 w-9 text-rubik-brand" />
+            )}
+            <label
+              htmlFor="avatar-upload-file-sidebar"
+              className="absolute inset-0 bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-[9px] font-bold p-1 text-center"
+              title="Profil şəklini dəyişin"
+            >
+              <Camera className="h-4 w-4 mb-0.5" />
+              <span>Yüklə</span>
+            </label>
+            <input
+              id="avatar-upload-file-sidebar"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarFileUpload}
+            />
+            <span className="absolute bottom-0 right-0 bg-green-500 border-2 border-card w-4.5 h-4.5 rounded-full" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-foreground">{fullName}</h3>
-            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{email}</p>
+            <h3 className="text-sm font-black text-foreground">{fullName || 'İstifadəçi'}</h3>
+            <p className="text-[10px] text-muted-foreground font-medium mt-0.5">{email || 'email@rubikshop.az'}</p>
           </div>
-          <div className="pt-2">
+          <div className="pt-1">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rubik-brand/10 text-rubik-brand font-black text-[10px] rounded-full uppercase tracking-wider">
               <Award className="h-3.5 w-3.5 animate-bounce" /> {points} Loyallıq Xalı
             </span>
@@ -478,7 +529,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
             </Link>
           )}
           {[
-            { id: 'overview', label: 'Ümumi Baxış', icon: Compass },
+            { id: 'overview', label: 'İcmal', icon: Compass },
             { id: 'profile', label: 'Profil & Ünvanlar', icon: MapPin },
             { id: 'orders', label: 'Sifarişlər & İzləmə', icon: ShoppingBag },
             { id: 'wishlist', label: 'İstək Siyahısı', icon: Heart },
@@ -597,17 +648,24 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                 <div className="bg-card border border-border rounded-3xl p-5 shadow-soft-sm flex flex-col justify-between">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Dəstək biletləri</span>
+                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Dəstək Biletləri</span>
                       <HelpCircle className="h-5 w-5 text-purple-500" />
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-black text-foreground font-mono">{openTicketsCount}</span>
-                      <span className="text-xs text-muted-foreground">açıq sorğu</span>
+                      <span className="text-xs text-muted-foreground">{openTicketsCount > 0 ? 'aktiv müraciət' : 'açıq müraciət'}</span>
                     </div>
                   </div>
-                  <span className="text-[10px] text-muted-foreground mt-4">
-                    Bizə ünvanladığınız bütün sorğular ən geci 1 saat ərzində cavablandırılır.
-                  </span>
+                  <button
+                    onClick={() => {
+                      const el = document.getElementById('support-ticket-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="text-xs font-bold text-rubik-brand hover:underline mt-4 text-left flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Müraciət yaradın</span>
+                    <ChevronRight className="h-3 w-3" />
+                  </button>
                 </div>
 
               </div>
@@ -670,7 +728,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
               </div>
 
               {/* Support ticketing widget */}
-              <div className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-6">
+              <div id="support-ticket-section" className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-6">
                 <div className="border-b border-border pb-4 flex items-center gap-2">
                   <MessageSquare className="h-5 w-5 text-rubik-brand" />
                   <div>
@@ -759,11 +817,7 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                       ))}
                     </div>
                   </div>
-                ) : (
-                  <div className="pt-4 border-t border-border text-center py-2">
-                    <p className="text-[11px] text-muted-foreground font-semibold">Heç bir dəstək sorğunuz yoxdur.</p>
-                  </div>
-                )}
+                ) : null}
               </div>
 
             </motion.div>
@@ -782,6 +836,48 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                 <div className="border-b border-border pb-4">
                   <h3 className="text-sm font-black text-foreground uppercase tracking-wider">Şəxsi Məlumatlar</h3>
                   <p className="text-[10px] text-muted-foreground mt-0.5">Fərdi məlumatlarınızı və profil bəndlerini dəyişdirə bilərsiniz.</p>
+                </div>
+
+                {/* Avatar upload / selector section */}
+                <div className="bg-muted/40 border border-border/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-full bg-rubik-brand/10 border-2 border-rubik-brand/20 flex items-center justify-center shrink-0 overflow-hidden shadow-soft-sm">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Profil şəkli" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="h-8 w-8 text-rubik-brand" />
+                    )}
+                  </div>
+                  <div className="space-y-2 text-center sm:text-left flex-grow">
+                    <div>
+                      <h4 className="text-xs font-black text-foreground">Profil Şəkli / Avatar</h4>
+                      <p className="text-[10px] text-muted-foreground">Kompüterinizdən real şəkil yükləyin və ya standart ikon əvəzinə fərdiləşdirin.</p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
+                      <label
+                        htmlFor="avatar-upload-file-tab"
+                        className="px-3 py-1.5 bg-rubik-brand text-white font-bold text-[10px] rounded-lg hover:bg-rubik-brand-dark transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Camera className="h-3.5 w-3.5" />
+                        <span>Şəkil Yüklə</span>
+                      </label>
+                      <input
+                        id="avatar-upload-file-tab"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarFileUpload}
+                      />
+                      {avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => handleAvatarChange('')}
+                          className="px-2.5 py-1.5 text-[10px] font-bold text-muted-foreground hover:text-red-500 bg-muted hover:bg-red-50 border border-border/50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          Sıfırla
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <form onSubmit={handleUpdateProfile} className="space-y-4">

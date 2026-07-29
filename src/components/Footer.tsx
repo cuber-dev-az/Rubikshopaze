@@ -21,9 +21,20 @@ export function Footer({ dict, locale }: FooterProps) {
         const { getSettings } = await import('@/lib/actions/settings');
         const res = await getSettings('general');
         if (res.success && res.data) {
-          if (res.data.contactPhone) setPhone(res.data.contactPhone);
-          if (res.data.contactEmail) setEmail(res.data.contactEmail);
-          if (res.data.address) setAddress(res.data.address);
+          if (res.data.contactPhone && typeof res.data.contactPhone === 'string') {
+            const rawPhone = res.data.contactPhone.trim();
+            if (rawPhone && !rawPhone.includes('000 00 00') && !rawPhone.includes('0000000') && !rawPhone.includes('00 00 00')) {
+              setPhone(rawPhone);
+            } else {
+              setPhone('+994 50 668 49 25');
+            }
+          }
+          if (res.data.contactEmail && typeof res.data.contactEmail === 'string' && res.data.contactEmail.trim()) {
+            setEmail(res.data.contactEmail);
+          }
+          if (res.data.address && typeof res.data.address === 'string' && res.data.address.trim()) {
+            setAddress(res.data.address);
+          }
         }
       } catch (err) {
         console.error(err);

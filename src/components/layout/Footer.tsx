@@ -124,8 +124,8 @@ export function Footer({ dict, locale }: FooterProps) {
           <p className="text-xs md:text-sm text-[#6B7280] leading-relaxed max-w-sm">
             {dict.footer?.bio_desc || "Azərbaycanın ilk və tək ixtisaslaşmış professional sürətli kub yarışı (speedcubing) platforması. Dünya səviyyəli brendlər və xidmət keyfiyyəti."}
           </p>
-          <div className="flex items-center gap-1.5 text-xs text-[#6B7280] mt-3 bg-[#F3F4F6] p-2.5 rounded-lg border border-[#E5E7EB]">
-            <AlertCircle className="h-4 w-4 text-[#D8232A] shrink-0 animate-pulse" />
+          <div className="flex items-center gap-2 text-xs font-medium text-[#374151] mt-3 bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
             <span>{dict.footer?.wca_notice || "WCA rəsmi qaydaları ilə tam uyğun məhsullar."}</span>
           </div>
         </div>
@@ -136,19 +136,19 @@ export function Footer({ dict, locale }: FooterProps) {
           <ul className="space-y-2.5 text-xs md:text-sm">
             <li>
               <Link href={`/${locale}`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <span>{dict.navigation.home}</span>
+                <span>{dict.navigation?.home || t({ az: 'Ana Səhifə', en: 'Home', ru: 'Главная' })}</span>
               </Link>
             </li>
             {(userRole === 'admin' || userRole === 'manager') && (
               <li>
                 <Link href={`/${locale}/admin`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                  <span>{dict.navigation.admin}</span>
+                  <span>{dict.navigation?.admin || 'İdarəetmə Paneli'}</span>
                 </Link>
               </li>
             )}
             <li>
               <Link href={`/${locale}/track-order`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <span>{t({ az: 'Sifarişimi Yoxla (Track Order)', en: 'Track Order', ru: 'Отследить заказ' })}</span>
+                <span>{t({ az: 'Sifarişi İzlə', en: 'Track Order', ru: 'Отследить заказ' })}</span>
               </Link>
             </li>
             <li>
@@ -158,7 +158,7 @@ export function Footer({ dict, locale }: FooterProps) {
             </li>
             <li>
               <Link href={`/${locale}?category=bundles`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <span>{t({ az: 'Endirimli Dəstlər (Bundles)', en: 'Discount Bundles', ru: 'Наборы со скидкой' })}</span>
+                <span>{t({ az: 'Endirimli Dəstlər', en: 'Discount Bundles', ru: 'Наборы со скидкой' })}</span>
               </Link>
             </li>
           </ul>
@@ -176,13 +176,13 @@ export function Footer({ dict, locale }: FooterProps) {
             </li>
             <li>
               <Link href={`/${locale}/pages/privacy-policy`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-[#6B7280]" />
+                <ShieldCheck className="h-4 w-4 text-[#16A34A]" />
                 <span>{dict.footer?.privacy_policy || "Məxfilik Siyasəti"}</span>
               </Link>
             </li>
             <li>
               <Link href={`/${locale}/pages/return-policy`} className="text-[#6B7280] hover:text-[#D8232A] transition-colors flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-[#D8232A]" />
+                <ShieldCheck className="h-4 w-4 text-[#16A34A]" />
                 <span>{dict.footer?.return_policy || "Geri Qaytarma Qaydaları"}</span>
               </Link>
             </li>

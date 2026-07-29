@@ -112,9 +112,9 @@ export function Header({ dict, locale }: HeaderProps) {
   return (
     <React.Fragment>
       {/* Top Banner Accent */}
-      <div className="bg-[#D8232A] text-white text-xs sm:text-xs font-semibold py-2.5 px-4 sm:px-6 text-center tracking-wide flex items-center justify-center gap-2.5 leading-snug shadow-sm">
+      <div className="bg-[#D8232A] text-white text-[11px] sm:text-xs font-semibold py-2 px-3 sm:px-6 text-center tracking-wide flex items-center justify-center gap-2 leading-tight shadow-sm">
         <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-300" />
-        <span className="truncate sm:whitespace-normal">{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
+        <span className="whitespace-normal break-words">{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
       </div>
 
       <header className={`sticky top-0 w-full bg-[#FFFFFF] border-b border-[#EDEDED] shadow-sm backdrop-blur-md ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>

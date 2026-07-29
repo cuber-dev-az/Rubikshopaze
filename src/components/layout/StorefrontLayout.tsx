@@ -50,11 +50,11 @@ export function StorefrontLayout({ children, dict, locale }: StorefrontLayoutPro
         href="https://wa.me/994506684925"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-[88px] sm:bottom-24 md:bottom-8 right-4 md:right-6 z-30 bg-[#25D366] hover:bg-[#20bd5a] text-white p-3 sm:p-3.5 rounded-full shadow-xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center group ring-4 ring-white/20"
+        className="fixed bottom-[84px] sm:bottom-20 md:bottom-8 right-3.5 sm:right-6 z-40 bg-[#25D366] hover:bg-[#20bd5a] text-white p-2.5 sm:p-3 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center group border border-white/30 backdrop-blur-xs ring-4 ring-black/5"
         aria-label="Köməkçi WhatsApp Dəstək"
         title="Köməkçi Dəstək Xətti"
       >
-        <MessageCircle className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" />
+        <MessageCircle className="w-5 h-5 shrink-0" />
         <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-xs transition-all duration-300 ease-in-out text-xs font-bold pl-0 group-hover:pl-2">
           Dəstək
         </span>
