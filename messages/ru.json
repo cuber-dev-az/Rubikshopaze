@@ -88,6 +88,10 @@
     "privacy_policy": "Политика Конфиденциальности",
     "return_policy": "Правила Возврата",
     "address_val": "город Баку, Азербайджан",
-    "all_rights_reserved": "Все права защищены."
+    "all_rights_reserved": "Все права защищены.",
+    "secure_payment": "Безопасная Оплата",
+    "track_order": "Отследить заказ",
+    "discount_bundles": "Наборы со скидкой",
+    "learning": "Алгоритмы и Обучение"
   }
 }

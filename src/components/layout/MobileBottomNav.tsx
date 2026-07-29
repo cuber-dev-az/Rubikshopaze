@@ -37,32 +37,32 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
   const navItems = [
     {
       id: 'home',
-      name: dict.navigation.home || 'Əsas',
+      name: dict?.navigation?.home || (locale === 'en' ? 'Home' : (locale === 'ru' ? 'Главная' : 'Ana Səhifə')),
       href: `/${locale}`,
       icon: Home,
     },
     {
       id: 'catalog',
-      name: dict.navigation.catalog || 'Kataloq', 
+      name: dict?.navigation?.catalog || (locale === 'en' ? 'Catalog' : (locale === 'ru' ? 'Каталог' : 'Kataloq')), 
       href: `/${locale}/category`, 
       icon: LayoutGrid,
     },
     {
       id: 'wishlist',
-      name: dict.navigation.wishlist || 'Seçilmişlər',
+      name: dict?.navigation?.wishlist || (locale === 'en' ? 'Wishlist' : (locale === 'ru' ? 'Избранное' : 'Seçilmişlər')),
       href: `/${locale}/wishlist`,
       icon: Heart,
     },
     {
       id: 'cart',
-      name: dict.navigation.cart || 'Səbət',
+      name: dict?.navigation?.cart || (locale === 'en' ? 'Cart' : (locale === 'ru' ? 'Корзина' : 'Səbət')),
       href: `/${locale}/cart`,
       icon: ShoppingCart,
       badge: mounted && totalItems > 0 ? totalItems : undefined,
     },
     {
       id: 'account',
-      name: dict.navigation.account || 'Kabinet',
+      name: dict?.navigation?.account || (locale === 'en' ? 'Account' : (locale === 'ru' ? 'Кабинет' : 'Kabinet')),
       href: `/${locale}/account`,
       icon: User,
     }

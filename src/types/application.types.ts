@@ -105,5 +105,9 @@ export interface ApplicationDictionary {
     return_policy: string;
     address_val: string;
     all_rights_reserved: string;
+    secure_payment?: string;
+    track_order?: string;
+    discount_bundles?: string;
+    learning?: string;
   };
 }

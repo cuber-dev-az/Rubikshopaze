@@ -751,25 +751,28 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                   <MessageSquare className="h-5 w-5 text-rubik-brand" />
                   <div>
                     <h3 className="text-sm font-black text-foreground uppercase tracking-wider">İnzibatçıya Dəstək Sorğusu</h3>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Sualınız və ya rəyiniz var? Bizə dərhal yazın, komandamız sizə kömək etsin.</p>
+                    <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-0.5 font-medium">Sualınız və ya rəyiniz var? Bizə dərhal yazın, komandamız sizə kömək etsin.</p>
                   </div>
                 </div>
 
                 <form onSubmit={handleSubmitTicket} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="md:col-span-2 space-y-1.5">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Mövzu</label>
+                      <label className="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
+                        <span>Mövzu</span>
+                        <span className="text-red-500 font-bold text-sm">*</span>
+                      </label>
                       <input
                         type="text"
                         required
                         value={ticketSubject}
                         onChange={(e) => setTicketSubject(e.target.value)}
                         placeholder="Məsələn: Sürətli kubun yağlanması qaydaları"
-                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
+                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Prioritet</label>
+                      <label className="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider">Prioritet</label>
                       <select
                         value={ticketPriority}
                         onChange={(e) => setTicketPriority(e.target.value as any)}
@@ -783,14 +786,17 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Mesajınız</label>
+                    <label className="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
+                      <span>Mesajınız</span>
+                      <span className="text-red-500 font-bold text-sm">*</span>
+                    </label>
                     <textarea
                       rows={3}
                       required
                       value={ticketMessage}
                       onChange={(e) => setTicketMessage(e.target.value)}
                       placeholder="Geri bildiriminiz və ya probleminizi ətraflı qeyd edin..."
-                      className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
+                      className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                     />
                   </div>
 
@@ -901,35 +907,44 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                 <form onSubmit={handleUpdateProfile} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Ad və Soyad</label>
+                      <label className="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
+                        <span>Ad və Soyad</span>
+                        <span className="text-red-500 font-bold text-sm">*</span>
+                      </label>
                       <input
                         type="text"
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
+                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Mobil Telefon</label>
+                      <label className="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
+                        <span>Mobil Telefon</span>
+                        <span className="text-red-500 font-bold text-sm">*</span>
+                      </label>
                       <input
                         type="tel"
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
+                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">E-poçt ünvanı</label>
+                      <label className="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider flex items-center gap-1">
+                        <span>E-poçt ünvanı</span>
+                        <span className="text-red-500 font-bold text-sm">*</span>
+                      </label>
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
+                        className="w-full bg-muted border border-border rounded-xl px-3.5 py-2.5 text-xs text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                       />
                     </div>
 

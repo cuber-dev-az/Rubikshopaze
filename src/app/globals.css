@@ -11,8 +11,8 @@
 
   /* C — Mətn */
   --text-primary: #17181C;      /* başlıq, məhsul adı */
-  --text-secondary: #6B7280;    /* təsvir, alt yazı, çatdırılma qeydi */
-  --text-muted: #9CA3AF;        /* placeholder, əlçatmaz mətn */
+  --text-secondary: #4B5563;    /* təsvir, alt yazı, çatdırılma qeydi (high-contrast WCAG) */
+  --text-muted: #6B7280;        /* placeholder, əlçatmaz mətn */
   --text-hero: #FFFFFF;         /* yalnız hero daxilində */
 
   /* D — Əsas aksent (qırmızı) */
@@ -59,7 +59,7 @@
   --card: #FFFFFF;
   --card-foreground: #17181C;
   --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
+  --muted-foreground: #4B5563;
   --border: #E5E7EB;
   --input: #E5E7EB;
   --ring: #D8232A;
