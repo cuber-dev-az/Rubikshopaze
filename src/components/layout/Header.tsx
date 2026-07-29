@@ -112,9 +112,9 @@ export function Header({ dict, locale }: HeaderProps) {
   return (
     <React.Fragment>
       {/* Top Banner Accent */}
-      <div className="bg-rubik-brand text-white text-xs font-sans py-2 px-4 text-center tracking-wide font-medium flex items-center justify-center gap-2">
-        <Sparkles className="h-3 w-3 shrink-0 animate-pulse" />
-        <span>{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
+      <div className="bg-[#D8232A] text-white text-xs sm:text-xs font-semibold py-2.5 px-4 sm:px-6 text-center tracking-wide flex items-center justify-center gap-2.5 leading-snug shadow-sm">
+        <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-300" />
+        <span className="truncate sm:whitespace-normal">{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
       </div>
 
       <header className={`sticky top-0 w-full bg-[#FFFFFF] border-b border-[#EDEDED] shadow-sm backdrop-blur-md ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>
@@ -239,11 +239,11 @@ export function Header({ dict, locale }: HeaderProps) {
           </div>
         )}
 
-        {/* FULL-SCREEN NAVIGATION OVERLAY DRAWER */}
+        {/* RIGHT-ALIGNED SLIDE-OUT NAVIGATION OVERLAY DRAWER */}
         <AnimatePresence>
           {isMenuOpen && (
             <>
-              {/* Dark Backdrop Overlay */}
+              {/* Backdrop Overlay */}
               <motion.div
                 key="mobile-drawer-backdrop"
                 initial={{ opacity: 0 }}
@@ -251,51 +251,51 @@ export function Header({ dict, locale }: HeaderProps) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => setIsMenuOpen(false)}
-                className="fixed inset-0 w-screen h-dvh bg-black/80 backdrop-blur-md z-[99998]"
+                className="fixed inset-0 w-screen h-dvh bg-black/60 backdrop-blur-sm z-[99998]"
                 aria-hidden="true"
               />
 
-              {/* Mobile Drawer Container */}
+              {/* Side Drawer Container (Full width on mobile, right-docked max-w-md on desktop) */}
               <motion.div
                 key="mobile-drawer-container"
-                initial={{ opacity: 0, y: '-100%' }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: '-100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-                className="fixed inset-0 h-dvh w-full max-w-full bg-[#0d1117] z-[99999] p-6 flex flex-col overflow-y-auto text-white overscroll-contain"
+                initial={{ opacity: 0, x: '100%' }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: '100%' }}
+                transition={{ type: 'spring', damping: 26, stiffness: 240 }}
+                className="fixed inset-y-0 right-0 h-dvh w-full md:w-[460px] md:max-w-md bg-[#FFFFFF] z-[99999] p-5 sm:p-6 flex flex-col overflow-y-auto text-[#17181C] overscroll-contain shadow-2xl border-l border-[#EDEDED]"
               >
-                <div className="w-full max-w-3xl mx-auto flex flex-col gap-6">
+                <div className="w-full flex flex-col gap-6">
                   
                   {/* Header Row */}
-                  <div className="flex items-center justify-between border-b border-gray-800 pb-5">
+                  <div className="flex items-center justify-between border-b border-[#EDEDED] pb-4">
                     <Link 
                       href={`/${locale}`} 
                       className="flex items-center gap-2 group"
                       onClick={() => setIsMenuOpen(false)}
                     >
-                      <span className="text-xl font-sans font-black bg-rubik-brand text-white px-3 py-1.5 rounded-lg tracking-tight">
-                        RubikShop<span className="text-rubik-yellow">.az</span>
+                      <span className="text-xl font-sans font-black bg-[#D8232A] text-white px-3 py-1.5 rounded-lg tracking-tight shadow-sm">
+                        RubikShop<span className="text-yellow-300">.az</span>
                       </span>
                     </Link>
                     <button
                       type="button"
                       onClick={() => setIsMenuOpen(false)}
-                      className="p-3 bg-gray-800/50 hover:bg-gray-800 rounded-full text-white transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                      className="p-2.5 bg-[#F6F6F8] hover:bg-[#EDEDED] border border-[#E5E7EB] rounded-full text-[#17181C] transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
                       aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
                     >
-                      <X className="h-5 w-5 text-white" />
+                      <X className="h-5 w-5 text-[#17181C]" />
                     </button>
                   </div>
 
                   {/* Body Content */}
-                  <div className="flex flex-col gap-6 py-2 pb-12">
+                  <div className="flex flex-col gap-6 py-2 pb-[calc(5rem+env(safe-area-inset-bottom))]">
                     
-                    {/* Language Selection Bar - PLACED EXCLUSIVELY HERE */}
-                    <div className="space-y-3 w-full">
-                      <span className="text-xs font-black uppercase tracking-wider text-gray-400 block">
+                    {/* Language Selection Bar */}
+                    <div className="space-y-2.5 w-full">
+                      <span className="text-xs font-black uppercase tracking-wider text-[#374151] block">
                         {dict.header?.language_title || "Dil seçimi"}
                       </span>
-                      <div className="grid grid-cols-3 gap-1.5 bg-[#161b22] p-1.5 rounded-xl border border-gray-800 w-full overflow-hidden">
+                      <div className="grid grid-cols-3 gap-1.5 bg-[#F6F6F8] p-1.5 rounded-xl border border-[#E5E7EB] w-full overflow-hidden">
                         {(['az', 'en', 'ru'] as const).map((lang) => (
                           <button
                             key={lang}
@@ -306,8 +306,8 @@ export function Header({ dict, locale }: HeaderProps) {
                             }}
                             className={`w-full py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[44px] flex items-center justify-center cursor-pointer ${
                               locale === lang
-                                ? 'bg-red-500 text-white shadow-soft-sm'
-                                : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                ? 'bg-[#D8232A] text-white shadow-sm'
+                                : 'text-[#374151] hover:text-[#17181C] hover:bg-white border border-[#E5E7EB]/50 font-bold'
                             }`}
                           >
                             {lang}
@@ -319,7 +319,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   {/* Structural Navigation Links */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
-                      <span className="text-xs font-black uppercase tracking-wider text-gray-500 block pb-1 border-b border-gray-800">
+                      <span className="text-xs font-black uppercase tracking-wider text-[#374151] block pb-1 border-b border-[#EDEDED]">
                         {dict.header?.pages_title || "Səhifələr"}
                       </span>
                       <nav className="flex flex-col">
@@ -334,10 +334,10 @@ export function Header({ dict, locale }: HeaderProps) {
                             key={item.label}
                             href={item.href}
                             onClick={() => setIsMenuOpen(false)}
-                            className={`block py-3 text-lg font-medium text-white border-b border-gray-800/40 last:border-0 transition-colors ${
+                            className={`block py-3 text-base font-semibold text-[#17181C] border-b border-[#F6F6F8] last:border-0 transition-colors ${
                               pathname === item.href || pathname.startsWith(item.href + '/')
-                                ? 'text-red-500 font-bold'
-                                : 'hover:text-red-500'
+                                ? 'text-[#D8232A] font-black'
+                                : 'hover:text-[#D8232A]'
                             }`}
                           >
                             {item.label}
@@ -346,23 +346,28 @@ export function Header({ dict, locale }: HeaderProps) {
                       </nav>
                     </div>
 
-                    <div className="space-y-4">
-                      <span className="text-xs font-black uppercase tracking-wider text-gray-500 block pb-1 border-b border-gray-800">
+                    <div className="space-y-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-[#374151] block pb-1 border-b border-[#EDEDED]">
                         {dict.header?.categories_title || "Məhsul Qrupları"}
                       </span>
-                      <div className="grid grid-cols-2 gap-2">
-                        {rubikTaxonomyGroups.map((group) => {
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {rubikTaxonomyGroups.map((group, idx) => {
                           const mainCategoryLink = group.items[0]?.slug 
                             ? `/${locale}/category/${encodeURIComponent(group.items[0].slug)}`
                             : `/${locale}/category`;
+                          const isLastOdd = idx === rubikTaxonomyGroups.length - 1 && rubikTaxonomyGroups.length % 2 !== 0;
                           return (
                             <Link
                               key={group.id}
                               href={mainCategoryLink}
                               onClick={() => setIsMenuOpen(false)}
-                              className="p-3 bg-[#161b22] border border-gray-800 rounded-xl hover:border-red-500 hover:bg-gray-800/50 transition-all text-center flex flex-col justify-center min-h-[60px]"
+                              className={`p-3 bg-[#F6F6F8] border border-[#E5E7EB] rounded-xl hover:border-[#D8232A] hover:bg-white transition-all text-center flex items-center justify-center min-h-[56px] shadow-2xs group ${
+                                isLastOdd ? 'col-span-2' : ''
+                              }`}
                             >
-                              <span className="text-xs font-bold text-white tracking-wide">{t(group.title)}</span>
+                              <span className="text-xs font-bold text-[#17181C] group-hover:text-[#D8232A] tracking-wide transition-colors">
+                                {t(group.title)}
+                              </span>
                             </Link>
                           );
                         })}
@@ -371,14 +376,14 @@ export function Header({ dict, locale }: HeaderProps) {
                   </div>
 
                   {/* User Account & Action Panel */}
-                  <div className="space-y-3 pt-6 border-t border-gray-800">
+                  <div className="space-y-3 pt-6 border-t border-[#EDEDED]">
                     {mounted && user ? (
                       <div className="space-y-2">
                         {(userRole === 'admin' || userRole === 'manager') && (
                           <Link
                             href={`/${locale}/admin`}
                             onClick={() => setIsMenuOpen(false)}
-                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-red-600/20 text-red-400 border border-red-500/30 text-xs font-black rounded-xl hover:bg-red-600/30 transition-colors cursor-pointer min-h-[44px] uppercase tracking-wider"
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3.5 bg-[#D8232A]/10 text-[#D8232A] border border-[#D8232A]/30 text-xs font-black rounded-xl hover:bg-[#D8232A]/20 transition-colors cursor-pointer min-h-[48px] uppercase tracking-wider"
                           >
                             <ShieldCheck className="h-4 w-4" />
                             Admin Panel
@@ -389,7 +394,7 @@ export function Header({ dict, locale }: HeaderProps) {
                             setIsMenuOpen(false);
                             handleAccountClick();
                           }}
-                          className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-white text-[#0d1117] text-sm font-black rounded-xl hover:bg-gray-100 transition-colors cursor-pointer min-h-[44px]"
+                          className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-[#17181C] text-white text-sm font-black rounded-xl hover:bg-black transition-colors cursor-pointer min-h-[48px] shadow-sm"
                         >
                           {dict.header?.my_account || "Şəxsi Kabinet"}
                         </button>
@@ -400,7 +405,7 @@ export function Header({ dict, locale }: HeaderProps) {
                           setIsMenuOpen(false);
                           openModal('login');
                         }}
-                        className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-red-500 text-white text-sm font-black rounded-xl hover:bg-red-600 transition-colors cursor-pointer min-h-[44px]"
+                        className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-[#D8232A] text-white text-sm font-black rounded-xl hover:bg-[#B31B21] transition-colors cursor-pointer min-h-[48px] shadow-md"
                       >
                         {dict.header?.login_register || "Giriş / Qeydiyyat"}
                       </button>

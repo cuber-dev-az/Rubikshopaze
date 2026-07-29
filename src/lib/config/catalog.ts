@@ -156,7 +156,7 @@ export const rubikTaxonomy = {
     id: 'skill-levels',
     slug: 'skill-levels',
     title: {
-      az: 'Bacarıq Səviyyəsi',
+      az: 'Çətinlik Səviyyəsi',
       en: 'Skill Levels',
       ru: 'Уровень Мастерства'
     },
