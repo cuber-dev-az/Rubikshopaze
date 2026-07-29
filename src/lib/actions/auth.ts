@@ -126,6 +126,18 @@ export async function sendOTPAction(email: string) {
     if (!email) {
       return { error: 'E-poçt ünvanı daxil edilməyib.' };
     }
+
+    // Check if user already exists in Auth DB
+    const supabaseAdmin = createAdminSupabaseClient();
+    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (!listError && users) {
+      const userExists = users.some(u => u.email?.toLowerCase() === email.toLowerCase());
+      if (userExists) {
+        return { error: 'Bu e-poçt ünvanı ilə artıq hesab yaradılıb. Zəhmət olmasa daxil olun.' };
+      }
+    }
+
     const otp = await generateOTP();
     const expiryTime = Date.now() + 5 * 60 * 1000; // 5 minutes
     const token = await generateToken(email, otp, expiryTime);
