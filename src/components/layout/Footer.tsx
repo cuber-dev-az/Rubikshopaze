@@ -212,7 +212,7 @@ export function Footer({ dict, locale }: FooterProps) {
       </div>
 
       {/* Bottom Legal & Payments bar */}
-      <div className="border-t border-[#E5E7EB] bg-[#F6F6F8] py-8">
+      <div className="border-t border-[#E5E7EB] bg-[#F6F6F8] pt-8 pb-24 md:pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-xs text-[#6B7280] text-center md:text-left leading-relaxed">
             © {currentYear} RubikShop.az. {dict.footer?.all_rights_reserved || "Bütün hüquqlar qorunur."} <br className="hidden sm:block" />
@@ -220,11 +220,11 @@ export function Footer({ dict, locale }: FooterProps) {
           </p>
 
           {/* Secure Payment Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 pr-12 md:pr-0">
             <span className="text-[10px] uppercase text-[#6B7280] font-bold tracking-widest mr-2">
               {dict.footer?.secure_payment || "Təhlükəsiz Ödəniş"}
             </span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 justify-center">
               <span className="bg-[#FFFFFF] text-[#17181C] text-[10px] font-bold px-2.5 py-1.5 rounded border border-[#E5E7EB] tracking-wider shadow-sm">
                 💳 Visa / MasterCard
               </span>

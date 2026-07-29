@@ -668,8 +668,16 @@ export function AccountDashboardClient({ locale, dict, initialProfile }: Account
                   </div>
                   <button
                     onClick={() => {
-                      const el = document.getElementById('support-ticket-section');
-                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      if (activeTab !== 'overview') {
+                        setActiveTab('overview');
+                        setTimeout(() => {
+                          const el = document.getElementById('support-ticket-section');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }, 120);
+                      } else {
+                        const el = document.getElementById('support-ticket-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }
                     }}
                     className="text-xs font-bold text-rubik-brand hover:underline mt-4 text-left flex items-center gap-1 cursor-pointer"
                   >

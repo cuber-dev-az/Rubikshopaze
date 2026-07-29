@@ -87,12 +87,20 @@ export default function RequireAuthClient({ dict, locale }: RequireAuthClientPro
   }
 
   return (
-    <div className="py-4">
-      <div className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tight">Fərdi Kabinet</h1>
-        <p className="text-xs text-muted-foreground mt-1">
-          Sifarişlərinizi izləyin, istək siyahınızı idarə edin və loyallıq xallarını idarə edin.
-        </p>
+    <div className="py-2">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl md:text-3xl font-black text-foreground tracking-tight">Fərdi Kabinet</h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Aktiv Hesab
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Sifarişlərinizi izləyin, istək siyahınızı idarə edin və loyallıq xallarını tənzimləyin.
+          </p>
+        </div>
       </div>
       <AccountDashboardClient locale={locale} dict={dict} initialProfile={profile} />
     </div>
