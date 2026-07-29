@@ -50,7 +50,7 @@ export function StorefrontLayout({ children, dict, locale }: StorefrontLayoutPro
         href="https://wa.me/994506684925"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-[80px] sm:bottom-20 md:bottom-10 right-4 sm:right-8 z-40 bg-[#25D366] hover:bg-[#20bd5a] text-white p-2.5 sm:p-3 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center group border border-white/30 backdrop-blur-xs ring-4 ring-black/5"
+        className="fixed bottom-[130px] sm:bottom-24 md:bottom-10 right-4 sm:right-8 z-40 bg-[#25D366] hover:bg-[#20bd5a] text-white p-2.5 sm:p-3 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center group border border-white/30 backdrop-blur-xs ring-4 ring-black/5"
         aria-label="Köməkçi WhatsApp Dəstək"
         title="Köməkçi Dəstək Xətti"
       >

@@ -8,7 +8,7 @@
     "account": "Kabinet"
   },
   "product": { "add_to_cart": "Səbətə At", "out_of_stock": "Bitib", "price": "Qiymət" },
-  "cart": { "title": "Sizin Səbətiniz", "empty": "Səbətiniz boşdur.", "total": "Cəmi", "checkout": "Sifariş ver", "quantity": "Say" },
+  "cart": { "title": "Sizin Səbətiniz", "empty": "Səbətiniz boşdur.", "total": "Cəmi", "checkout": "Sifariş ver", "quantity": "Say", "pro_setup": "Professional İncə Tənzimləmə", "calc_at_checkout": "Ödəniş addımında hesablanır", "checkout_note": "* Dəqiq metro stansiyası növbəti addımda (Ödəniş addımında) seçilərək çatdırılma məbləği dəqiq əlavə edilir." },
   "checkout": {
     "title": "Sifarişi Rəsmiləşdir",
     "name": "Ad və Soyad",
@@ -89,9 +89,6 @@
     "return_policy": "Geri Qaytarma Qaydaları",
     "address_val": "Bakı şəhəri, Azərbaycan",
     "all_rights_reserved": "Bütün hüquqlar qorunur.",
-    "secure_payment": "Təhlükəsiz Ödəniş",
-    "track_order": "Sifarişi İzlə",
-    "discount_bundles": "Endirimli Dəstlər",
-    "learning": "Alqoritmlər & Öyrənmə"
+    "secure_payment": "Təhlükəsiz Ödəniş"
   }
 }

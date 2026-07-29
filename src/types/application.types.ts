@@ -18,6 +18,14 @@ export interface ApplicationDictionary {
     total: string;
     checkout: string;
     quantity: string;
+    pro_setup?: string;
+    calc_at_checkout?: string;
+    checkout_note?: string;
+    summary?: string;
+    subtotal?: string;
+    savings?: string;
+    subtotal_discounted?: string;
+    shipping?: string;
   };
   checkout: {
     title: string;
@@ -105,9 +113,5 @@ export interface ApplicationDictionary {
     return_policy: string;
     address_val: string;
     all_rights_reserved: string;
-    secure_payment?: string;
-    track_order?: string;
-    discount_bundles?: string;
-    learning?: string;
   };
 }

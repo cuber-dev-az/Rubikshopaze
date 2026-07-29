@@ -8,7 +8,7 @@
     "account": "Account"
   },
   "product": { "add_to_cart": "Add to Cart", "out_of_stock": "Out of Stock", "price": "Price" },
-  "cart": { "title": "Your Cart", "empty": "Your cart is empty.", "total": "Total", "checkout": "Checkout", "quantity": "Qty" },
+  "cart": { "title": "Your Cart", "empty": "Your cart is empty.", "total": "Total", "checkout": "Checkout", "quantity": "Qty", "pro_setup": "Professional Setup Add-on", "calc_at_checkout": "Calculated at checkout", "checkout_note": "* Exact metro station will be selected in the next step (Checkout) to add shipping fee." },
   "checkout": {
     "title": "Complete Order",
     "name": "Full Name",
@@ -79,19 +79,16 @@
     "newsletter_placeholder": "E-poçt ünvanınızı daxil edin",
     "newsletter_button": "Abunə ol",
     "newsletter_subscribed": "Abunə olundu!",
-    "bio_desc": "Azerbaijan's first and only specialized professional speedcubing platform. Fast delivery.",
-    "wca_notice": "Products fully compliant with official WCA regulations.",
-    "useful_links": "Useful Links",
-    "support_policies": "Support & Policies",
-    "contact_us": "Contact Us",
-    "terms_of_service": "Terms of Service",
-    "privacy_policy": "Privacy Policy",
-    "return_policy": "Return Policy",
-    "address_val": "Baku city, Azerbaijan",
-    "all_rights_reserved": "All rights reserved.",
-    "secure_payment": "Secure Payment",
-    "track_order": "Track Order",
-    "discount_bundles": "Discount Bundles",
-    "learning": "Algorithms & Learning"
+    "bio_desc": "Azərbaycanın ilk və tək ixtisaslaşmış professional sürətli kub yarışı (speedcubing) platforması. Sürətli çatdırılma.",
+    "wca_notice": "WCA rəsmi qaydaları ilə tam uyğun məhsullar.",
+    "useful_links": "Faydalı Keçidlər",
+    "support_policies": "Dəstək və Şərtlər",
+    "contact_us": "Bizimlə Əlaqə",
+    "terms_of_service": "İstifadə Şərtləri",
+    "privacy_policy": "Məxfilik Siyasəti",
+    "return_policy": "Geri Qaytarma Qaydaları",
+    "address_val": "Bakı şəhəri, Azərbaycan",
+    "all_rights_reserved": "Bütün hüquqlar qorunur.",
+    "secure_payment": "Təhlükəsiz Ödəniş"
   }
 }

@@ -340,7 +340,9 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                           <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground font-medium">
                             <span>Original Premium</span>
                             <span>•</span>
-                            <span className="text-rubik-brand">Professional Setup add-on</span>
+                            <span className="text-rubik-brand">
+                              {dict.cart?.pro_setup || (locale === 'en' ? 'Professional Setup Add-on' : (locale === 'ru' ? 'Профессиональная Настройка' : 'Professional İncə Tənzimləmə'))}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -500,9 +502,9 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                           <span className="text-xs font-black text-foreground font-mono">{up.price_azn.toFixed(2)} AZN</span>
                           <button
                             onClick={() => handleAddUpsell(up)}
-                            className="px-2.5 py-1 bg-foreground text-card hover:bg-rubik-brand hover:text-white font-black text-[10px] rounded-lg transition-colors cursor-pointer"
+                            className="px-2.5 py-1 bg-rubik-brand text-white hover:bg-rubik-brand-dark font-black text-[10px] rounded-lg transition-colors cursor-pointer"
                           >
-                            + Əlavə et
+                            + {locale === 'en' ? 'Add' : (locale === 'ru' ? 'Добавить' : 'Əlavə et')}
                           </button>
                         </div>
                       </div>
@@ -519,14 +521,18 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
               {/* Order Summary card */}
               <div className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-5">
                 <h3 className="text-base font-black text-foreground uppercase tracking-wider pb-3 border-b border-border">
-                  Sifariş Xülasəsi
+                  {dict.cart?.summary || (locale === 'en' ? 'Order Summary' : (locale === 'ru' ? 'Итог заказа' : 'Sifariş Xülasəsi'))}
                 </h3>
 
                 {productSavings > 0 && (
                   <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300">
                     <Sparkles className="h-4 w-4 text-emerald-600 shrink-0 animate-bounce" />
                     <p className="text-xs font-bold leading-tight">
-                      🎉 Təbriklər! Siz bu sifarişdə məhsul endirimlərindən <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{productSavings.toFixed(2)} AZN</span> qənaət edirsiniz!
+                      🎉 {locale === 'en' 
+                        ? <>Congrats! You save <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{productSavings.toFixed(2)} AZN</span> on product discounts!</>
+                        : (locale === 'ru'
+                          ? <>Поздравляем! Вы экономите <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{productSavings.toFixed(2)} AZN</span> на скидках!</>
+                          : <>Təbriklər! Siz bu sifarişdə məhsul endirimlərindən <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{productSavings.toFixed(2)} AZN</span> qənaət edirsiniz!</>)}
                     </p>
                   </div>
                 )}
@@ -536,18 +542,18 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                   {productSavings > 0 && (
                     <>
                       <div className="flex justify-between items-center text-muted-foreground">
-                        <span>İlkin məhsul dəyəri</span>
+                        <span>{dict.cart?.subtotal || (locale === 'en' ? 'Initial Product Price' : (locale === 'ru' ? 'Начальная стоимость' : 'İlkin məhsul dəyəri'))}</span>
                         <span className="line-through font-mono">{origSubtotal.toFixed(2)} AZN</span>
                       </div>
                       <div className="flex justify-between items-center text-emerald-600 font-bold">
-                        <span>Məhsul endirimləri</span>
+                        <span>{dict.cart?.savings || (locale === 'en' ? 'Product Discounts' : (locale === 'ru' ? 'Скидки на товары' : 'Məhsul endirimləri'))}</span>
                         <span className="font-mono">-{productSavings.toFixed(2)} AZN</span>
                       </div>
                     </>
                   )}
 
                   <div className="flex justify-between items-center text-muted-foreground">
-                    <span>Səbət cəmi (Endirimli)</span>
+                    <span>{dict.cart?.subtotal_discounted || (locale === 'en' ? 'Subtotal' : (locale === 'ru' ? 'Подытог' : 'Səbət cəmi (Endirimli)'))}</span>
                     <span className="font-semibold text-foreground font-mono">{subtotal.toFixed(2)} AZN</span>
                   </div>
 
@@ -572,34 +578,35 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                   {/* Delivery type info */}
                   <div className="space-y-2 pt-2 border-t border-border/60">
                     <div className="flex justify-between items-center">
-                      <span className="block font-bold text-foreground text-[10px] uppercase tracking-wider">Çatdırılma</span>
-                      <span className="text-[11px] font-bold text-emerald-600 font-mono">Checkout-da hesablanır</span>
+                      <span className="block font-bold text-foreground text-[10px] uppercase tracking-wider">
+                        {dict.cart?.shipping || (locale === 'en' ? 'Delivery' : (locale === 'ru' ? 'Доставка' : 'Çatdırılma'))}
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-600 font-mono">
+                        {dict.cart?.calc_at_checkout || (locale === 'en' ? 'Calculated at checkout' : (locale === 'ru' ? 'Рассчитывается при оформлении' : 'Ödəniş addımında hesablanır'))}
+                      </span>
                     </div>
                     <div className="p-3 bg-muted/40 border border-border/60 rounded-xl space-y-1.5 text-xs">
                       <div className="flex justify-between items-center">
-                        <span className="text-foreground font-semibold flex items-center gap-1">📍 Metro Stansiyası:</span>
+                        <span className="text-foreground font-semibold flex items-center gap-1">📍 {locale === 'en' ? 'Metro Station:' : (locale === 'ru' ? 'Станция метро:' : 'Metro Stansiyası:')}</span>
                         <span className="text-emerald-600 font-bold font-mono">1.00 – 2.00 AZN</span>
                       </div>
                       <div className="flex justify-between items-center text-muted-foreground text-[11px]">
-                        <span>🚚 Ünvana / Rayona:</span>
-                        <span>Razılaşdırılır</span>
+                        <span>🚚 {locale === 'en' ? 'Address / Region:' : (locale === 'ru' ? 'На адрес / В регион:' : 'Ünvana / Rayona:')}</span>
+                        <span>{locale === 'en' ? 'Negotiable' : (locale === 'ru' ? 'По договоренности' : 'Razılaşdırılır')}</span>
                       </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground italic leading-tight">
-                      * Dəqiq metro stansiyası növbəti addımda (Checkout) seçilərək çatdırılma məbləği dəqiq əlavə edilir.
+                      {dict.cart?.checkout_note || (locale === 'en' 
+                        ? '* Exact metro station will be selected in the next step (Checkout) to add shipping fee.' 
+                        : (locale === 'ru' 
+                          ? '* Точная станция метро выбирается на следующем шаге (Оформление заказа) для добавления стоимости доставки.' 
+                          : '* Dəqiq metro stansiyası növbəti addımda (Ödəniş addımında) seçilərək çatdırılma məbləği dəqiq əlavə edilir.'))}
                     </p>
                   </div>
 
-                  {(productSavings > 0 || discountAmount > 0) && (
-                    <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between text-xs font-black text-emerald-700 dark:text-emerald-300">
-                      <span>CƏMİ QƏNAƏTİNİZ:</span>
-                      <span className="font-mono text-sm">{(productSavings + discountAmount).toFixed(2)} AZN</span>
-                    </div>
-                  )}
-
                   {/* Final Total price */}
                   <div className="flex justify-between items-center text-sm font-black text-foreground pt-4 border-t border-border">
-                    <span className="uppercase">Yekun Ödəniş</span>
+                    <span className="uppercase">{locale === 'en' ? 'Total Payment' : (locale === 'ru' ? 'Итого к оплате' : 'Yekun Ödəniş')}</span>
                     <span className="font-mono text-lg text-rubik-brand">{total.toFixed(2)} AZN</span>
                   </div>
                 </div>
@@ -610,7 +617,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                   className="w-full inline-flex items-center justify-center py-4 bg-rubik-brand hover:bg-rubik-brand-dark text-white font-black text-sm rounded-2xl hover:shadow-soft-lg active:scale-98 transition-all cursor-pointer flex gap-2"
                 >
                   <Zap className="h-4.5 w-4.5" />
-                  <span>Sifarişi Tamamla</span>
+                  <span>{dict.cart?.checkout || (locale === 'en' ? 'Proceed to Checkout' : (locale === 'ru' ? 'Оформить заказ' : 'Sifarişi Tamamla'))}</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
@@ -619,7 +626,7 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
               <div className="bg-card border border-border rounded-3xl p-6 shadow-soft-sm space-y-4">
                 <h4 className="text-xs font-black text-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Ticket className="h-4 w-4 text-rubik-brand" />
-                  Kupon və Promo Kod
+                  {locale === 'en' ? 'Coupon & Promo Code' : (locale === 'ru' ? 'Купон и Промокод' : 'Kupon və Promo Kod')}
                 </h4>
 
                 <form onSubmit={handleApplyCoupon} className="flex gap-2">
@@ -635,9 +642,10 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2.5 bg-foreground text-card hover:bg-rubik-brand hover:text-white font-black text-xs rounded-xl transition-colors cursor-pointer whitespace-nowrap"
+                    disabled={isCouponLoading}
+                    className="px-4 py-2.5 bg-rubik-brand text-white hover:bg-rubik-brand-dark font-black text-xs rounded-xl transition-colors cursor-pointer whitespace-nowrap shadow-sm disabled:opacity-50"
                   >
-                    Tətbiq Et
+                    {isCouponLoading ? '...' : (locale === 'en' ? 'Apply' : (locale === 'ru' ? 'Применить' : 'Tətbiq Et'))}
                   </button>
                 </form>
 
