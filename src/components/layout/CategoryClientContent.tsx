@@ -577,34 +577,34 @@ function CategoryClientContentInner({
               animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileFilterOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden"
             />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] bg-[#111827] text-white rounded-t-3xl border-t border-gray-800 shadow-2xl flex flex-col p-6 lg:hidden"
+              className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[85vh] bg-white text-[#17181C] rounded-t-3xl border-t border-[#E5E7EB] shadow-2xl flex flex-col p-6 lg:hidden"
             >
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-700 rounded-full mt-3" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-gray-300 rounded-full mt-3" />
               
-              <div className="flex items-center justify-between border-b border-gray-800 pb-4 mt-2">
+              <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-4 mt-2">
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-5 w-5 text-[#ef4444]" />
-                  <h3 className="font-bold text-lg text-white">Filtrlər</h3>
+                  <SlidersHorizontal className="h-5 w-5 text-[#D8232A]" />
+                  <h3 className="font-bold text-lg text-[#17181C]">Filtrlər</h3>
                 </div>
                 <div className="flex items-center gap-3">
                   {(selectedBrands.length > 0 || selectedMechanics.length > 0 || minPrice > 0 || maxPrice < 250) && (
                     <button
                       onClick={clearAllFilters}
-                      className="text-xs text-[#ef4444] font-bold hover:underline cursor-pointer"
+                      className="text-xs text-[#D8232A] font-bold hover:underline cursor-pointer"
                     >
                       Təmizlə
                     </button>
                   )}
                   <button
                     onClick={() => setIsMobileFilterOpen(false)}
-                    className="p-1.5 bg-gray-800 hover:bg-gray-700 rounded-full text-gray-300 hover:text-white transition-colors cursor-pointer"
+                    className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition-colors cursor-pointer"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -615,14 +615,14 @@ function CategoryClientContentInner({
                 {/* Brand Filter (Mobile) */}
                 {availableBrands.length > 0 && (
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Brend</h4>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">Brend</h4>
                     <div className="space-y-2.5">
                       {availableBrands.map(brand => (
-                        <label key={brand} className="flex items-center gap-2.5 text-sm font-medium text-gray-200 cursor-pointer group">
+                        <label key={brand} className="flex items-center gap-2.5 text-sm font-medium text-[#17181C] cursor-pointer group">
                           <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center transition-all ${
                             selectedBrands.includes(brand)
-                              ? 'bg-[#ef4444] border-[#ef4444] text-white'
-                              : 'border-gray-700 group-hover:border-gray-500 bg-gray-800/60'
+                              ? 'bg-[#D8232A] border-[#D8232A] text-white'
+                              : 'border-gray-300 group-hover:border-gray-400 bg-gray-50'
                           }`}>
                             {selectedBrands.includes(brand) && <Check className="h-3.5 w-3.5" />}
                           </div>
@@ -641,15 +641,15 @@ function CategoryClientContentInner({
 
                 {/* Mechanics Filter (Mobile) */}
                 {availableMechanics.length > 0 && (
-                  <div className="space-y-3 pt-4 border-t border-gray-800">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Mexanika</h4>
+                  <div className="space-y-3 pt-4 border-t border-[#E5E7EB]">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">Mexanika</h4>
                     <div className="space-y-2.5">
                       {availableMechanics.map(mech => (
-                        <label key={mech} className="flex items-center gap-2.5 text-sm font-medium text-gray-200 cursor-pointer group">
+                        <label key={mech} className="flex items-center gap-2.5 text-sm font-medium text-[#17181C] cursor-pointer group">
                           <div className={`h-4.5 w-4.5 rounded border flex items-center justify-center transition-all ${
                             selectedMechanics.includes(mech)
-                              ? 'bg-[#ef4444] border-[#ef4444] text-white'
-                              : 'border-gray-700 group-hover:border-gray-500 bg-gray-800/60'
+                              ? 'bg-[#D8232A] border-[#D8232A] text-white'
+                              : 'border-gray-300 group-hover:border-gray-400 bg-gray-50'
                           }`}>
                             {selectedMechanics.includes(mech) && <Check className="h-3.5 w-3.5" />}
                           </div>
@@ -667,10 +667,10 @@ function CategoryClientContentInner({
                 )}
 
                 {/* Price Filter (Mobile) */}
-                <div className="space-y-4 pt-4 border-t border-gray-800">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Qiymət</h4>
+                <div className="space-y-4 pt-4 border-t border-[#E5E7EB]">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">Qiymət</h4>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-gray-400 font-mono">
+                    <div className="flex items-center justify-between text-xs text-[#6B7280] font-mono">
                       <span>{minPrice} AZN</span>
                       <span>{maxPrice} AZN</span>
                     </div>
@@ -680,18 +680,18 @@ function CategoryClientContentInner({
                       max="250"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(parseInt(e.target.value))}
-                      className="w-full accent-[#ef4444] cursor-pointer"
+                      className="w-full accent-[#D8232A] cursor-pointer"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-800 space-y-2">
+              <div className="pt-3 pb-20 border-t border-[#E5E7EB] space-y-2 bg-white">
                 <button
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="w-full py-3 bg-[#ef4444] text-white font-bold rounded-xl text-sm hover:bg-[#dc2626] transition-colors cursor-pointer"
+                  className="w-full py-3.5 bg-[#D8232A] text-white font-black rounded-xl text-sm hover:bg-[#B31B21] transition-colors cursor-pointer shadow-soft-sm"
                 >
-                  Təsdiqlə
+                  Tətbiq Et
                 </button>
               </div>
             </motion.div>
@@ -707,7 +707,7 @@ function CategoryClientContentInner({
               animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileSortOpen(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-xs z-50 lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden"
             />
             <motion.div
               key="sort-sheet"
@@ -715,18 +715,18 @@ function CategoryClientContentInner({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-x-0 bottom-0 z-50 bg-[#111827] text-white rounded-t-3xl overflow-hidden lg:hidden flex flex-col max-h-[85vh] shadow-2xl border-t border-gray-800"
+              className="fixed inset-x-0 bottom-0 z-50 bg-white text-[#17181C] rounded-t-3xl overflow-hidden lg:hidden flex flex-col max-h-[85vh] shadow-2xl border-t border-[#E5E7EB]"
             >
-              <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900/50">
-                <h3 className="font-bold text-lg text-white">Sıralama</h3>
+              <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-gray-50">
+                <h3 className="font-bold text-lg text-[#17181C]">Sıralama</h3>
                 <button 
                   onClick={() => setIsMobileSortOpen(false)} 
-                  className="p-1.5 bg-gray-800 border border-gray-700 rounded-full text-gray-300 hover:text-white transition-colors cursor-pointer"
+                  className="p-1.5 bg-gray-100 border border-gray-200 rounded-full text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="p-4 overflow-y-auto space-y-2 pb-[100px]">
+              <div className="p-4 overflow-y-auto space-y-2 pb-24 bg-white">
                 {[
                   { id: 'newest', label: 'Ən Yenilər' },
                   { id: 'price_asc', label: 'Qiymət: Ucuzdan bahaya' },
@@ -741,8 +741,8 @@ function CategoryClientContentInner({
                     }}
                     className={`w-full flex items-center justify-between p-4 rounded-xl border ${
                       sortOption === opt.id 
-                        ? 'border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444] font-bold' 
-                        : 'border-gray-800 bg-gray-900/60 hover:bg-gray-800 text-gray-300'
+                        ? 'border-[#D8232A] bg-[#D8232A]/5 text-[#D8232A] font-bold' 
+                        : 'border-[#E5E7EB] bg-gray-50 hover:bg-gray-100 text-[#17181C]'
                     } transition-colors cursor-pointer`}
                   >
                     <span>{opt.label}</span>

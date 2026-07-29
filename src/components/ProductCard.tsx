@@ -130,7 +130,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     else brandName = '';
   }
 
-  // 2. Resolve Type / Magnetic label accurately
+  // 2. Resolve Type / Category / Magnetic label accurately
   let typeLabel = '';
 
   if (titleLower.includes('açarlıq') || titleLower.includes('keychain') || titleLower.includes('key chain') || titleLower.includes('acarliq') || titleLower.includes('brelok') || titleLower.includes('брелок')) {
@@ -141,8 +141,32 @@ export function ProductCard({ product, dict }: ProductCardProps) {
     typeLabel = 'Yağ';
   } else if (titleLower.includes('taymer') || titleLower.includes('timer') || titleLower.includes('секундомер')) {
     typeLabel = 'Taymer';
-  } else if (titleLower.includes('aksessuar') || titleLower.includes('accessory') || titleLower.includes('stend') || titleLower.includes('stand') || titleLower.includes('çanta') || titleLower.includes('canta') || titleLower.includes('bag') || titleLower.includes('box') || titleLower.includes('подставка')) {
+  } else if (titleLower.includes('stend') || titleLower.includes('stand ') || titleLower.includes('çanta') || titleLower.includes('canta') || titleLower.includes('pouch') || titleLower.includes('törpü')) {
     typeLabel = 'Aksessuar';
+  } else if (/\b3x3(x3)?\b/i.test(productTitle)) {
+    typeLabel = '3x3';
+  } else if (/\b2x2(x2)?\b/i.test(productTitle)) {
+    typeLabel = '2x2';
+  } else if (/\b4x4(x4)?\b/i.test(productTitle)) {
+    typeLabel = '4x4';
+  } else if (/\b5x5(x5)?\b/i.test(productTitle)) {
+    typeLabel = '5x5';
+  } else if (/\b6x6(x6)?\b/i.test(productTitle)) {
+    typeLabel = '6x6';
+  } else if (/\b7x7(x7)?\b/i.test(productTitle)) {
+    typeLabel = '7x7';
+  } else if (titleLower.includes('megaminx')) {
+    typeLabel = 'Megaminx';
+  } else if (titleLower.includes('pyraminx')) {
+    typeLabel = 'Pyraminx';
+  } else if (titleLower.includes('skewb')) {
+    typeLabel = 'Skewb';
+  } else if (titleLower.includes('square-1') || titleLower.includes('square 1') || titleLower.includes('sq-1')) {
+    typeLabel = 'Square-1';
+  } else if (titleLower.includes('clock')) {
+    typeLabel = 'Clock';
+  } else if (product.category_slug && ['3x3', '2x2', '4x4', '5x5', '6x6', '7x7', 'megaminx', 'pyraminx', 'skewb', 'square-1'].includes(String(product.category_slug).toLowerCase())) {
+    typeLabel = String(product.category_slug).toUpperCase();
   } else if (product.product_type && !['speedcube', 'other', 'default', 'puzzle', 'magnetic', 'maqnitli', 'standart', 'standard'].includes(product.product_type.toLowerCase())) {
     typeLabel = product.product_type;
   } else {
@@ -193,13 +217,13 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       className="flex flex-col bg-white border border-[#E5E7EB] rounded-[12px] overflow-hidden shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow duration-300 relative group cursor-pointer block"
     >
       {isPreorder ? (
-        <div className="absolute top-2.5 left-2.5 z-20 bg-[#FDECEC] text-[#B31B21] text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider shadow-sm pointer-events-none flex items-center gap-1 max-w-[calc(100%-3.2rem)]">
+        <div className="absolute top-2.5 left-2.5 z-20 bg-[#FDECEC] text-[#B31B21] text-[10px] font-bold px-2 py-0.5 rounded-full tracking-wider shadow-sm pointer-events-none flex items-center gap-1 whitespace-nowrap">
           <Clock className="w-3 h-3 shrink-0" />
-          <span className="truncate">Ön Sifariş ({product.preorder_lead_time || '14-28 iş günü'})</span>
+          <span>{locale === 'en' ? 'Pre-order' : (locale === 'ru' ? 'Предзаказ' : 'Ön Sifariş')}</span>
         </div>
       ) : hasDiscount && discountPercent > 0 ? (
-        <div className="absolute top-2.5 left-2.5 z-20 bg-[#D8232A] text-white text-[10px] font-bold px-2.5 py-1 rounded tracking-wider shadow-sm pointer-events-none flex items-center gap-1">
-          <Sparkles className="w-3 h-3 animate-bounce" />
+        <div className="absolute top-2.5 left-2.5 z-20 bg-[#D8232A] text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-wider shadow-sm pointer-events-none flex items-center gap-1 whitespace-nowrap">
+          <Sparkles className="w-3 h-3 animate-bounce shrink-0" />
           <span>-{discountPercent}% ENDİRİM</span>
         </div>
       ) : null}
