@@ -262,59 +262,57 @@ export function Header({ dict, locale }: HeaderProps) {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: '100%' }}
                 transition={{ type: 'spring', damping: 26, stiffness: 240 }}
-                className="fixed inset-y-0 right-0 h-dvh w-full md:w-[460px] md:max-w-md bg-[#FFFFFF] z-[99999] p-5 sm:p-6 flex flex-col overflow-y-auto text-[#17181C] overscroll-contain shadow-2xl border-l border-[#EDEDED]"
+                className="fixed inset-y-0 right-0 h-dvh w-full md:w-[460px] md:max-w-md bg-[#FFFFFF] z-[99999] flex flex-col overflow-hidden text-[#17181C] shadow-2xl border-l border-[#EDEDED]"
               >
-                <div className="w-full flex flex-col gap-6">
-                  
-                  {/* Header Row */}
-                  <div className="flex items-center justify-between border-b border-[#EDEDED] pb-4">
-                    <Link 
-                      href={`/${locale}`} 
-                      className="flex items-center gap-2 group"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <span className="text-xl font-sans font-black bg-[#D8232A] text-white px-3 py-1.5 rounded-lg tracking-tight shadow-sm">
-                        RubikShop<span className="text-yellow-300">.az</span>
-                      </span>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="p-2.5 bg-[#F6F6F8] hover:bg-[#EDEDED] border border-[#E5E7EB] rounded-full text-[#17181C] transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-                      aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
-                    >
-                      <X className="h-5 w-5 text-[#17181C]" />
-                    </button>
-                  </div>
+                {/* Sticky Drawer Header */}
+                <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md px-5 sm:px-6 py-4 border-b border-[#EDEDED] flex items-center justify-between shrink-0">
+                  <Link 
+                    href={`/${locale}`} 
+                    className="flex items-center gap-2 group"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="text-xl font-sans font-black bg-[#D8232A] text-white px-3 py-1.5 rounded-lg tracking-tight shadow-sm">
+                      RubikShop<span className="text-yellow-300">.az</span>
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="p-2.5 bg-[#F6F6F8] hover:bg-[#EDEDED] border border-[#E5E7EB] rounded-full text-[#17181C] transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
+                    aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
+                  >
+                    <X className="h-5 w-5 text-[#17181C]" />
+                  </button>
+                </div>
 
-                  {/* Body Content */}
-                  <div className="flex flex-col gap-6 py-2 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                    
-                    {/* Language Selection Bar */}
-                    <div className="space-y-2.5 w-full">
-                      <span className="text-xs font-black uppercase tracking-wider text-[#374151] block">
-                        {dict.header?.language_title || "Dil seçimi"}
-                      </span>
-                      <div className="grid grid-cols-3 gap-1.5 bg-[#F6F6F8] p-1.5 rounded-xl border border-[#E5E7EB] w-full overflow-hidden">
-                        {(['az', 'en', 'ru'] as const).map((lang) => (
-                          <button
-                            key={lang}
-                            type="button"
-                            onClick={() => {
-                              changeLanguage(lang);
-                              setIsMenuOpen(false);
-                            }}
-                            className={`w-full py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[44px] flex items-center justify-center cursor-pointer ${
-                              locale === lang
-                                ? 'bg-[#D8232A] text-white shadow-sm'
-                                : 'text-[#374151] hover:text-[#17181C] hover:bg-white border border-[#E5E7EB]/50 font-bold'
-                            }`}
-                          >
-                            {lang}
-                          </button>
-                        ))}
-                      </div>
+                {/* Body Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 overscroll-contain pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                  
+                  {/* Language Selection Bar */}
+                  <div className="space-y-2.5 w-full">
+                    <span className="text-xs font-black uppercase tracking-wider text-[#374151] block">
+                      {dict.header?.language_title || "Dil seçimi"}
+                    </span>
+                    <div className="grid grid-cols-3 gap-1.5 bg-[#F6F6F8] p-1.5 rounded-xl border border-[#E5E7EB] w-full overflow-hidden">
+                      {(['az', 'en', 'ru'] as const).map((lang) => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => {
+                            changeLanguage(lang);
+                            setIsMenuOpen(false);
+                          }}
+                          className={`w-full py-2.5 text-xs font-black rounded-lg transition-all duration-200 uppercase min-h-[44px] flex items-center justify-center cursor-pointer ${
+                            locale === lang
+                              ? 'bg-[#D8232A] text-white shadow-sm'
+                              : 'text-[#374151] hover:text-[#17181C] hover:bg-white border border-[#E5E7EB]/50 font-bold'
+                          }`}
+                        >
+                          {lang}
+                        </button>
+                      ))}
                     </div>
+                  </div>
 
                   {/* Structural Navigation Links */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -334,7 +332,7 @@ export function Header({ dict, locale }: HeaderProps) {
                             key={item.label}
                             href={item.href}
                             onClick={() => setIsMenuOpen(false)}
-                            className={`block py-3 text-base font-semibold text-[#17181C] border-b border-[#F6F6F8] last:border-0 transition-colors ${
+                            className={`block py-3.5 px-2 text-base font-semibold text-[#17181C] border-b border-[#F6F6F8] last:border-0 transition-colors flex items-center min-h-[48px] ${
                               pathname === item.href || pathname.startsWith(item.href + '/')
                                 ? 'text-[#D8232A] font-black'
                                 : 'hover:text-[#D8232A]'
@@ -413,8 +411,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   </div>
 
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
           </>
         )}
         </AnimatePresence>
