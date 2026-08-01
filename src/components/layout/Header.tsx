@@ -15,15 +15,9 @@ import {
   Package,
   Heart,
   ShieldCheck,
-  ChevronRight,
   ChevronDown,
-  Compass,
-  HelpCircle,
-  PhoneCall,
   MessageCircle,
-  Layers,
 } from 'lucide-react';
-import { rubikTaxonomyGroups } from '@/lib/config/catalog';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
 import type { ApplicationDictionary } from '@/types/application.types';
@@ -73,10 +67,6 @@ export function Header({ dict, locale }: HeaderProps) {
     }
   }, [user, userRole, locale, openModal, router]);
 
-  const handleSignOut = React.useCallback(async () => {
-    await authSignOut(locale, router);
-  }, [authSignOut, locale, router]);
-  
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -124,12 +114,12 @@ export function Header({ dict, locale }: HeaderProps) {
       {/* Top Banner Accent */}
       <div className="bg-[#D8232A] text-white text-[11px] sm:text-xs font-semibold py-2 px-3 sm:px-6 text-center tracking-wide flex items-center justify-center gap-2 leading-tight shadow-sm">
         <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-300" />
-        <span className="whitespace-normal break-words">{dict.header?.promo_banner || "Rubikshop AZ â€” AzÉ™rbaycanda 1 nÃ¶mrÉ™li sÃ¼rÉ™tli kub yarÄ±ÅŸÄ± maÄŸazasÄ±! SÃ¼rÉ™tli Ã§atdÄ±rÄ±lma."}</span>
+        <span className="whitespace-normal break-words">{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
       </div>
 
       <header className={`sticky top-0 w-full bg-[#FFFFFF] border-b border-[#EDEDED] shadow-sm backdrop-blur-md ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>
         
-        {/* DESKTOP LAYOUT ARCHITECTURE RULES */}
+        {/* DESKTOP LAYOUT ARCHITECTURE */}
         <div className="hidden md:flex items-center justify-between bg-[#FFFFFF] border-b border-[#EDEDED] px-6 py-3.5 w-full gap-6">
           
           {/* LEFT SECTION */}
@@ -142,9 +132,8 @@ export function Header({ dict, locale }: HeaderProps) {
               <Menu className="h-6 w-6" />
             </button>
 
-            {/* Brand Logo Link per Section I */}
+            {/* Brand Logo Link */}
             <Link href={`/${locale}`} className="flex items-center gap-2 group">
-              {/* Mascot Icon */}
               <div className="w-8 h-8 rounded-lg bg-[#D8232A] text-white flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition-transform">
                 <Package className="w-5 h-5" />
               </div>
@@ -160,7 +149,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <Search className="absolute left-4 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
               <input
                 type="search"
-                placeholder={dict.header?.search_placeholder || "MÉ™hsul axtar..."}
+                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-24 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-xl text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#D8232A] focus:bg-white transition-all"
@@ -176,7 +165,6 @@ export function Header({ dict, locale }: HeaderProps) {
 
           {/* RIGHT SECTION */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Account Shortcut */}
             <button
               onClick={handleAccountClick}
               className="p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -185,20 +173,18 @@ export function Header({ dict, locale }: HeaderProps) {
               <User className="h-5 w-5" />
             </button>
 
-            {/* Wishlist Shortcut */}
             <Link
               href={`/${locale}/wishlist`}
               className="p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label={dict.navigation.wishlist || "SeÃ§ilmiÅŸlÉ™r"}
+              aria-label={dict.navigation.wishlist || "Seçilmişlər"}
             >
               <Heart className="h-5 w-5" />
             </Link>
 
-            {/* SÉ™bÉ™t Shortcut */}
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
-              aria-label={dict.navigation.cart || "SÉ™bÉ™t"}
+              aria-label={dict.navigation.cart || "Səbət"}
             >
               <ShoppingCart className="h-5 w-5" />
               {mounted && totalItems > 0 && (
@@ -211,9 +197,8 @@ export function Header({ dict, locale }: HeaderProps) {
 
         </div>
 
-        {/* MOBILE LAYOUT ARCHITECTURE RULES */}
+        {/* MOBILE LAYOUT ARCHITECTURE */}
         <div className="flex md:hidden items-center justify-between bg-[#FFFFFF] border-b border-[#EDEDED] px-4 py-3 w-full">
-          {/* Left: Brand logo */}
           <Link href={`/${locale}`} className="flex items-center gap-2 group">
             <div className="w-7 h-7 rounded-lg bg-[#D8232A] text-white flex items-center justify-center font-black text-xs shadow-sm">
               <Package className="w-4 h-4" />
@@ -223,24 +208,23 @@ export function Header({ dict, locale }: HeaderProps) {
             </span>
           </Link>
 
-          {/* Right: Hamburger navigation toggle trigger */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2.5 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label={t({ az: 'Menyu', en: 'Menu', ru: 'ĞœĞµĞ½Ñ' })}
+            aria-label={t({ az: 'Menyu', en: 'Menu', ru: 'Меню' })}
           >
             <Menu className="h-6 w-6" />
           </button>
         </div>
 
-        {/* Conditional Sub-Row Search visibility (Mobile only) */}
+        {/* Mobile Search Sub-Row */}
         {showMobileSearch && (
           <div className="md:hidden px-4 pb-3 pt-1 bg-[#FFFFFF]">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
               <Search className="absolute left-3.5 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
               <input
                 type="search"
-                placeholder={dict.header?.search_placeholder || "MÉ™hsul axtar..."}
+                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-lg text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#D8232A] transition-all"
@@ -249,11 +233,11 @@ export function Header({ dict, locale }: HeaderProps) {
           </div>
         )}
 
-        {/* LEFT-ALIGNED SLIDE-OUT OFF-CANVAS NAVIGATION DRAWER */}
+        {/* LEFT SLIDE-OUT MOBILE MENU DRAWER */}
         <AnimatePresence>
           {isMenuOpen && (
             <>
-              {/* Backdrop Overlay (Transparent dark backdrop with blur, top: 0, highest z-index) */}
+              {/* Backdrop */}
               <motion.div
                 key="left-drawer-backdrop"
                 initial={{ opacity: 0 }}
@@ -265,7 +249,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 aria-hidden="true"
               />
 
-              {/* Left Side Drawer Container */}
+              {/* Drawer Content */}
               <motion.div
                 key="left-drawer-container"
                 initial={{ opacity: 0, x: '-100%' }}
@@ -274,7 +258,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 transition={{ type: 'spring', damping: 28, stiffness: 280 }}
                 className="fixed top-0 left-0 inset-y-0 h-dvh w-[380px] max-w-[88vw] sm:w-[380px] bg-[#FFFFFF] z-[99999] flex flex-col overflow-hidden text-[#17181C] shadow-2xl border-r border-[#EDEDED]"
               >
-                {/* 1. Header Block (Sticky Top) with Search, Cart & Close icons */}
+                {/* Drawer Header */}
                 <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md px-4 py-3 border-b border-[#EDEDED] flex items-center justify-between shrink-0 gap-2">
                   <Link 
                     href={`/${locale}`} 
@@ -289,19 +273,16 @@ export function Header({ dict, locale }: HeaderProps) {
                     </span>
                   </Link>
 
-                  {/* Top Header Actions (Requirement #1) */}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {/* AxtarÄ±ÅŸ (Lupa) Ä°konu */}
                     <button
                       type="button"
                       onClick={() => setIsDrawerSearchOpen(!isDrawerSearchOpen)}
                       className="p-2 bg-[#F6F6F8] hover:bg-[#EDEDED] border border-[#E5E7EB] rounded-full text-[#17181C] transition-colors cursor-pointer w-9 h-9 flex items-center justify-center"
-                      aria-label={t({ az: 'AxtarÄ±ÅŸ', en: 'Search', ru: 'ĞŸĞ¾Ğ¸ÑĞº' })}
+                      aria-label={t({ az: 'Axtarış', en: 'Search', ru: 'Поиск' })}
                     >
                       <Search className="h-4 w-4 text-[#17181C]" />
                     </button>
 
-                    {/* SÉ™bÉ™t (Cart) Ä°konu + Say GÃ¶stÉ™ricisi */}
                     <button
                       type="button"
                       onClick={() => {
@@ -309,7 +290,7 @@ export function Header({ dict, locale }: HeaderProps) {
                         setIsCartOpen(true);
                       }}
                       className="relative p-2 bg-[#F6F6F8] hover:bg-[#EDEDED] border border-[#E5E7EB] rounded-full text-[#17181C] transition-colors cursor-pointer w-9 h-9 flex items-center justify-center"
-                      aria-label={t({ az: 'SÉ™bÉ™t', en: 'Cart', ru: 'ĞšĞ¾Ñ€Ğ·Ğ¸Ğ½Ğ°' })}
+                      aria-label={t({ az: 'Səbət', en: 'Cart', ru: 'Корзина' })}
                     >
                       <ShoppingCart className="h-4 w-4 text-[#17181C]" />
                       {mounted && totalItems > 0 && (
@@ -319,19 +300,17 @@ export function Header({ dict, locale }: HeaderProps) {
                       )}
                     </button>
 
-                    {/* BaÄŸlama (X) DÃ¼ymÉ™si */}
                     <button
                       type="button"
                       onClick={() => setIsMenuOpen(false)}
                       className="p-2 bg-[#F6F6F8] hover:bg-[#EDEDED] border border-[#E5E7EB] rounded-full text-[#17181C] transition-colors cursor-pointer w-9 h-9 flex items-center justify-center"
-                      aria-label={t({ az: 'BaÄŸla', en: 'Close', ru: 'Ğ—Ğ°ĞºÑ€Ñ‹Ñ‚ÑŒ' })}
+                      aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
                     >
                       <X className="h-4 w-4 text-[#17181C]" />
                     </button>
                   </div>
                 </div>
 
-                {/* Inline Quick Search Field when Search Icon clicked */}
                 {isDrawerSearchOpen && (
                   <div className="px-4 py-2 bg-[#F9FAFB] border-b border-[#EDEDED] shrink-0">
                     <form 
@@ -345,7 +324,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       <input
                         type="search"
                         autoFocus
-                        placeholder={dict.header?.search_placeholder || "MÉ™hsul axtar..."}
+                        placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-xs text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#D8232A]"
@@ -354,36 +333,36 @@ export function Header({ dict, locale }: HeaderProps) {
                   </div>
                 )}
 
-                {/* 2 & 3. Menu Navigation Items in exact specified order (No left icons, clean text + chevrons for expandable) */}
+                {/* Navigation Menu Links */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain">
                   <nav className="flex flex-col space-y-0.5">
                     
-                    {/* 1. Kataloq (BÃ¼tÃ¼n MÉ™hsullar) */}
+                    {/* Kataloq (Bütün Məhsullar) */}
                     <Link
                       href={`/${locale}/category`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'Kataloq (BÃ¼tÃ¼n MÉ™hsullar)', en: 'Catalog (All Products)', ru: 'ĞšĞ°Ñ‚Ğ°Ğ»Ğ¾Ğ³ (Ğ’ÑĞµ Ñ‚Ğ¾Ğ²Ğ°Ñ€Ñ‹)' })}</span>
+                      <span className="truncate">{t({ az: 'Kataloq (Bütün Məhsullar)', en: 'Catalog (All Products)', ru: 'Каталог (Все товары)' })}</span>
                     </Link>
 
-                    {/* Æn Ã‡ox SatÄ±lanlar (Best Sellers) */}
+                    {/* Ən Çox Satılanlar */}
                     <Link
                       href={`/${locale}/category?sort=bestselling`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'Æn Ã‡ox SatÄ±lanlar', en: 'Best Sellers', ru: 'Ğ¥Ğ¸Ñ‚Ñ‹ Ğ¿Ñ€Ğ¾Ğ´Ğ°Ğ¶' })}</span>
+                      <span className="truncate">{t({ az: 'Ən Çox Satılanlar', en: 'Best Sellers', ru: 'Хиты продаж' })}</span>
                     </Link>
 
-                    {/* 2. KÃ¼plÉ™r (Speedcubes) - Accordion */}
+                    {/* Küplər (Speedcubes) */}
                     <div>
                       <button
                         type="button"
                         onClick={() => setIsCubesExpanded(!isCubesExpanded)}
                         className="w-full group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer text-left"
                       >
-                        <span className="truncate">{t({ az: 'KÃ¼plÉ™r (Speedcubes)', en: 'Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ (Speedcubes)' })}</span>
+                        <span className="truncate">{t({ az: 'Küplər (Speedcubes)', en: 'Speedcubes', ru: 'Кубики (Speedcubes)' })}</span>
                         <ChevronDown className={`h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] transition-transform duration-200 shrink-0 ml-2 ${isCubesExpanded ? 'rotate-180' : ''}`} />
                       </button>
                       
@@ -397,17 +376,17 @@ export function Header({ dict, locale }: HeaderProps) {
                             className="overflow-hidden pl-4 pr-2 py-1 space-y-1 border-l-2 border-[#E5E7EB] ml-3 my-1"
                           >
                             {[
-                              { name: t({ az: '2x2 Kublar', en: '2x2 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 2x2' }), slug: '2x2' },
-                              { name: t({ az: '3x3 Kublar', en: '3x3 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 3x3' }), slug: '3x3' },
-                              { name: t({ az: '4x4 Kublar', en: '4x4 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 4x4' }), slug: '4x4' },
-                              { name: t({ az: '5x5 Kublar', en: '5x5 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 5x5' }), slug: '5x5' },
-                              { name: t({ az: '6x6 Kublar', en: '6x6 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 6x6' }), slug: '6x6' },
-                              { name: t({ az: '7x7 Kublar', en: '7x7 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 7x7' }), slug: '7x7' },
-                              { name: t({ az: 'BÃ¶yÃ¼k Kublar (8x8+)', en: 'Big Cubes (8x8+)', ru: 'Ğ‘Ğ¾Ğ»ÑŒÑˆĞ¸Ğµ ĞºÑƒĞ±Ñ‹ (8x8+)' }), slug: 'big-cubes' },
-                              { name: t({ az: 'Pyraminx', en: 'Pyraminx', ru: 'ĞŸĞ¸Ñ€Ğ°Ğ¼Ğ¸Ğ½ĞºÑ' }), slug: 'pyraminx' },
-                              { name: t({ az: 'Megaminx', en: 'Megaminx', ru: 'ĞœĞµĞ³Ğ°Ğ¼Ğ¸Ğ½ĞºÑ' }), slug: 'megaminx' },
-                              { name: t({ az: 'Skewb', en: 'Skewb', ru: 'Ğ¡ĞºÑŒÑĞ±' }), slug: 'skewb' },
-                              { name: t({ az: 'Square-1', en: 'Square-1', ru: 'Ğ¡ĞºÑƒÑÑ€-1' }), slug: 'square-1' },
+                              { name: t({ az: '2x2 Kublar', en: '2x2 Speedcubes', ru: 'Кубики 2x2' }), slug: '2x2' },
+                              { name: t({ az: '3x3 Kublar', en: '3x3 Speedcubes', ru: 'Кубики 3x3' }), slug: '3x3' },
+                              { name: t({ az: '4x4 Kublar', en: '4x4 Speedcubes', ru: 'Кубики 4x4' }), slug: '4x4' },
+                              { name: t({ az: '5x5 Kublar', en: '5x5 Speedcubes', ru: 'Кубики 5x5' }), slug: '5x5' },
+                              { name: t({ az: '6x6 Kublar', en: '6x6 Speedcubes', ru: 'Кубики 6x6' }), slug: '6x6' },
+                              { name: t({ az: '7x7 Kublar', en: '7x7 Speedcubes', ru: 'Кубики 7x7' }), slug: '7x7' },
+                              { name: t({ az: 'Böyük Kublar (8x8+)', en: 'Big Cubes (8x8+)', ru: 'Большие кубы (8x8+)' }), slug: 'big-cubes' },
+                              { name: t({ az: 'Pyraminx', en: 'Pyraminx', ru: 'Пираминкс' }), slug: 'pyraminx' },
+                              { name: t({ az: 'Megaminx', en: 'Megaminx', ru: 'Мегаминкс' }), slug: 'megaminx' },
+                              { name: t({ az: 'Skewb', en: 'Skewb', ru: 'Скьюб' }), slug: 'skewb' },
+                              { name: t({ az: 'Square-1', en: 'Square-1', ru: 'Скуэр-1' }), slug: 'square-1' },
                               { name: t({ az: 'FTO', en: 'FTO', ru: 'FTO' }), slug: 'fto' },
                             ].map((sub) => (
                               <Link
@@ -424,32 +403,32 @@ export function Header({ dict, locale }: HeaderProps) {
                       </AnimatePresence>
                     </div>
 
-                    {/* 3. EndirimlÉ™r */}
+                    {/* Endirimlər */}
                     <Link
                       href={`/${locale}/category?sale=true`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'EndirimlÉ™r', en: 'Discounts', ru: 'Ğ¡ĞºĞ¸Ğ´ĞºĞ¸' })}</span>
+                      <span className="truncate">{t({ az: 'Endirimlər', en: 'Discounts', ru: 'Скидки' })}</span>
                     </Link>
 
-                    {/* 4. Yeni MÉ™hsullar */}
+                    {/* Yeni Məhsullar */}
                     <Link
                       href={`/${locale}/category?sort=newest`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'Yeni MÉ™hsullar', en: 'New Products', ru: 'ĞĞ¾Ğ²Ğ¸Ğ½ĞºĞ¸' })}</span>
+                      <span className="truncate">{t({ az: 'Yeni Məhsullar', en: 'New Products', ru: 'Новинки' })}</span>
                     </Link>
 
-                    {/* 5. Markalar (GAN, MoYu, QiYi vÉ™ s.) - Accordion */}
+                    {/* Markalar */}
                     <div>
                       <button
                         type="button"
                         onClick={() => setIsBrandsExpanded(!isBrandsExpanded)}
                         className="w-full group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer text-left"
                       >
-                        <span className="truncate">{t({ az: 'Markalar', en: 'Brands', ru: 'Ğ‘Ñ€ĞµĞ½Ğ´Ñ‹' })}</span>
+                        <span className="truncate">{t({ az: 'Markalar', en: 'Brands', ru: 'Бренды' })}</span>
                         <ChevronDown className={`h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] transition-transform duration-200 shrink-0 ml-2 ${isBrandsExpanded ? 'rotate-180' : ''}`} />
                       </button>
                       
@@ -485,48 +464,46 @@ export function Header({ dict, locale }: HeaderProps) {
                       </AnimatePresence>
                     </div>
 
-                    {/* 6. YaÄŸlar vÉ™ BaxÄ±m (Lube) */}
+                    {/* Yağlar və Baxım (Lube) */}
                     <Link
                       href={`/${locale}/category/lube`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'YaÄŸlar vÉ™ BaxÄ±m (Lube)', en: 'Lubes & Care', ru: 'Ğ¡Ğ¼Ğ°Ğ·ĞºĞ¸ Ğ¸ Ğ£Ñ…Ğ¾Ğ´' })}</span>
+                      <span className="truncate">{t({ az: 'Yağlar və Baxım (Lube)', en: 'Lubes & Care', ru: 'Смазки и Уход' })}</span>
                     </Link>
 
-                    {/* 7. TaymerlÉ™r vÉ™ Aksessuarlar */}
+                    {/* Taymerlər və Aksessuarlar */}
                     <Link
                       href={`/${locale}/category/accessories`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'TaymerlÉ™r vÉ™ Aksessuarlar', en: 'Timers & Accessories', ru: 'Ğ¢Ğ°Ğ¹Ğ¼ĞµÑ€Ñ‹ Ğ¸ ĞĞºÑĞµÑÑÑƒĞ°Ñ€Ñ‹' })}</span>
+                      <span className="truncate">{t({ az: 'Taymerlər və Aksessuarlar', en: 'Timers & Accessories', ru: 'Таймеры и Аксессуары' })}</span>
                     </Link>
 
-                    {/* 8. AlqoritmlÉ™r & Ã–yrÉ™nmÉ™ */}
+                    {/* Alqoritmlər & Öyrənmə */}
                     <Link
                       href={`/${locale}/blog`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'AlqoritmlÉ™r & Ã–yrÉ™nmÉ™', en: 'Algorithms & Learning', ru: 'ĞĞ»Ğ³Ğ¾Ñ€Ğ¸Ñ‚Ğ¼Ñ‹ Ğ¸ ĞĞ±ÑƒÑ‡ĞµĞ½Ğ¸Ğµ' })}</span>
+                      <span className="truncate">{t({ az: 'Alqoritmlər & Öyrənmə', en: 'Algorithms & Learning', ru: 'Алгоритмы и Обучение' })}</span>
                     </Link>
 
-                    {/* 9. ÆlaqÉ™ */}
+                    {/* Əlaqə */}
                     <Link
                       href={`/${locale}/faq`}
                       onClick={() => setIsMenuOpen(false)}
                       className="group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer"
                     >
-                      <span className="truncate">{t({ az: 'ÆlaqÉ™', en: 'Contact', ru: 'ĞšĞ¾Ğ½Ñ‚Ğ°ĞºÑ‚Ñ‹' })}</span>
+                      <span className="truncate">{t({ az: 'Əlaqə', en: 'Contact', ru: 'Контакты' })}</span>
                     </Link>
                   </nav>
                 </div>
 
-                {/* 4. Bottom Footer Block with Outline Button & Neutral Language Switcher */}
+                {/* Footer Block */}
                 <div className="sticky bottom-0 z-10 bg-white border-t border-[#EDEDED] px-4 py-3 pb-6 space-y-3 shrink-0 shadow-lg">
-                  
-                  {/* Account / Login Outline Button (Requirement #7) */}
                   <div>
                     {mounted && user ? (
                       <div className="space-y-2">
@@ -537,7 +514,7 @@ export function Header({ dict, locale }: HeaderProps) {
                             className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-[#F6F6F8] text-[#17181C] border border-[#E5E7EB] text-xs font-bold rounded-xl hover:bg-[#EDEDED] transition-colors cursor-pointer uppercase tracking-wider"
                           >
                             <ShieldCheck className="h-4 w-4 text-[#D8232A]" />
-                            {t({ az: 'Admin Panel', en: 'Admin Dashboard', ru: 'ĞĞ´Ğ¼Ğ¸Ğ½ ĞŸĞ°Ğ½ĞµĞ»ÑŒ' })}
+                            {t({ az: 'Admin Panel', en: 'Admin Dashboard', ru: 'Админ Панель' })}
                           </Link>
                         )}
                         <button
@@ -547,7 +524,7 @@ export function Header({ dict, locale }: HeaderProps) {
                           }}
                           className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-transparent border-2 border-[#17181C] text-[#17181C] hover:bg-[#17181C] hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
                         >
-                          {t({ az: 'ÅÉ™xsi Kabinet', en: 'My Account', ru: 'Ğ›Ğ¸Ñ‡Ğ½Ñ‹Ğ¹ ĞšĞ°Ğ±Ğ¸Ğ½ĞµÑ‚' })}
+                          {t({ az: 'Şəxsi Kabinet', en: 'My Account', ru: 'Личный Кабинет' })}
                         </button>
                       </div>
                     ) : (
@@ -558,15 +535,15 @@ export function Header({ dict, locale }: HeaderProps) {
                         }}
                         className="w-full inline-flex items-center justify-center px-4 py-2.5 bg-transparent border-2 border-[#17181C] text-[#17181C] hover:bg-[#17181C] hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
                       >
-                        {t({ az: 'ÅÉ™xsi Kabinet / GiriÅŸ', en: 'My Account / Login', ru: 'ĞšĞ°Ğ±Ğ¸Ğ½ĞµÑ‚ / Ğ’Ğ¾Ğ¹Ñ‚Ğ¸' })}
+                        {t({ az: 'Şəxsi Kabinet / Giriş', en: 'My Account / Login', ru: 'Кабинет / Войти' })}
                       </button>
                     )}
                   </div>
 
-                  {/* Neutral Language Selector (Requirement #6) */}
+                  {/* Language Switcher */}
                   <div className="flex items-center justify-between pt-1 border-t border-[#F3F4F6]">
                     <span className="text-[11px] font-medium text-[#6B7280]">
-                      {t({ az: 'Dil', en: 'Language', ru: 'Ğ¯Ğ·Ñ‹Ğº' })}:
+                      {t({ az: 'Dil', en: 'Language', ru: 'Язык' })}:
                     </span>
                     <div className="flex items-center gap-1 bg-[#F6F6F8] p-0.5 rounded-lg border border-[#E5E7EB]">
                       {(['az', 'en', 'ru'] as const).map((lang) => (
@@ -589,7 +566,7 @@ export function Header({ dict, locale }: HeaderProps) {
                     </div>
                   </div>
 
-                  {/* Small Neutral WhatsApp Chat link (Requirement #8) */}
+                  {/* WhatsApp Link */}
                   <div className="flex items-center justify-center pt-1">
                     <a
                       href="https://wa.me/994506684925"
@@ -599,7 +576,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       aria-label="WhatsApp"
                     >
                       <MessageCircle className="h-3.5 w-3.5 text-[#9CA3AF]" />
-                      <span>{t({ az: 'WhatsApp DÉ™stÉ™k', en: 'WhatsApp Support', ru: 'WhatsApp ĞŸĞ¾Ğ´Ğ´ĞµÑ€Ğ¶ĞºĞ°' })}</span>
+                      <span>{t({ az: 'WhatsApp Dəstək', en: 'WhatsApp Support', ru: 'WhatsApp Поддержка' })}</span>
                     </a>
                   </div>
 
