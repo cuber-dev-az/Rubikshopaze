@@ -122,7 +122,7 @@ export function Header({ dict, locale }: HeaderProps) {
       {/* Top Banner Accent */}
       <div className="bg-[#D8232A] text-white text-[11px] sm:text-xs font-semibold py-2 px-3 sm:px-6 text-center tracking-wide flex items-center justify-center gap-2 leading-tight shadow-sm">
         <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-300" />
-        <span className="whitespace-normal break-words">{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
+        <span className="whitespace-normal break-words">{dict.header?.promo_banner || "Rubikshop AZ â€” AzÉ™rbaycanda 1 nÃ¶mrÉ™li sÃ¼rÉ™tli kub yarÄ±ÅŸÄ± maÄŸazasÄ±! SÃ¼rÉ™tli Ã§atdÄ±rÄ±lma."}</span>
       </div>
 
       <header className={`sticky top-0 w-full bg-[#FFFFFF] border-b border-[#EDEDED] shadow-sm backdrop-blur-md ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>
@@ -158,7 +158,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <Search className="absolute left-4 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
               <input
                 type="search"
-                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
+                placeholder={dict.header?.search_placeholder || "MÉ™hsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-11 pr-24 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-xl text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#D8232A] focus:bg-white transition-all"
@@ -187,16 +187,16 @@ export function Header({ dict, locale }: HeaderProps) {
             <Link
               href={`/${locale}/wishlist`}
               className="p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-              aria-label={dict.navigation.wishlist || "Seçilmişlər"}
+              aria-label={dict.navigation.wishlist || "SeÃ§ilmiÅŸlÉ™r"}
             >
               <Heart className="h-5 w-5" />
             </Link>
 
-            {/* Səbət Shortcut */}
+            {/* SÉ™bÉ™t Shortcut */}
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
-              aria-label={dict.navigation.cart || "Səbət"}
+              aria-label={dict.navigation.cart || "SÉ™bÉ™t"}
             >
               <ShoppingCart className="h-5 w-5" />
               {mounted && totalItems > 0 && (
@@ -225,7 +225,7 @@ export function Header({ dict, locale }: HeaderProps) {
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2.5 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label={t({ az: 'Menyu', en: 'Menu', ru: 'Меню' })}
+            aria-label={t({ az: 'Menyu', en: 'Menu', ru: 'ĞœĞµĞ½Ñ' })}
           >
             <Menu className="h-6 w-6" />
           </button>
@@ -238,7 +238,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <Search className="absolute left-3.5 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
               <input
                 type="search"
-                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
+                placeholder={dict.header?.search_placeholder || "MÉ™hsul axtar..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-lg text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#D8232A] transition-all"
@@ -290,7 +290,7 @@ export function Header({ dict, locale }: HeaderProps) {
                     type="button"
                     onClick={() => setIsMenuOpen(false)}
                     className="p-2 bg-[#F6F6F8] hover:bg-[#EDEDED] border border-[#E5E7EB] rounded-full text-[#17181C] transition-colors cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center"
-                    aria-label={t({ az: 'Bağla', en: 'Close', ru: 'Закрыть' })}
+                    aria-label={t({ az: 'BaÄŸla', en: 'Close', ru: 'Ğ—Ğ°ĞºÑ€Ñ‹Ñ‚ÑŒ' })}
                   >
                     <X className="h-5 w-5 text-[#17181C]" />
                   </button>
@@ -300,12 +300,12 @@ export function Header({ dict, locale }: HeaderProps) {
                 <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 overscroll-contain">
                   
                   <span className="text-[11px] font-black uppercase tracking-wider text-[#9CA3AF] block px-1">
-                    {t({ az: 'Menyu və Kateqoriyalar', en: 'Menu & Categories', ru: 'Меню и Категории' })}
+                    {t({ az: 'Menyu vÉ™ Kateqoriyalar', en: 'Menu & Categories', ru: 'ĞœĞµĞ½Ñ Ğ¸ ĞšĞ°Ñ‚ĞµĞ³Ğ¾Ñ€Ğ¸Ğ¸' })}
                   </span>
 
                   <nav className="flex flex-col space-y-1">
                     
-                    {/* Kataloq (Bütün Məhsullar) */}
+                    {/* Kataloq (BÃ¼tÃ¼n MÉ™hsullar) */}
                     <Link
                       href={`/${locale}/category`}
                       onClick={() => setIsMenuOpen(false)}
@@ -313,12 +313,12 @@ export function Header({ dict, locale }: HeaderProps) {
                     >
                       <div className="flex items-center gap-3 group-hover:translate-x-1.5 transition-transform duration-200 min-w-0">
                         <Compass className="h-5 w-5 text-[#D8232A] shrink-0" />
-                        <span className="truncate">{t({ az: 'Kataloq (Bütün Məhsullar)', en: 'Catalog (All Products)', ru: 'Каталог (Все товары)' })}</span>
+                        <span className="truncate">{t({ az: 'Kataloq (BÃ¼tÃ¼n MÉ™hsullar)', en: 'Catalog (All Products)', ru: 'ĞšĞ°Ñ‚Ğ°Ğ»Ğ¾Ğ³ (Ğ’ÑĞµ Ñ‚Ğ¾Ğ²Ğ°Ñ€Ñ‹)' })}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                     </Link>
 
-                    {/* Küplər (Accordion with subcategories) */}
+                    {/* KÃ¼plÉ™r (Accordion with subcategories) */}
                     <div>
                       <button
                         type="button"
@@ -327,7 +327,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       >
                         <div className="flex items-center gap-3 group-hover:translate-x-1.5 transition-transform duration-200 min-w-0">
                           <Package className="h-5 w-5 text-[#D8232A] shrink-0" />
-                          <span className="truncate">{t({ az: 'Küplər (Speedcubes)', en: 'Speedcubes', ru: 'Кубики (Speedcubes)' })}</span>
+                          <span className="truncate">{t({ az: 'KÃ¼plÉ™r (Speedcubes)', en: 'Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ (Speedcubes)' })}</span>
                         </div>
                         <ChevronDown className={`h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] transition-transform duration-200 shrink-0 ml-2 ${isCubesExpanded ? 'rotate-180' : ''}`} />
                       </button>
@@ -342,11 +342,11 @@ export function Header({ dict, locale }: HeaderProps) {
                             className="overflow-hidden pl-7 pr-2 py-1 space-y-1 border-l-2 border-[#E5E7EB] ml-5 my-1"
                           >
                             {[
-                              { name: t({ az: '3x3 Kublar', en: '3x3 Speedcubes', ru: 'Кубики 3x3' }), slug: '3x3' },
-                              { name: t({ az: '2x2 Kublar', en: '2x2 Speedcubes', ru: 'Кубики 2x2' }), slug: '2x2' },
-                              { name: t({ az: '4x4 & Böyük Kublar', en: '4x4 & Big Cubes', ru: '4x4 и Большие кубы' }), slug: '4x4' },
-                              { name: t({ az: 'Pyraminx & Megaminx', en: 'Pyraminx & Megaminx', ru: 'Пираминкс и Мегаминкс' }), slug: 'pyraminx' },
-                              { name: t({ az: 'Skewb & Square-1', en: 'Skewb & Square-1', ru: 'Скьюб и Скуэр-1' }), slug: 'skewb' },
+                              { name: t({ az: '3x3 Kublar', en: '3x3 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 3x3' }), slug: '3x3' },
+                              { name: t({ az: '2x2 Kublar', en: '2x2 Speedcubes', ru: 'ĞšÑƒĞ±Ğ¸ĞºĞ¸ 2x2' }), slug: '2x2' },
+                              { name: t({ az: '4x4 & BÃ¶yÃ¼k Kublar', en: '4x4 & Big Cubes', ru: '4x4 Ğ¸ Ğ‘Ğ¾Ğ»ÑŒÑˆĞ¸Ğµ ĞºÑƒĞ±Ñ‹' }), slug: '4x4' },
+                              { name: t({ az: 'Pyraminx & Megaminx', en: 'Pyraminx & Megaminx', ru: 'ĞŸĞ¸Ñ€Ğ°Ğ¼Ğ¸Ğ½ĞºÑ Ğ¸ ĞœĞµĞ³Ğ°Ğ¼Ğ¸Ğ½ĞºÑ' }), slug: 'pyraminx' },
+                              { name: t({ az: 'Skewb & Square-1', en: 'Skewb & Square-1', ru: 'Ğ¡ĞºÑŒÑĞ± Ğ¸ Ğ¡ĞºÑƒÑÑ€-1' }), slug: 'skewb' },
                             ].map((sub) => (
                               <Link
                                 key={sub.slug}
@@ -363,7 +363,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       </AnimatePresence>
                     </div>
 
-                    {/* Yağlar və Baxım (Lube) */}
+                    {/* YaÄŸlar vÉ™ BaxÄ±m (Lube) */}
                     <Link
                       href={`/${locale}/category/lube`}
                       onClick={() => setIsMenuOpen(false)}
@@ -371,12 +371,12 @@ export function Header({ dict, locale }: HeaderProps) {
                     >
                       <div className="flex items-center gap-3 group-hover:translate-x-1.5 transition-transform duration-200 min-w-0">
                         <Sparkles className="h-5 w-5 text-[#D8232A] shrink-0" />
-                        <span className="truncate">{t({ az: 'Yağlar və Baxım (Lube)', en: 'Lubes & Care', ru: 'Смазки и Уход' })}</span>
+                        <span className="truncate">{t({ az: 'YaÄŸlar vÉ™ BaxÄ±m (Lube)', en: 'Lubes & Care', ru: 'Ğ¡Ğ¼Ğ°Ğ·ĞºĞ¸ Ğ¸ Ğ£Ñ…Ğ¾Ğ´' })}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                     </Link>
 
-                    {/* Taymerlər və Aksessuarlar */}
+                    {/* TaymerlÉ™r vÉ™ Aksessuarlar */}
                     <Link
                       href={`/${locale}/category/accessories`}
                       onClick={() => setIsMenuOpen(false)}
@@ -384,12 +384,12 @@ export function Header({ dict, locale }: HeaderProps) {
                     >
                       <div className="flex items-center gap-3 group-hover:translate-x-1.5 transition-transform duration-200 min-w-0">
                         <Layers className="h-5 w-5 text-[#D8232A] shrink-0" />
-                        <span className="truncate">{t({ az: 'Taymerlər və Aksessuarlar', en: 'Timers & Accessories', ru: 'Таймеры и Аксессуары' })}</span>
+                        <span className="truncate">{t({ az: 'TaymerlÉ™r vÉ™ Aksessuarlar', en: 'Timers & Accessories', ru: 'Ğ¢Ğ°Ğ¹Ğ¼ĞµÑ€Ñ‹ Ğ¸ ĞĞºÑĞµÑÑÑƒĞ°Ñ€Ñ‹' })}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                     </Link>
 
-                    {/* Alqoritmlər və Öyrənmə */}
+                    {/* AlqoritmlÉ™r vÉ™ Ã–yrÉ™nmÉ™ */}
                     <Link
                       href={`/${locale}?category=learning-content`}
                       onClick={() => setIsMenuOpen(false)}
@@ -397,12 +397,12 @@ export function Header({ dict, locale }: HeaderProps) {
                     >
                       <div className="flex items-center gap-3 group-hover:translate-x-1.5 transition-transform duration-200 min-w-0">
                         <Sparkles className="h-5 w-5 text-[#D8232A] shrink-0" />
-                        <span className="truncate">{t({ az: 'Alqoritmlər & Öyrənmə', en: 'Algorithms & Learning', ru: 'Алгоритмы и Обучение' })}</span>
+                        <span className="truncate">{t({ az: 'AlqoritmlÉ™r & Ã–yrÉ™nmÉ™', en: 'Algorithms & Learning', ru: 'ĞĞ»Ğ³Ğ¾Ñ€Ğ¸Ñ‚Ğ¼Ñ‹ Ğ¸ ĞĞ±ÑƒÑ‡ĞµĞ½Ğ¸Ğµ' })}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                     </Link>
 
-                    {/* Haqqımızda və Çatdırılma */}
+                    {/* HaqqÄ±mÄ±zda vÉ™ Ã‡atdÄ±rÄ±lma */}
                     <Link
                       href={`/${locale}/pages/about`}
                       onClick={() => setIsMenuOpen(false)}
@@ -410,12 +410,12 @@ export function Header({ dict, locale }: HeaderProps) {
                     >
                       <div className="flex items-center gap-3 group-hover:translate-x-1.5 transition-transform duration-200 min-w-0">
                         <HelpCircle className="h-5 w-5 text-[#D8232A] shrink-0" />
-                        <span className="truncate">{t({ az: 'Haqqımızda və Çatdırılma', en: 'About & Delivery', ru: 'О нас и Доставка' })}</span>
+                        <span className="truncate">{t({ az: 'HaqqÄ±mÄ±zda vÉ™ Ã‡atdÄ±rÄ±lma', en: 'About & Delivery', ru: 'Ğ Ğ½Ğ°Ñ Ğ¸ Ğ”Ğ¾ÑÑ‚Ğ°Ğ²ĞºĞ°' })}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                     </Link>
 
-                    {/* Əlaqə */}
+                    {/* ÆlaqÉ™ */}
                     <Link
                       href={`/${locale}/faq`}
                       onClick={() => setIsMenuOpen(false)}
@@ -423,7 +423,7 @@ export function Header({ dict, locale }: HeaderProps) {
                     >
                       <div className="flex items-center gap-3 group-hover:translate-x-1.5 transition-transform duration-200 min-w-0">
                         <PhoneCall className="h-5 w-5 text-[#D8232A] shrink-0" />
-                        <span className="truncate">{t({ az: 'Əlaqə', en: 'Contact', ru: 'Контакты' })}</span>
+                        <span className="truncate">{t({ az: 'ÆlaqÉ™', en: 'Contact', ru: 'ĞšĞ¾Ğ½Ñ‚Ğ°ĞºÑ‚Ñ‹' })}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] group-hover:translate-x-1 transition-all shrink-0 ml-2" />
                     </Link>
@@ -436,7 +436,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   {/* Language Switcher */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#6B7280] block">
-                      {t({ az: 'Dil seçimi', en: 'Select Language', ru: 'Выбор языка' })}
+                      {t({ az: 'Dil seÃ§imi', en: 'Select Language', ru: 'Ğ’Ñ‹Ğ±Ğ¾Ñ€ ÑĞ·Ñ‹ĞºĞ°' })}
                     </span>
                     <div className="grid grid-cols-3 gap-1 bg-[#F6F6F8] p-1 rounded-xl border border-[#E5E7EB]">
                       {(['az', 'en', 'ru'] as const).map((lang) => (
@@ -470,7 +470,7 @@ export function Header({ dict, locale }: HeaderProps) {
                             className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-[#D8232A]/10 text-[#D8232A] border border-[#D8232A]/30 text-xs font-black rounded-xl hover:bg-[#D8232A]/20 transition-colors cursor-pointer uppercase tracking-wider"
                           >
                             <ShieldCheck className="h-4 w-4" />
-                            {t({ az: 'Admin Panel', en: 'Admin Dashboard', ru: 'Админ Панель' })}
+                            {t({ az: 'Admin Panel', en: 'Admin Dashboard', ru: 'ĞĞ´Ğ¼Ğ¸Ğ½ ĞŸĞ°Ğ½ĞµĞ»ÑŒ' })}
                           </Link>
                         )}
                         <button
@@ -480,7 +480,7 @@ export function Header({ dict, locale }: HeaderProps) {
                           }}
                           className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-[#17181C] text-white text-sm font-black rounded-xl hover:bg-black transition-colors cursor-pointer shadow-sm"
                         >
-                          {t({ az: 'Şəxsi Kabinet', en: 'My Account', ru: 'Личный Кабинет' })}
+                          {t({ az: 'ÅÉ™xsi Kabinet', en: 'My Account', ru: 'Ğ›Ğ¸Ñ‡Ğ½Ñ‹Ğ¹ ĞšĞ°Ğ±Ğ¸Ğ½ĞµÑ‚' })}
                         </button>
                       </div>
                     ) : (
@@ -491,7 +491,7 @@ export function Header({ dict, locale }: HeaderProps) {
                         }}
                         className="w-full inline-flex items-center justify-center px-4 py-3.5 bg-[#D8232A] text-white text-sm font-black rounded-xl hover:bg-[#B31B21] transition-colors cursor-pointer shadow-md"
                       >
-                        {t({ az: 'Giriş / Qeydiyyat', en: 'Login / Register', ru: 'Войти / Регистрация' })}
+                        {t({ az: 'GiriÅŸ / Qeydiyyat', en: 'Login / Register', ru: 'Ğ’Ğ¾Ğ¹Ñ‚Ğ¸ / Ğ ĞµĞ³Ğ¸ÑÑ‚Ñ€Ğ°Ñ†Ğ¸Ñ' })}
                       </button>
                     )}
                   </div>
