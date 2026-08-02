@@ -15,9 +15,15 @@ import {
   Package,
   Heart,
   ShieldCheck,
+  ChevronRight,
   ChevronDown,
+  Compass,
+  HelpCircle,
+  PhoneCall,
   MessageCircle,
+  Layers,
 } from 'lucide-react';
+import { rubikTaxonomyGroups } from '@/lib/config/catalog';
 import { useCartStore } from '@/store/useCartStore';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
 import type { ApplicationDictionary } from '@/types/application.types';
@@ -32,10 +38,20 @@ export function Header({ dict, locale }: HeaderProps) {
   const [mounted, setMounted] = React.useState(false);
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const [isCartOpen, setIsCartOpen] = React.useState(false);
-  const [isCubesExpanded, setIsCubesExpanded] = React.useState(false);
-  const [isBrandsExpanded, setIsBrandsExpanded] = React.useState(false);
+  const [openAccordion, setOpenAccordion] = React.useState<'cubes' | 'brands' | null>(null);
   const [isDrawerSearchOpen, setIsDrawerSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  
+  const isCubesExpanded = openAccordion === 'cubes';
+  const isBrandsExpanded = openAccordion === 'brands';
+
+  const toggleCubes = () => {
+    setOpenAccordion((prev) => (prev === 'cubes' ? null : 'cubes'));
+  };
+
+  const toggleBrands = () => {
+    setOpenAccordion((prev) => (prev === 'brands' ? null : 'brands'));
+  };
   
   const { user, userRole, signOut: authSignOut } = useAuthUser();
   const openModal = useAuthModalStore((state) => state.openModal);
@@ -67,6 +83,10 @@ export function Header({ dict, locale }: HeaderProps) {
     }
   }, [user, userRole, locale, openModal, router]);
 
+  const handleSignOut = React.useCallback(async () => {
+    await authSignOut(locale, router);
+  }, [authSignOut, locale, router]);
+  
   React.useEffect(() => {
     setMounted(true);
   }, []);
@@ -111,15 +131,17 @@ export function Header({ dict, locale }: HeaderProps) {
 
   return (
     <React.Fragment>
-      {/* Top Banner Accent */}
-      <div className="bg-[#D8232A] text-white text-[11px] sm:text-xs font-semibold py-2 px-3 sm:px-6 text-center tracking-wide flex items-center justify-center gap-2 leading-tight shadow-sm">
-        <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-300" />
-        <span className="whitespace-normal break-words">{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
-      </div>
+      {/* Top Banner Accent - Hidden when mobile hamburger drawer is open */}
+      {!isMenuOpen && (
+        <div className="bg-[#D8232A] text-white text-[11px] sm:text-xs font-semibold py-2 px-3 sm:px-6 text-center tracking-wide flex items-center justify-center gap-2 leading-tight shadow-sm">
+          <Sparkles className="h-3.5 w-3.5 shrink-0 animate-pulse text-yellow-300" />
+          <span className="whitespace-normal break-words">{dict.header?.promo_banner || "Rubikshop AZ — Azərbaycanda 1 nömrəli sürətli kub yarışı mağazası! Sürətli çatdırılma."}</span>
+        </div>
+      )}
 
       <header className={`sticky top-0 w-full bg-[#FFFFFF] border-b border-[#EDEDED] shadow-sm backdrop-blur-md ${isMenuOpen ? 'z-[99999]' : 'z-40'}`}>
         
-        {/* DESKTOP LAYOUT ARCHITECTURE */}
+        {/* DESKTOP LAYOUT ARCHITECTURE RULES */}
         <div className="hidden md:flex items-center justify-between bg-[#FFFFFF] border-b border-[#EDEDED] px-6 py-3.5 w-full gap-6">
           
           {/* LEFT SECTION */}
@@ -132,8 +154,9 @@ export function Header({ dict, locale }: HeaderProps) {
               <Menu className="h-6 w-6" />
             </button>
 
-            {/* Brand Logo Link */}
+            {/* Brand Logo Link per Section I */}
             <Link href={`/${locale}`} className="flex items-center gap-2 group">
+              {/* Mascot Icon */}
               <div className="w-8 h-8 rounded-lg bg-[#D8232A] text-white flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition-transform">
                 <Package className="w-5 h-5" />
               </div>
@@ -165,6 +188,7 @@ export function Header({ dict, locale }: HeaderProps) {
 
           {/* RIGHT SECTION */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* Account Shortcut */}
             <button
               onClick={handleAccountClick}
               className="p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -173,6 +197,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <User className="h-5 w-5" />
             </button>
 
+            {/* Wishlist Shortcut */}
             <Link
               href={`/${locale}/wishlist`}
               className="p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -181,6 +206,7 @@ export function Header({ dict, locale }: HeaderProps) {
               <Heart className="h-5 w-5" />
             </Link>
 
+            {/* Səbət Shortcut */}
             <button
               onClick={() => setIsCartOpen(true)}
               className="relative p-3 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-full transition-all duration-200 items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer"
@@ -197,8 +223,9 @@ export function Header({ dict, locale }: HeaderProps) {
 
         </div>
 
-        {/* MOBILE LAYOUT ARCHITECTURE */}
+        {/* MOBILE LAYOUT ARCHITECTURE RULES */}
         <div className="flex md:hidden items-center justify-between bg-[#FFFFFF] border-b border-[#EDEDED] px-4 py-3 w-full">
+          {/* Left: Brand logo */}
           <Link href={`/${locale}`} className="flex items-center gap-2 group">
             <div className="w-7 h-7 rounded-lg bg-[#D8232A] text-white flex items-center justify-center font-black text-xs shadow-sm">
               <Package className="w-4 h-4" />
@@ -208,6 +235,7 @@ export function Header({ dict, locale }: HeaderProps) {
             </span>
           </Link>
 
+          {/* Right: Hamburger navigation toggle trigger */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="p-2.5 text-[#17181C] hover:text-[#D8232A] hover:bg-[#F6F6F8] rounded-lg transition-colors cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
@@ -217,7 +245,7 @@ export function Header({ dict, locale }: HeaderProps) {
           </button>
         </div>
 
-        {/* Mobile Search Sub-Row */}
+        {/* Conditional Sub-Row Search visibility (Mobile only) */}
         {showMobileSearch && (
           <div className="md:hidden px-4 pb-3 pt-1 bg-[#FFFFFF]">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
@@ -233,11 +261,11 @@ export function Header({ dict, locale }: HeaderProps) {
           </div>
         )}
 
-        {/* LEFT SLIDE-OUT MOBILE MENU DRAWER */}
+        {/* LEFT-ALIGNED SLIDE-OUT OFF-CANVAS NAVIGATION DRAWER */}
         <AnimatePresence>
           {isMenuOpen && (
             <>
-              {/* Backdrop */}
+              {/* Backdrop Overlay (Solid dark backdrop preventing background text bleed-through) */}
               <motion.div
                 key="left-drawer-backdrop"
                 initial={{ opacity: 0 }}
@@ -245,11 +273,11 @@ export function Header({ dict, locale }: HeaderProps) {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 onClick={() => setIsMenuOpen(false)}
-                className="fixed top-0 left-0 inset-0 w-screen h-dvh bg-black/60 backdrop-blur-xs z-[99998]"
+                className="fixed top-0 left-0 inset-0 w-screen h-dvh bg-black/95 backdrop-blur-md z-[99998]"
                 aria-hidden="true"
               />
 
-              {/* Drawer Content */}
+              {/* Left Side Drawer Container */}
               <motion.div
                 key="left-drawer-container"
                 initial={{ opacity: 0, x: '-100%' }}
@@ -258,7 +286,7 @@ export function Header({ dict, locale }: HeaderProps) {
                 transition={{ type: 'spring', damping: 28, stiffness: 280 }}
                 className="fixed top-0 left-0 inset-y-0 h-dvh w-[380px] max-w-[88vw] sm:w-[380px] bg-[#FFFFFF] z-[99999] flex flex-col overflow-hidden text-[#17181C] shadow-2xl border-r border-[#EDEDED]"
               >
-                {/* Drawer Header */}
+                {/* 1. Header Block (Sticky Top) with Search, Cart & Close icons */}
                 <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-md px-4 py-3 border-b border-[#EDEDED] flex items-center justify-between shrink-0 gap-2">
                   <Link 
                     href={`/${locale}`} 
@@ -273,7 +301,9 @@ export function Header({ dict, locale }: HeaderProps) {
                     </span>
                   </Link>
 
+                  {/* Top Header Actions (Requirement #1) */}
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Axtarış (Lupa) İkonu */}
                     <button
                       type="button"
                       onClick={() => setIsDrawerSearchOpen(!isDrawerSearchOpen)}
@@ -283,6 +313,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       <Search className="h-4 w-4 text-[#17181C]" />
                     </button>
 
+                    {/* Səbət (Cart) İkonu + Say Göstəricisi */}
                     <button
                       type="button"
                       onClick={() => {
@@ -300,6 +331,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       )}
                     </button>
 
+                    {/* Bağlama (X) Düyməsi */}
                     <button
                       type="button"
                       onClick={() => setIsMenuOpen(false)}
@@ -311,6 +343,7 @@ export function Header({ dict, locale }: HeaderProps) {
                   </div>
                 </div>
 
+                {/* Inline Quick Search Field when Search Icon clicked */}
                 {isDrawerSearchOpen && (
                   <div className="px-4 py-2 bg-[#F9FAFB] border-b border-[#EDEDED] shrink-0">
                     <form 
@@ -333,11 +366,11 @@ export function Header({ dict, locale }: HeaderProps) {
                   </div>
                 )}
 
-                {/* Navigation Menu Links */}
+                {/* 2 & 3. Menu Navigation Items in exact specified order (No left icons, clean text + chevrons for expandable) */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 overscroll-contain">
                   <nav className="flex flex-col space-y-0.5">
                     
-                    {/* Kataloq (Bütün Məhsullar) */}
+                    {/* 1. Kataloq (Bütün Məhsullar) */}
                     <Link
                       href={`/${locale}/category`}
                       onClick={() => setIsMenuOpen(false)}
@@ -346,7 +379,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Kataloq (Bütün Məhsullar)', en: 'Catalog (All Products)', ru: 'Каталог (Все товары)' })}</span>
                     </Link>
 
-                    {/* Ən Çox Satılanlar */}
+                    {/* Ən Çox Satılanlar (Best Sellers) */}
                     <Link
                       href={`/${locale}/category?sort=bestselling`}
                       onClick={() => setIsMenuOpen(false)}
@@ -355,14 +388,14 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Ən Çox Satılanlar', en: 'Best Sellers', ru: 'Хиты продаж' })}</span>
                     </Link>
 
-                    {/* Küplər (Speedcubes) */}
+                    {/* 2. Kublar (Speedcubes) - Accordion */}
                     <div>
                       <button
                         type="button"
-                        onClick={() => setIsCubesExpanded(!isCubesExpanded)}
+                        onClick={toggleCubes}
                         className="w-full group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer text-left"
                       >
-                        <span className="truncate">{t({ az: 'Küplər (Speedcubes)', en: 'Speedcubes', ru: 'Кубики (Speedcubes)' })}</span>
+                        <span className="truncate">{t({ az: 'Kublar (Speedcubes)', en: 'Speedcubes', ru: 'Кубики (Speedcubes)' })}</span>
                         <ChevronDown className={`h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] transition-transform duration-200 shrink-0 ml-2 ${isCubesExpanded ? 'rotate-180' : ''}`} />
                       </button>
                       
@@ -403,7 +436,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       </AnimatePresence>
                     </div>
 
-                    {/* Endirimlər */}
+                    {/* 3. Endirimlər */}
                     <Link
                       href={`/${locale}/category?sale=true`}
                       onClick={() => setIsMenuOpen(false)}
@@ -412,7 +445,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Endirimlər', en: 'Discounts', ru: 'Скидки' })}</span>
                     </Link>
 
-                    {/* Yeni Məhsullar */}
+                    {/* 4. Yeni Məhsullar */}
                     <Link
                       href={`/${locale}/category?sort=newest`}
                       onClick={() => setIsMenuOpen(false)}
@@ -421,11 +454,11 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Yeni Məhsullar', en: 'New Products', ru: 'Новинки' })}</span>
                     </Link>
 
-                    {/* Markalar */}
+                    {/* 5. Markalar (GAN, MoYu, QiYi və s.) - Accordion */}
                     <div>
                       <button
                         type="button"
-                        onClick={() => setIsBrandsExpanded(!isBrandsExpanded)}
+                        onClick={toggleBrands}
                         className="w-full group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer text-left"
                       >
                         <span className="truncate">{t({ az: 'Markalar', en: 'Brands', ru: 'Бренды' })}</span>
@@ -464,7 +497,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       </AnimatePresence>
                     </div>
 
-                    {/* Yağlar və Baxım (Lube) */}
+                    {/* 6. Yağlar və Baxım (Lube) */}
                     <Link
                       href={`/${locale}/category/lube`}
                       onClick={() => setIsMenuOpen(false)}
@@ -473,7 +506,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Yağlar və Baxım (Lube)', en: 'Lubes & Care', ru: 'Смазки и Уход' })}</span>
                     </Link>
 
-                    {/* Taymerlər və Aksessuarlar */}
+                    {/* 7. Taymerlər və Aksessuarlar */}
                     <Link
                       href={`/${locale}/category/accessories`}
                       onClick={() => setIsMenuOpen(false)}
@@ -482,7 +515,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Taymerlər və Aksessuarlar', en: 'Timers & Accessories', ru: 'Таймеры и Аксессуары' })}</span>
                     </Link>
 
-                    {/* Alqoritmlər & Öyrənmə */}
+                    {/* 8. Alqoritmlər & Öyrənmə */}
                     <Link
                       href={`/${locale}/blog`}
                       onClick={() => setIsMenuOpen(false)}
@@ -491,7 +524,7 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Alqoritmlər & Öyrənmə', en: 'Algorithms & Learning', ru: 'Алгоритмы и Обучение' })}</span>
                     </Link>
 
-                    {/* Əlaqə */}
+                    {/* 9. Əlaqə */}
                     <Link
                       href={`/${locale}/faq`}
                       onClick={() => setIsMenuOpen(false)}
@@ -502,8 +535,10 @@ export function Header({ dict, locale }: HeaderProps) {
                   </nav>
                 </div>
 
-                {/* Footer Block */}
+                {/* 4. Bottom Footer Block with Outline Button & Neutral Language Switcher */}
                 <div className="sticky bottom-0 z-10 bg-white border-t border-[#EDEDED] px-4 py-3 pb-6 space-y-3 shrink-0 shadow-lg">
+                  
+                  {/* Account / Login Outline Button (Requirement #7) */}
                   <div>
                     {mounted && user ? (
                       <div className="space-y-2">
@@ -540,7 +575,7 @@ export function Header({ dict, locale }: HeaderProps) {
                     )}
                   </div>
 
-                  {/* Language Switcher */}
+                  {/* Neutral Language Selector (Requirement #6) */}
                   <div className="flex items-center justify-between pt-1 border-t border-[#F3F4F6]">
                     <span className="text-[11px] font-medium text-[#6B7280]">
                       {t({ az: 'Dil', en: 'Language', ru: 'Язык' })}:
@@ -566,7 +601,7 @@ export function Header({ dict, locale }: HeaderProps) {
                     </div>
                   </div>
 
-                  {/* WhatsApp Link */}
+                  {/* Small Neutral WhatsApp Chat link (Requirement #8) */}
                   <div className="flex items-center justify-center pt-1">
                     <a
                       href="https://wa.me/994506684925"
