@@ -588,31 +588,31 @@ function ProductDetailClientContentInner({
       icon: Truck,
       color: 'text-rubik-brand',
       bg: 'bg-rubik-brand/10',
-      title: 'Bakı daxili Sürətli Çatdırılma',
-      desc: '1-3 saat ərzində sürətli kuryer vasitəsilə birbaşa ünvanınıza təhvil verilir.'
+      title: locale === 'en' ? 'Fast Delivery in Baku' : locale === 'ru' ? 'Быстрая Доставка по Баку' : 'Bakı daxili Sürətli Çatdırılma',
+      desc: locale === 'en' ? 'Delivered directly to your address within 1-3 hours via fast courier.' : locale === 'ru' ? 'Доставляется прямо по адресу за 1-3 часа курьером.' : '1-3 saat ərzində sürətli kuryer vasitəsilə birbaşa ünvanınıza təhvil verilir.'
     },
     {
       icon: Award,
       color: 'text-emerald-600',
       bg: 'bg-emerald-500/10',
-      title: '100% Orijinal & Rəsmi Zəmanət',
-      desc: 'Rəsmi istehsalçı zəmanəti ilə sertifikatlaşdırılmış orijinal məhsullar.'
+      title: locale === 'en' ? '100% Original & Official Warranty' : locale === 'ru' ? '100% Оригинал и Гарантия' : '100% Orijinal & Rəsmi Zəmanət',
+      desc: locale === 'en' ? 'Certified original products with official manufacturer warranty.' : locale === 'ru' ? 'Сертифицированные оригинальные товары с официальной гарантией.' : 'Rəsmi istehsalçı zəmanəti ilə sertifikatlaşdırılmış orijinal məhsullar.'
     },
     {
       icon: RotateCcw,
       color: 'text-blue-500',
       bg: 'bg-blue-500/10',
-      title: '14 Gün Geri Qaytarma Zəmanəti',
-      desc: 'İstifadə olunmamış və qutusu zədələnməmiş məhsulların heç bir sual verilmədən dəyişdirilməsi.'
+      title: locale === 'en' ? '14-Day Money Back Guarantee' : locale === 'ru' ? 'Гарантия Возврата 14 Дней' : '14 Gün Geri Qaytarma Zəmanəti',
+      desc: locale === 'en' ? 'No questions asked exchange for unused products with undamaged boxes.' : locale === 'ru' ? 'Обмен неиспользованного товара в неповрежденной упаковке без вопросов.' : 'İstifadə olunmamış və qutusu zədələnməmiş məhsulların heç bir sual verilmədən dəyişdirilməsi.'
     },
     {
       icon: Zap,
       color: 'text-amber-500',
       bg: 'bg-amber-500/10',
-      title: 'Metrolara Ödənişsiz Çatdırılma',
-      desc: 'Sifarişlərinizi Bakı metro stansiyalarına tam pulsuz təhvil ala bilərsiniz.'
+      title: locale === 'en' ? 'Free Delivery to Metro Stations' : locale === 'ru' ? 'Бесплатная Доставка до Метро' : 'Metrolara Ödənişsiz Çatdırılma',
+      desc: locale === 'en' ? 'Pick up your orders at Baku metro stations completely free.' : locale === 'ru' ? 'Вы можете забрать заказ на любой станции метро Баку совершенно бесплатно.' : 'Sifarişlərinizi Bakı metro stansiyalarına tam pulsuz təhvil ala bilərsiniz.'
     }
-  ], []);
+  ], [locale]);
 
   const [trustSlideIndex, setTrustSlideIndex] = React.useState(0);
   const [isTrustBannerPaused, setIsTrustBannerPaused] = React.useState(false);
@@ -1228,11 +1228,11 @@ function ProductDetailClientContentInner({
         <nav className="flex items-center gap-2 text-xs text-muted-foreground font-medium overflow-x-auto pb-1">
           <Link href={`/${locale}`} className="hover:text-foreground flex items-center gap-1 shrink-0">
             <Home className="h-3.5 w-3.5" />
-            <span>Ana Səhifə</span>
+            <span>{locale === 'en' ? 'Home' : locale === 'ru' ? 'Главная' : 'Ana Səhifə'}</span>
           </Link>
           <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-50" />
           <Link href={`/${locale}/catalog`} className="hover:text-foreground shrink-0">
-            Kataloq
+            {locale === 'en' ? 'Catalog' : locale === 'ru' ? 'Каталог' : 'Kataloq'}
           </Link>
           <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-50" />
           <span className="text-foreground font-bold truncate max-w-[200px] sm:max-w-xs">{product.title}</span>
@@ -1314,7 +1314,7 @@ function ProductDetailClientContentInner({
                   className="bg-background/90 hover:bg-background backdrop-blur-sm border border-border px-3.5 py-2 rounded-xl text-xs font-bold text-foreground flex items-center gap-1.5 shadow-soft-sm cursor-pointer"
                 >
                   <Play className="h-3.5 w-3.5 text-rubik-brand fill-rubik-brand" />
-                  <span>Baxış Videosu</span>
+                  <span>{locale === 'en' ? 'Overview Video' : locale === 'ru' ? 'Видео Обзор' : 'Baxış Videosu'}</span>
                 </button>
               </div>
             </div>
@@ -1358,19 +1358,19 @@ function ProductDetailClientContentInner({
 
                 {hasDiscount && (
                   <span className="px-2.5 py-1 bg-red-600 text-white font-black text-xs rounded-full uppercase tracking-wider shadow-sm">
-                    -{discountPercent}% ENDİRİM
+                    -{discountPercent}% {locale === 'en' ? 'OFF' : locale === 'ru' ? 'СКИДКА' : 'ENDİRİM'}
                   </span>
                 )}
 
                 {product?.is_featured && (
                   <span className="px-2.5 py-1 bg-[#FDECEC] text-[#B31B21] border border-[#D8232A]/30 font-bold text-xs rounded-full uppercase">
-                    ⭐ FLAQMAN
+                    ⭐ {locale === 'en' ? 'FLAGSHIP' : locale === 'ru' ? 'ФЛАГМАН' : 'FLAQMAN'}
                   </span>
                 )}
 
                 {!isOutOfStock && (
                   <span className="px-2.5 py-1 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 font-bold text-xs rounded-full uppercase">
-                    ⚡ STOKDA VAR
+                    ⚡ {locale === 'en' ? 'IN STOCK' : locale === 'ru' ? 'В НАЛИЧИИ' : 'STOKDA VAR'}
                   </span>
                 )}
               </div>
@@ -1387,11 +1387,11 @@ function ProductDetailClientContentInner({
                       {renderStars(Number(averageRating))}
                     </div>
                     <span className="text-sm font-black text-foreground">{averageRating}</span>
-                    <span className="text-muted-foreground text-xs">• ({reviews.length} müştəri rəyi)</span>
+                    <span className="text-muted-foreground text-xs">• ({reviews.length} {locale === 'en' ? 'customer reviews' : locale === 'ru' ? 'отзывов' : 'müştəri rəyi'})</span>
                   </>
                 ) : (
                   <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-md">
-                    Hələ rəy yoxdur
+                    {locale === 'en' ? 'No reviews yet' : locale === 'ru' ? 'Пока нет отзывов' : 'Hələ rəy yoxdur'}
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded border border-border">
@@ -1405,7 +1405,7 @@ function ProductDetailClientContentInner({
               <div className="flex items-baseline justify-between">
                 <div className="space-y-1">
                   <span className="text-[11px] font-bold text-muted-foreground block uppercase tracking-wider">
-                    Xüsusi Qiymət
+                    {locale === 'en' ? 'Special Price' : locale === 'ru' ? 'Специальная Цена' : 'Xüsusi Qiymət'}
                   </span>
                   <div className="flex items-baseline flex-wrap gap-3">
                     <span className="text-3xl font-black text-foreground font-mono tracking-tight">
@@ -1418,7 +1418,7 @@ function ProductDetailClientContentInner({
                     )}
                     {hasDiscount && (
                       <span className="px-3 py-1 bg-gradient-to-r from-red-600 to-rose-600 text-white font-black text-xs rounded-full uppercase tracking-wider shadow-md animate-pulse">
-                        -{discountPercent}% ENDİRİM
+                        -{discountPercent}% {locale === 'en' ? 'OFF' : locale === 'ru' ? 'СКИДКА' : 'ENDİRİM'}
                       </span>
                     )}
                   </div>
@@ -1428,7 +1428,7 @@ function ProductDetailClientContentInner({
               {hasDiscount && (
                 <div className="pt-2 border-t border-border/50 flex items-center gap-2 text-xs font-black text-emerald-600 dark:text-emerald-400">
                   <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Bu məhsulu seçməklə <span className="font-mono text-sm underline">{formatPrice(numOriginalPrice - finalPrice)}</span> qənaət edirsiniz!</span>
+                  <span>{locale === 'en' ? 'By choosing this product you save ' : locale === 'ru' ? 'Выбирая этот товар вы экономите ' : 'Bu məhsulu seçməklə '}<span className="font-mono text-sm underline">{formatPrice(numOriginalPrice - finalPrice)}</span>{locale === 'en' ? '!' : locale === 'ru' ? '!' : ' qənaət edirsiniz!'}</span>
                 </div>
               )}
             </div>
@@ -1521,10 +1521,10 @@ function ProductDetailClientContentInner({
               <div className="p-4 bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl space-y-1.5 text-amber-900 dark:text-amber-300">
                 <div className="flex items-center gap-2 font-black text-xs md:text-sm text-amber-600 dark:text-amber-400 uppercase tracking-wide">
                   <Clock className="w-4.5 h-4.5 text-amber-500 shrink-0" />
-                  <span>Ön Sifariş Məlumatı Və Şərtləri</span>
+                  <span>{locale === 'en' ? 'Pre-order Information & Terms' : locale === 'ru' ? 'Информация и Условия Предзаказа' : 'Ön Sifariş Məlumatı Və Şərtləri'}</span>
                 </div>
                 <p className="text-xs md:text-sm font-bold leading-relaxed">
-                  Bu məhsul ön sifarişdədir, {product?.preorder_lead_time || '14-28 iş gününə'} çatdırılır. WhatsApp üzərindən 100% ön ödəniş tələb olunur.
+                  {locale === 'en' ? `This product is on pre-order, delivered in ${product?.preorder_lead_time || '14-28 business days'}. 100% advance payment required via WhatsApp.` : locale === 'ru' ? `Этот товар по предзаказу, доставка за ${product?.preorder_lead_time || '14-28 рабочих дней'}. Требуется 100% предоплата в WhatsApp.` : `Bu məhsul ön sifarişdədir, ${product?.preorder_lead_time || '14-28 iş gününə'} çatdırılır. WhatsApp üzərindən 100% ön ödəniş tələb olunur.`}
                 </p>
               </div>
             )}
@@ -1534,7 +1534,7 @@ function ProductDetailClientContentInner({
               <div className="border border-dashed border-rubik-brand/50 rounded-2xl p-4 bg-rubik-brand/5 space-y-3">
                 <span className="text-xs font-black text-rubik-brand block uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles className="h-4 w-4" />
-                  Əlavə Xidmətlər və Aksesuarlar
+                  {locale === 'en' ? 'Additional Services & Accessories' : locale === 'ru' ? 'Дополнительные Услуги и Аксессуары' : 'Əlavə Xidmətlər və Aksesuarlar'}
                 </span>
                 <div className="space-y-2">
                   {addOnsList.map((addon: any) => {
@@ -1584,20 +1584,20 @@ function ProductDetailClientContentInner({
               {isPreorder ? null : isTrulyOutOfStock ? (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-3.5 rounded-2xl flex items-center gap-3 text-xs md:text-sm font-semibold">
                   <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
-                  <span>Stokda müvəqqəti yoxdur — Məhsul gələndə xəbərdar olmaq üçün bizimlə əlaqə saxlayın.</span>
+                  <span>{locale === 'en' ? 'Temporarily out of stock — contact us to get notified when available.' : locale === 'ru' ? 'Временно нет в наличии — свяжитесь с нами, чтобы узнать о поступлении.' : 'Stokda müvəqqəti yoxdur — Məhsul gələndə xəbərdar olmaq üçün bizimlə əlaqə saxlayın.'}</span>
                 </div>
               ) : effectiveStock <= 5 ? (
                 <div className="bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 p-3.5 rounded-2xl flex items-center justify-between gap-3 text-xs md:text-sm font-extrabold animate-pulse">
                   <div className="flex items-center gap-2.5">
                     <Zap className="h-5 w-5 text-red-500 shrink-0 fill-red-500" />
-                    <span>Yalnız <u className="underline decoration-2">{effectiveStock} ədəd</u> qaldı — {estimatedShipDate} tarixində göndəriləcək</span>
+                    <span>{locale === 'en' ? `Only ` : locale === 'ru' ? `Осталось всего ` : `Yalnız `}<u className="underline decoration-2">{effectiveStock} {locale === 'en' ? 'pcs' : locale === 'ru' ? 'шт.' : 'ədəd'}</u> {locale === 'en' ? `left — will be shipped on ${estimatedShipDate}` : locale === 'ru' ? `— будет отправлено ${estimatedShipDate}` : `qaldı — ${estimatedShipDate} tarixində göndəriləcək`}</span>
                   </div>
-                  <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded font-black tracking-wider uppercase shrink-0">TƏCİLİ</span>
+                  <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded font-black tracking-wider uppercase shrink-0">{locale === 'en' ? 'URGENT' : locale === 'ru' ? 'СРОЧНО' : 'TƏCİLİ'}</span>
                 </div>
               ) : (
                 <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 p-3.5 rounded-2xl flex items-center gap-3 text-xs md:text-sm font-semibold">
                   <Check className="h-5 w-5 text-emerald-600 shrink-0" />
-                  <span>Anbarda: <strong className="font-extrabold">{effectiveStock} ədəd</strong> var — {estimatedShipDate} tarixində göndəriləcək</span>
+                  <span>{locale === 'en' ? 'In stock: ' : locale === 'ru' ? 'В наличии: ' : 'Anbarda: '}<strong className="font-extrabold">{effectiveStock} {locale === 'en' ? 'pcs' : locale === 'ru' ? 'шт.' : 'ədəd'}</strong> {locale === 'en' ? `— will be shipped on ${estimatedShipDate}` : locale === 'ru' ? `— будет отправлено ${estimatedShipDate}` : `var — ${estimatedShipDate} tarixində göndəriləcək`}</span>
                 </div>
               )}
             </div>
@@ -1608,15 +1608,15 @@ function ProductDetailClientContentInner({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-muted/30 border border-border/80 p-3.5 rounded-2xl">
                 <div className="space-y-0.5">
                   <span className="text-xs font-extrabold uppercase tracking-wider text-foreground block">
-                    Miqdar
+                    {locale === 'en' ? 'Quantity' : locale === 'ru' ? 'Количество' : 'Miqdar'}
                   </span>
                   <span className="text-[11px] text-muted-foreground font-medium block">
                     {isPreorder ? (
-                      <span className="text-amber-600 dark:text-amber-400 font-bold">Ön sifariş üçün xüsusi sifariş</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">{locale === 'en' ? 'Custom pre-order item' : locale === 'ru' ? 'Специальный заказ по предзаказу' : 'Ön sifariş üçün xüsusi sifariş'}</span>
                     ) : isTrulyOutOfStock ? (
-                      <span className="text-red-500 font-bold">Stokda yoxdur</span>
+                      <span className="text-red-500 font-bold">{locale === 'en' ? 'Out of stock' : locale === 'ru' ? 'Нет в наличии' : 'Stokda yoxdur'}</span>
                     ) : (
-                      <>Anbarda: <strong className="text-foreground font-bold">{effectiveStock} ədəd</strong> var</>
+                      <>{locale === 'en' ? 'In stock: ' : locale === 'ru' ? 'В наличии: ' : 'Anbarda: '}<strong className="text-foreground font-bold">{effectiveStock} {locale === 'en' ? 'pcs' : locale === 'ru' ? 'шт.' : 'ədəd'}</strong></>
                     )}
                   </span>
                 </div>
@@ -1681,18 +1681,18 @@ function ProductDetailClientContentInner({
                     {isPreorder ? (
                       <>
                         <Clock className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
-                        <span>Ön sifariş et {quantity > 1 ? `(${quantity})` : ''}</span>
+                        <span>{locale === 'en' ? 'Pre-order' : locale === 'ru' ? 'Предзаказ' : 'Ön sifariş et'} {quantity > 1 ? `(${quantity})` : ''}</span>
                       </>
                     ) : (
                       <>
                         <ShoppingBag className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0" />
-                        <span>Səbətə Əlavə Et {quantity > 1 ? `(${quantity})` : ''}</span>
+                        <span>{locale === 'en' ? 'Add to Cart' : locale === 'ru' ? 'Добавить в корзину' : 'Səbətə Əlavə Et'} {quantity > 1 ? `(${quantity})` : ''}</span>
                       </>
                     )}
                   </button>
                   {isPreorder && (
                     <span className="text-[12px] text-[#6B7280] font-normal mt-1 text-center">
-                      14-28 iş günü ərzində çatdırılacaq
+                      {locale === 'en' ? 'Delivered in 14-28 business days' : locale === 'ru' ? 'Доставка в течение 14-28 рабочих дней' : '14-28 iş günü ərzində çatdırılacaq'}
                     </span>
                   )}
                 </div>
@@ -1711,11 +1711,11 @@ function ProductDetailClientContentInner({
                     }`}
                   >
                     <Zap className="h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 text-[#D8232A]" />
-                    <span>{isPreorder ? 'İndi Ön Sifariş Et' : 'İndi Al (Sifariş et)'}</span>
+                    <span>{isPreorder ? (locale === 'en' ? 'Pre-order Now' : locale === 'ru' ? 'Предзаказать Сейчас' : 'İndi Ön Sifariş Et') : (locale === 'en' ? 'Buy Now' : locale === 'ru' ? 'Купить Сейчас' : 'İndi Al (Sifariş et)')}</span>
                   </button>
                   {isPreorder && (
                     <span className="text-[12px] text-[#6B7280] font-normal mt-1 text-center">
-                      14-28 iş günü ərzində çatdırılacaq
+                      {locale === 'en' ? 'Delivered in 14-28 business days' : locale === 'ru' ? 'Доставка в течение 14-28 рабочих дней' : '14-28 iş günü ərzində çatdırılacaq'}
                     </span>
                   )}
                 </div>
@@ -1734,7 +1734,7 @@ function ProductDetailClientContentInner({
                   className="hover:text-foreground font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
                   <Heart className={`h-4.5 w-4.5 ${isWishlisted ? 'text-red-500 fill-red-500' : ''}`} />
-                  <span>{isWishlisted ? 'İstək Siyahısında' : 'İstək Siyahısına At'}</span>
+                  <span>{isWishlisted ? (locale === 'en' ? 'In Wishlist' : locale === 'ru' ? 'В Избранном' : 'İstək Siyahısında') : (locale === 'en' ? 'Add to Wishlist' : locale === 'ru' ? 'В Избранное' : 'İstək Siyahısına At')}</span>
                 </button>
                 <button
                   type="button"
@@ -1745,7 +1745,7 @@ function ProductDetailClientContentInner({
                   className="hover:text-foreground font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
                   <GitCompare className="h-4.5 w-4.5 text-blue-500" />
-                  <span>{isCompared ? 'Müqayisəyə əlavə edildi!' : 'Müqayisə Et'}</span>
+                  <span>{isCompared ? (locale === 'en' ? 'Added to comparison!' : locale === 'ru' ? 'Добавлено к сравнению!' : 'Müqayisəyə əlavə edildi!') : (locale === 'en' ? 'Compare' : locale === 'ru' ? 'Сравнить' : 'Müqayisə Et')}</span>
                 </button>
               </div>
             </div>
@@ -1761,10 +1761,10 @@ function ProductDetailClientContentInner({
                 >
                   <div className="flex items-center gap-2">
                     <Check className="h-4 w-4 shrink-0" />
-                    <span>Məhsul səbətinizə uğurla əlavə edildi!</span>
+                    <span>{locale === 'en' ? 'Product added to cart!' : locale === 'ru' ? 'Товар добавлен в корзину!' : 'Məhsul səbətinizə uğurla əlavə edildi!'}</span>
                   </div>
                   <Link href={`/${locale}/checkout`} className="underline hover:no-underline font-black ml-4 shrink-0">
-                    Səbətə bax
+                    {locale === 'en' ? 'View Cart' : locale === 'ru' ? 'В корзину' : 'Səbətə bax'}
                   </Link>
                 </motion.div>
               )}
@@ -1840,18 +1840,30 @@ function ProductDetailClientContentInner({
             <div className="grid grid-cols-3 gap-3 pt-1 border-t border-border">
               <div className="text-center p-3 bg-muted/30 rounded-xl space-y-1">
                 <Truck className="h-5 w-5 text-rubik-brand mx-auto" />
-                <span className="block font-black text-[10px] text-foreground">Sürətli Çatdırılma</span>
-                <span className="block text-[8px] text-muted-foreground">Bakı daxili 1-3 saat</span>
+                <span className="block font-black text-[10px] text-foreground">
+                  {locale === 'en' ? 'Fast Delivery' : locale === 'ru' ? 'Быстрая Доставка' : 'Sürətli Çatdırılma'}
+                </span>
+                <span className="block text-[8px] text-muted-foreground">
+                  {locale === 'en' ? '1-3 hours in Baku' : locale === 'ru' ? '1-3 часа по Баку' : 'Bakı daxili 1-3 saat'}
+                </span>
               </div>
               <div className="text-center p-3 bg-muted/30 rounded-xl space-y-1">
                 <Award className="h-5 w-5 text-green-600 mx-auto" />
-                <span className="block font-black text-[10px] text-foreground">100% Orijinal</span>
-                <span className="block text-[8px] text-muted-foreground">Rəsmi istehsalçı zəmanəti</span>
+                <span className="block font-black text-[10px] text-foreground">
+                  {locale === 'en' ? '100% Original' : locale === 'ru' ? '100% Оригинал' : '100% Orijinal'}
+                </span>
+                <span className="block text-[8px] text-muted-foreground">
+                  {locale === 'en' ? 'Official warranty' : locale === 'ru' ? 'Официальная гарантия' : 'Rəsmi istehsalçı zəmanəti'}
+                </span>
               </div>
               <div className="text-center p-3 bg-muted/30 rounded-xl space-y-1">
                 <RotateCcw className="h-5 w-5 text-blue-500 mx-auto" />
-                <span className="block font-black text-[10px] text-foreground">Asan Geri Qaytarma</span>
-                <span className="block text-[8px] text-muted-foreground">14 gün daxilində dəyişmə</span>
+                <span className="block font-black text-[10px] text-foreground">
+                  {locale === 'en' ? 'Easy Return' : locale === 'ru' ? 'Простой Возврат' : 'Asan Geri Qaytarma'}
+                </span>
+                <span className="block text-[8px] text-muted-foreground">
+                  {locale === 'en' ? 'Exchange in 14 days' : locale === 'ru' ? 'Обмен за 14 дней' : '14 gün daxilində dəyişmə'}
+                </span>
               </div>
             </div>
           </div>
@@ -1867,16 +1879,16 @@ function ProductDetailClientContentInner({
                 </div>
                 <div>
                   <h3 className="font-black text-base md:text-lg text-foreground tracking-tight">
-                    Tez-tez Birlikdə Alınır
+                    {locale === 'en' ? 'Frequently Bought Together' : locale === 'ru' ? 'С этим товаром покупают' : 'Tez-tez Birlikdə Alınır'}
                   </h3>
                   <p className="text-xs text-muted-foreground">
-                    Bu məhsulla birlikdə ən çox seçilən peşəkar aksesuarlar və tamamlayıcı məhsullar
+                    {locale === 'en' ? 'Combine flagship cube with essentials' : locale === 'ru' ? 'Скомбинируйте кубик с нужными аксессуарами' : 'Bu məhsulla birlikdə ən çox seçilən peşəkar aksesuarlar və tamamlayıcı məhsullar'}
                   </p>
                 </div>
               </div>
               {bundleSavings > 0 && (
                 <span className="text-xs font-black bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full w-fit">
-                  🔥 {bundleSavings.toFixed(2)} AZN Qənaət
+                  🔥 {bundleSavings.toFixed(2)} AZN {locale === 'en' ? 'Savings' : locale === 'ru' ? 'Экономия' : 'Qənaət'}
                 </span>
               )}
             </div>
@@ -1900,7 +1912,9 @@ function ProductDetailClientContentInner({
                     )}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-rubik-brand block">Əsas Məhsul</span>
+                    <span className="text-[9px] font-black uppercase tracking-wider text-rubik-brand block">
+                      {locale === 'en' ? 'Main Product' : locale === 'ru' ? 'Основной Товар' : 'Əsas Məhsul'}
+                    </span>
                     <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
                       {bundleItem1.title}
                     </span>
@@ -1938,7 +1952,9 @@ function ProductDetailClientContentInner({
                         )}
                       </div>
                       <div className="min-w-0 flex-1 space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 block">Tövsiyə Olunan</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600 block">
+                          {locale === 'en' ? 'Recommended' : locale === 'ru' ? 'Рекомендуемое' : 'Tövsiyə Olunan'}
+                        </span>
                         <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
                           {bundleItem2.title}
                         </span>
@@ -1985,7 +2001,9 @@ function ProductDetailClientContentInner({
                         )}
                       </div>
                       <div className="min-w-0 flex-1 space-y-1">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-blue-500 block">Tamamlayıcı</span>
+                        <span className="text-[9px] font-black uppercase tracking-wider text-blue-500 block">
+                          {locale === 'en' ? 'Complementary' : locale === 'ru' ? 'Сопутствующее' : 'Tamamlayıcı'}
+                        </span>
                         <span className="text-xs font-bold text-foreground line-clamp-2 leading-tight block">
                           {bundleItem3.title}
                         </span>
@@ -2008,7 +2026,9 @@ function ProductDetailClientContentInner({
               {/* Bundle CTA Box */}
               <div className="lg:col-span-4 bg-muted/40 border border-border/80 rounded-2xl p-4 flex flex-col justify-between gap-3 h-full">
                 <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground font-semibold block">Paket Cəmi Məbləğ:</span>
+                  <span className="text-xs text-muted-foreground font-semibold block">
+                    {locale === 'en' ? 'Total Bundle Price:' : locale === 'ru' ? 'Итого за комплект:' : 'Paket Cəmi Məbləğ:'}
+                  </span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-xl md:text-2xl font-black text-foreground">
                       {bundleTotalPrice.toFixed(2)} AZN
@@ -2027,7 +2047,7 @@ function ProductDetailClientContentInner({
                   className="w-full py-3 px-4 bg-rubik-brand text-white font-black text-xs md:text-sm rounded-xl hover:bg-rubik-brand-dark transition-all flex items-center justify-center gap-2 shadow-soft-sm cursor-pointer active:scale-98"
                 >
                   <ShoppingBag className="h-4 w-4" />
-                  <span>Seçilənləri Birlikdə Səbətə Əlavə Et</span>
+                  <span>{locale === 'en' ? 'Add Selected to Cart' : locale === 'ru' ? 'Добавить выбранное в корзину' : 'Seçilənləri Birlikdə Səbətə Əlavə Et'}</span>
                 </button>
               </div>
             </div>
@@ -2039,12 +2059,12 @@ function ProductDetailClientContentInner({
           {/* Tab Headers */}
           <div className="bg-muted border-b border-border flex flex-wrap">
             {[
-              { id: 'description', label: 'Məhsul Təsviri', icon: Info },
-              { id: 'specs', label: 'Spesifikasiyalar', icon: Award },
-              { id: 'compatibility', label: 'Uyğunluq', icon: AlertCircle },
-              { id: 'shipping', label: 'Çatdırılma Şərtləri', icon: Truck },
-              { id: 'return', label: 'Zəmanət və Geri Qaytarma', icon: RotateCcw },
-              { id: 'faq', label: 'Sual-Cavab', icon: HelpCircle }
+              { id: 'description', label: locale === 'en' ? 'Description' : locale === 'ru' ? 'Описание Товара' : 'Məhsul Təsviri', icon: Info },
+              { id: 'specs', label: locale === 'en' ? 'Specifications' : locale === 'ru' ? 'Характеристики' : 'Spesifikasiyalar', icon: Award },
+              { id: 'compatibility', label: locale === 'en' ? 'Compatibility' : locale === 'ru' ? 'Совместимость' : 'Uyğunluq', icon: AlertCircle },
+              { id: 'shipping', label: locale === 'en' ? 'Shipping Terms' : locale === 'ru' ? 'Условия Доставки' : 'Çatdırılma Şərtləri', icon: Truck },
+              { id: 'return', label: locale === 'en' ? 'Warranty & Returns' : locale === 'ru' ? 'Гарантия и Возврат' : 'Zəmanət və Geri Qaytarma', icon: RotateCcw },
+              { id: 'faq', label: locale === 'en' ? 'FAQ' : locale === 'ru' ? 'Вопросы и Ответы' : 'Sual-Cavab', icon: HelpCircle }
             ].map((tab) => {
               const TabIcon = tab.icon;
               return (
@@ -2075,7 +2095,7 @@ function ProductDetailClientContentInner({
                   exit={{ opacity: 0, y: 5 }}
                   className="space-y-4 text-sm text-muted-foreground leading-relaxed"
                 >
-                  <h4 className="text-base font-bold text-foreground">Məhsul Təsviri</h4>
+                  <h4 className="text-base font-bold text-foreground">{locale === 'en' ? 'Product Description' : locale === 'ru' ? 'Описание Товара' : 'Məhsul Təsviri'}</h4>
                   <p className="whitespace-pre-line">{product.description}</p>
                   
                   {/* Dynamic Version Comparison Matrix */}
@@ -2090,7 +2110,7 @@ function ProductDetailClientContentInner({
                   exit={{ opacity: 0, y: 5 }}
                   className="space-y-6"
                 >
-                  <h4 className="text-base font-bold text-foreground">Texniki Spesifikasiyalar</h4>
+                  <h4 className="text-base font-bold text-foreground">{locale === 'en' ? 'Technical Specifications' : locale === 'ru' ? 'Технические Характеристики' : 'Texniki Spesifikasiyalar'}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {Object.entries(specsToDisplay).map(([key, val]) => (
                       <div key={key} className="flex justify-between py-2 border-b border-border/60 text-xs md:text-sm">
@@ -2112,12 +2132,12 @@ function ProductDetailClientContentInner({
                   exit={{ opacity: 0, y: 5 }}
                   className="space-y-3 text-sm text-muted-foreground leading-relaxed"
                 >
-                  <h4 className="text-base font-bold text-foreground">Uyğunluq Şərtləri</h4>
-                  <p>{product.compatibility || 'Bütün yaş və təcrübə səviyyələrində olan speedcuberlər üçün tam uyğundur.'}</p>
+                  <h4 className="text-base font-bold text-foreground">{locale === 'en' ? 'Compatibility' : locale === 'ru' ? 'Совместимость' : 'Uyğunluq Şərtləri'}</h4>
+                  <p>{product.compatibility || (locale === 'en' ? 'Suitable for speedcubers of all ages and skill levels.' : locale === 'ru' ? 'Подходит для спидкуберов всех возрастов и уровней подготовки.' : 'Bütün yaş və təcrübə səviyyələrində olan speedcuberlər üçün tam uyğundur.')}</p>
                   <div className="bg-muted p-4 rounded-xl border border-border flex items-center gap-3 mt-2">
                     <Info className="h-5 w-5 text-rubik-brand shrink-0" />
                     <span className="text-xs leading-relaxed text-foreground">
-                      WCA (World Cube Association) standartlarına tam cavab verir. Hər hansı rəsmi turnirdə limitsiz istifadə edilə bilər.
+                      {locale === 'en' ? 'Fully complies with WCA (World Cube Association) standards. Can be used in official competitions.' : locale === 'ru' ? 'Полностью соответствует стандартам WCA (World Cube Association). Допущено к официальным соревнованиям.' : 'WCA (World Cube Association) standartlarına tam cavab verir. Hər hansı rəsmi turnirdə limitsiz istifadə edilə bilər.'}
                     </span>
                   </div>
                 </motion.div>
@@ -2130,14 +2150,14 @@ function ProductDetailClientContentInner({
                   exit={{ opacity: 0, y: 5 }}
                   className="space-y-4 text-sm text-muted-foreground leading-relaxed"
                 >
-                  <h4 className="text-base font-bold text-foreground">Sürətli Çatdırılma Qaydaları</h4>
+                  <h4 className="text-base font-bold text-foreground">{locale === 'en' ? 'Fast Delivery Terms' : locale === 'ru' ? 'Правила Быстрой Доставки' : 'Sürətli Çatdırılma Qaydaları'}</h4>
                   <p>
-                    Rubikshop Azərbaycan daxilində ən sürətli kuryer şəbəkəsinə malikdir. Sifarişlərin çatdırılması aşağıdakı kimi təyin edilmişdir:
+                    {locale === 'en' ? 'Rubikshop has the fastest delivery network in Azerbaijan. Delivery options are:' : locale === 'ru' ? 'Rubikshop имеет самую быструю службу доставки в Азербайджане. Варианты доставки:' : 'Rubikshop Azərbaycan daxilində ən sürətli kuryer şəbəkəsinə malikdir. Sifarişlərin çatdırılması aşağıdakı kimi təyin edilmişdir:'}
                   </p>
                   <ul className="list-disc pl-5 space-y-1 text-xs">
-                    <li><strong>Bakı daxili express çatdırılma:</strong> 1-3 saat ərzində (kuryer ilə birbaşa qapıya).</li>
-                    <li><strong>Sumqayıt və Abşeron yarımadası:</strong> Eyni gün daxilində (4-6 saat ərzində).</li>
-                    <li><strong>Azərbaycanın digər rayon və şəhərləri:</strong> Azərpoçt və ya xüsusi poçt xidmətləri vasitəsilə 24-48 saat ərzində.</li>
+                    <li><strong>{locale === 'en' ? 'Express delivery in Baku:' : locale === 'ru' ? 'Экспресс-доставка по Баку:' : 'Bakı daxili express çatdırılma:'}</strong> {locale === 'en' ? '1-3 hours (direct to door).' : locale === 'ru' ? '1-3 часа (курьером до двери).' : '1-3 saat ərzində (kuryer ilə birbaşa qapıya).'}</li>
+                    <li><strong>{locale === 'en' ? 'Sumqayit & Absheron:' : locale === 'ru' ? 'Сумгаит и Апшерон:' : 'Sumqayıt və Abşeron yarımadası:'}</strong> {locale === 'en' ? 'Same day (within 4-6 hours).' : locale === 'ru' ? 'В тот же день (4-6 часов).' : 'Eyni gün daxilində (4-6 saat ərzində).'}</li>
+                    <li><strong>{locale === 'en' ? 'Other regions of Azerbaijan:' : locale === 'ru' ? 'Другие регионы Азербайджана:' : 'Azərbaycanın digər rayon və şəhərləri:'}</strong> {locale === 'en' ? '24-48 hours via Azerpost.' : locale === 'ru' ? '24-48 часов через Azerpost.' : 'Azərpoçt və ya xüsusi poçt xidmətləri vasitəsilə 24-48 saat ərzində.'}</li>
                   </ul>
                 </motion.div>
               )}
@@ -2149,12 +2169,12 @@ function ProductDetailClientContentInner({
                   exit={{ opacity: 0, y: 5 }}
                   className="space-y-4 text-sm text-muted-foreground leading-relaxed"
                 >
-                  <h4 className="text-base font-bold text-foreground">Geri Qaytarma və Müştəri Təminatı</h4>
+                  <h4 className="text-base font-bold text-foreground">{locale === 'en' ? 'Warranty & Returns' : locale === 'ru' ? 'Гарантия и Возврат' : 'Geri Qaytarma və Müştəri Təminatı'}</h4>
                   <p>
-                    Alınan hər bir məhsul istehsalçı tərəfindən rəsmi qorunma qutusundadır və orijinallıq zəmanəti daşıyır.
+                    {locale === 'en' ? 'Every product purchased is in its official factory sealed box and comes with an authenticity guarantee.' : locale === 'ru' ? 'Каждый товар поставляется в официальной фирменной упаковке и имеет гарантию подлинности.' : 'Alınan hər bir məhsul istehsalçı tərəfindən rəsmi qorunma qutusundadır və orijinallıq zəmanəti daşıyır.'}
                   </p>
                   <p className="text-xs">
-                    Məhsulu istifadə etmədiyiniz, qutusuna və aksesuarlarına xələl gətirmədiyiniz təqdirdə 14 gün müddətində heç bir əlavə ödəniş etmədən tam geri qaytara və ya başqa modelə dəyişə bilərsiniz.
+                    {locale === 'en' ? 'If the product is unused and packaging is undamaged, you can exchange or return it within 14 days without extra charges.' : locale === 'ru' ? 'Если товар не использовался и упаковка не повреждена, вы можете обменять или вернуть его в течение 14 дней без дополнительных комиссий.' : 'Məhsulu istifadə etmədiyiniz, qutusuna və aksesuarlarına xələl gətirmədiyiniz təqdirdə 14 gün müddətində heç bir əlavə ödəniş etmədən tam geri qaytara və ya başqa modelə dəyişə bilərsiniz.'}
                   </p>
                 </motion.div>
               )}
@@ -2166,15 +2186,15 @@ function ProductDetailClientContentInner({
                   exit={{ opacity: 0, y: 5 }}
                   className="space-y-4"
                 >
-                  <h4 className="text-base font-bold text-foreground">Ən Çox Verilən Suallar</h4>
+                  <h4 className="text-base font-bold text-foreground">{locale === 'en' ? 'Frequently Asked Questions' : locale === 'ru' ? 'Часто Задаваемые Вопросы' : 'Ən Çox Verilən Suallar'}</h4>
                   <div className="space-y-3">
                     <div className="bg-muted p-4 rounded-xl border border-border/60">
-                      <span className="block font-bold text-foreground text-xs mb-1">Məhsul yağlanmış gəlir?</span>
-                      <span className="text-xs text-muted-foreground">Xeyr, standart zavod qutusu daxilində az miqdarda qoruyucu yağ olur. Əlavə setupsız tam professional sürət üçün rəsmi yağlama variantımızı seçməyi tövsiyə edirik.</span>
+                      <span className="block font-bold text-foreground text-xs mb-1">{locale === 'en' ? 'Does the product come lubricated?' : locale === 'ru' ? 'Кубик поставляется смазанным?' : 'Məhsul yağlanmış gəlir?'}</span>
+                      <span className="text-xs text-muted-foreground">{locale === 'en' ? 'It has factory protective lube. For optimal speed performance, we recommend ordering our professional lubrication service.' : locale === 'ru' ? 'Внутри есть заводская защита. Для идеального вращения рекомендуем заказать профессиональную смазку.' : 'Xeyr, standart zavod qutusu daxilində az miqdarda qoruyucu yağ olur. Əlavə setupsız tam professional sürət üçün rəsmi yağlama variantımızı seçməyi tövsiyə edirik.'}</span>
                     </div>
                     <div className="bg-muted p-4 rounded-xl border border-border/60">
-                      <span className="block font-bold text-foreground text-xs mb-1">Dönmə gərginliyini necə nizamlaya bilərəm?</span>
-                      <span className="text-xs text-muted-foreground">Qutudan çıxan xüsusi tənzimləmə açarları vasitəsilə yayların sıxlığını və maqnit gərginliyini daxili çarxlardan tənzimləmək olar.</span>
+                      <span className="block font-bold text-foreground text-xs mb-1">{locale === 'en' ? 'How can I adjust the tension?' : locale === 'ru' ? 'Как настроить натяжение?' : 'Dönmə gərginliyini necə nizamlaya bilərəm?'}</span>
+                      <span className="text-xs text-muted-foreground">{locale === 'en' ? 'Use the adjustment tool included in the box to adjust elasticity and magnet strength.' : locale === 'ru' ? 'С помощью специального ключа из комплекта можно регулировать натяжение пружин и магнетизм.' : 'Qutudan çıxan xüsusi tənzimləmə açarları vasitəsilə yayların sıxlığını və maqnit gərginliyini daxili çarxlardan tənzimləmək olar.'}</span>
                     </div>
                   </div>
                 </motion.div>
@@ -2187,8 +2207,12 @@ function ProductDetailClientContentInner({
         <section className="bg-card border border-border rounded-3xl p-6 md:p-8 space-y-8">
           <div className="flex flex-col md:flex-row gap-6 items-start justify-between border-b border-border pb-6">
             <div className="space-y-1">
-              <h3 className="text-xl md:text-2xl font-black text-foreground">Müştəri Rəyləri</h3>
-              <p className="text-xs text-muted-foreground">Müştərilərimizin bu məhsul haqqında qeyd etdiyi rəsmi fikirlər və reytinqlər</p>
+              <h3 className="text-xl md:text-2xl font-black text-foreground">
+                {locale === 'en' ? 'Customer Reviews' : locale === 'ru' ? 'Отзывы Покупателей' : 'Müştəri Rəyləri'}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {locale === 'en' ? 'Official ratings and opinions from our customers about this product' : locale === 'ru' ? 'Официальные отзывы и оценки наших покупателей об этом товаре' : 'Müştərilərimizin bu məhsul haqqında qeyd etdiyi rəsmi fikirlər və reytinqlər'}
+              </p>
             </div>
             
             <div className="flex items-center gap-4 bg-muted/40 p-4 rounded-2xl border border-border/60 shrink-0">
@@ -2197,13 +2221,19 @@ function ProductDetailClientContentInner({
                   <span className="text-4xl font-black text-foreground">{averageRating}</span>
                   <div>
                     <div className="flex items-center mb-0.5">{renderStars(Number(averageRating))}</div>
-                    <span className="text-xs text-muted-foreground">{reviews.length} həqiqi alıcı rəyi</span>
+                    <span className="text-xs text-muted-foreground">
+                      {reviews.length} {locale === 'en' ? 'verified buyer reviews' : locale === 'ru' ? 'отзывов покупателей' : 'həqiqi alıcı rəyi'}
+                    </span>
                   </div>
                 </>
               ) : (
                 <div className="text-left">
-                  <span className="text-sm font-bold text-amber-500 block">Hələ rəy yoxdur</span>
-                  <span className="text-xs text-muted-foreground">İlk rəyi siz yazın!</span>
+                  <span className="text-sm font-bold text-amber-500 block">
+                    {locale === 'en' ? 'No reviews yet' : locale === 'ru' ? 'Пока нет отзывов' : 'Hələ rəy yoxdur'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {locale === 'en' ? 'Be the first to write a review!' : locale === 'ru' ? 'Будьте первым, кто оставит отзыв!' : 'İlk rəyi siz yazın!'}
+                  </span>
                 </div>
               )}
             </div>
@@ -2211,7 +2241,9 @@ function ProductDetailClientContentInner({
 
           {/* Star Distribution Bar Chart */}
           <div className="bg-muted/20 border border-border/60 p-5 rounded-2xl space-y-3">
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground">Reytinq Paylanması</h4>
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+              {locale === 'en' ? 'Rating Distribution' : locale === 'ru' ? 'Распределение Оценок' : 'Reytinq Paylanması'}
+            </h4>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {[5, 4, 3, 2, 1].map((star) => {
                 const count = starCounts[star as keyof typeof starCounts] || 0;
@@ -2243,7 +2275,7 @@ function ProductDetailClientContentInner({
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Rəylərdə axtarış et..."
+                placeholder={locale === 'en' ? 'Search in reviews...' : locale === 'ru' ? 'Поиск в отзывах...' : 'Rəylərdə axtarış et...'}
                 value={reviewSearch}
                 onChange={(e) => setReviewSearch(e.target.value)}
                 className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
@@ -2252,17 +2284,19 @@ function ProductDetailClientContentInner({
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">Sıralama:</span>
+              <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">
+                {locale === 'en' ? 'Sort by:' : locale === 'ru' ? 'Сортировка:' : 'Sıralama:'}
+              </span>
               <select
                 value={reviewSort}
                 onChange={(e) => setReviewSort(e.target.value as any)}
                 className="bg-background border border-border rounded-xl px-3 py-2 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand cursor-pointer"
               >
-                <option value="newest">Ən Yeni</option>
-                <option value="oldest">Ən Qədim</option>
-                <option value="highest">Ən Yüksək Reytinq</option>
-                <option value="lowest">Ən Aşağı Reytinq</option>
-                <option value="helpful">Ən Faydalı</option>
+                <option value="newest">{locale === 'en' ? 'Newest' : locale === 'ru' ? 'Сначала новые' : 'Ən Yeni'}</option>
+                <option value="oldest">{locale === 'en' ? 'Oldest' : locale === 'ru' ? 'Сначала старые' : 'Ən Qədim'}</option>
+                <option value="highest">{locale === 'en' ? 'Highest Rating' : locale === 'ru' ? 'С высокой оценкой' : 'Ən Yüksək Reytinq'}</option>
+                <option value="lowest">{locale === 'en' ? 'Lowest Rating' : locale === 'ru' ? 'С низкой оценкой' : 'Ən Aşağı Reytinq'}</option>
+                <option value="helpful">{locale === 'en' ? 'Most Helpful' : locale === 'ru' ? 'Полезные' : 'Ən Faydalı'}</option>
               </select>
             </div>
           </div>
@@ -2273,7 +2307,10 @@ function ProductDetailClientContentInner({
             <div className="lg:col-span-7 space-y-4 max-h-[460px] overflow-y-auto pr-2">
               {filteredAndSortedReviews.length === 0 ? (
                 <div className="p-6 bg-muted/20 border border-border/40 rounded-2xl text-center text-xs md:text-sm text-muted-foreground">
-                  {reviewSearch ? 'Axtarışa uyğun rəy tapılmadı.' : 'Bu məhsul üçün hələ ki heç bir rəy yazılmayıb. İlk rəyi siz göndərə bilərsiniz!'}
+                  {reviewSearch 
+                    ? (locale === 'en' ? 'No reviews found matching search.' : locale === 'ru' ? 'Отзывов по запросу не найдено.' : 'Axtarışa uyğun rəy tapılmadı.')
+                    : (locale === 'en' ? 'No reviews written for this product yet. Be the first to submit a review!' : locale === 'ru' ? 'К этому товару еще нет отзывов. Вы можете быть первым!' : 'Bu məhsul üçün hələ ki heç bir rəy yazılmayıb. İlk rəyi siz göndərə bilərsiniz!')
+                  }
                 </div>
               ) : (
                 filteredAndSortedReviews.map((rev) => {
@@ -2284,10 +2321,10 @@ function ProductDetailClientContentInner({
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-bold text-foreground flex items-center gap-1.5">
                           <MessageSquare className="h-3.5 w-3.5 text-rubik-brand" />
-                          {rev.profiles?.full_name || rev.name || 'Anonim Müştəri'}
+                          {rev.profiles?.full_name || rev.name || (locale === 'en' ? 'Anonymous Customer' : locale === 'ru' ? 'Анонимный Покупатель' : 'Anonim Müştəri')}
                         </span>
                         <span className="text-muted-foreground text-[11px] font-mono">
-                          {rev.date || new Date(rev.created_at).toLocaleDateString('az-AZ')}
+                          {rev.date || new Date(rev.created_at).toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'ru' ? 'ru-RU' : 'az-AZ')}
                         </span>
                       </div>
                       <div className="flex items-center">{renderStars(rev.rating)}</div>
@@ -2295,7 +2332,9 @@ function ProductDetailClientContentInner({
                       
                       {/* Helpful / Unhelpful voting bar */}
                       <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[11px] text-muted-foreground">
-                        <span className="font-medium text-[10px]">Bu rəy sizin üçün faydalı oldu?</span>
+                        <span className="font-medium text-[10px]">
+                          {locale === 'en' ? 'Was this review helpful?' : locale === 'ru' ? 'Был ли этот отзыв полезен?' : 'Bu rəy sizin üçün faydalı oldu?'}
+                        </span>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -2307,7 +2346,7 @@ function ProductDetailClientContentInner({
                             }`}
                           >
                             <ThumbsUp className="h-3.5 w-3.5 text-green-600" />
-                            <span>Faydalıdır ({vote?.up || 0})</span>
+                            <span>{locale === 'en' ? 'Helpful' : locale === 'ru' ? 'Полезно' : 'Faydalıdır'} ({vote?.up || 0})</span>
                           </button>
 
                           <button
@@ -2332,50 +2371,58 @@ function ProductDetailClientContentInner({
 
             {/* Write a review form */}
             <div className="lg:col-span-5 bg-muted/20 border border-border p-6 rounded-2xl space-y-4">
-              <h4 className="font-black text-sm text-foreground uppercase tracking-wider">Rəy Bildirin</h4>
+              <h4 className="font-black text-sm text-foreground uppercase tracking-wider">
+                {locale === 'en' ? 'Leave a Review' : locale === 'ru' ? 'Оставить Отзыв' : 'Rəy Bildirin'}
+              </h4>
               
               {reviewSubmitted ? (
                 <div className="bg-green-50 border border-green-200 text-green-800 text-xs font-bold p-4 rounded-xl flex items-center gap-2">
                   <Check className="h-5 w-5 text-green-600 shrink-0" />
-                  <span>Rəyiniz uğurla əlavə edildi! Paylaşımınız üçün təşəkkür edirik.</span>
+                  <span>{locale === 'en' ? 'Your review was successfully submitted! Thank you.' : locale === 'ru' ? 'Ваш отзыв успешно отправлен! Спасибо.' : 'Rəyiniz uğurla əlavə edildi! Paylaşımınız üçün təşəkkür edirik.'}</span>
                 </div>
               ) : (
                 <form onSubmit={handleAddReview} className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Adınız</label>
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">
+                      {locale === 'en' ? 'Your Name' : locale === 'ru' ? 'Ваше Имя' : 'Adınız'}
+                    </label>
                     <input
                       type="text"
                       required
                       value={newReviewName}
                       onChange={(e) => setNewReviewName(e.target.value)}
-                      placeholder="Məsələn, Məmməd"
+                      placeholder={locale === 'en' ? 'e.g. John' : locale === 'ru' ? 'Например, Иван' : 'Məsələn, Məmməd'}
                       className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Qiymətləndirmə</label>
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">
+                      {locale === 'en' ? 'Rating' : locale === 'ru' ? 'Оценка' : 'Qiymətləndirmə'}
+                    </label>
                     <select
                       value={newReviewRating}
                       onChange={(e) => setNewReviewRating(Number(e.target.value))}
                       className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                     >
-                      <option value="5">5 Ulduz - Möhtəşəm</option>
-                      <option value="4">4 Ulduz - Çox yaxşı</option>
-                      <option value="3">3 Ulduz - Orta</option>
-                      <option value="2">2 Ulduz - Qənaətbəxş deyil</option>
-                      <option value="1">1 Ulduz - Zəif</option>
+                      <option value="5">{locale === 'en' ? '5 Stars - Amazing' : locale === 'ru' ? '5 Звезд - Отлично' : '5 Ulduz - Möhtəşəm'}</option>
+                      <option value="4">{locale === 'en' ? '4 Stars - Very Good' : locale === 'ru' ? '4 Звезды - Хорошо' : '4 Ulduz - Çox yaxşı'}</option>
+                      <option value="3">{locale === 'en' ? '3 Stars - Average' : locale === 'ru' ? '3 Звезды - Нормально' : '3 Ulduz - Orta'}</option>
+                      <option value="2">{locale === 'en' ? '2 Stars - Poor' : locale === 'ru' ? '2 Звезды - Плохо' : '2 Ulduz - Qənaətbəxş deyil'}</option>
+                      <option value="1">{locale === 'en' ? '1 Star - Terrible' : locale === 'ru' ? '1 Звезда - Ужасно' : '1 Ulduz - Zəif'}</option>
                     </select>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">Rəyiniz</label>
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-wider block">
+                      {locale === 'en' ? 'Your Review' : locale === 'ru' ? 'Ваш Отзыв' : 'Rəyiniz'}
+                    </label>
                     <textarea
                       required
                       rows={3}
                       value={newReviewComment}
                       onChange={(e) => setNewReviewComment(e.target.value)}
-                      placeholder="Məhsul haqqında fikirlərinizi bölüşün..."
+                      placeholder={locale === 'en' ? 'Share your thoughts about the product...' : locale === 'ru' ? 'Поделитесь впечатлениями о товаре...' : 'Məhsul haqqında fikirlərinizi bölüşün...'}
                       className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-rubik-brand"
                     />
                   </div>
@@ -2384,7 +2431,7 @@ function ProductDetailClientContentInner({
                     type="submit"
                     className="w-full py-2.5 bg-rubik-brand text-white font-black text-xs rounded-xl hover:bg-rubik-brand-dark transition-colors cursor-pointer"
                   >
-                    Rəyi Göndər
+                    {locale === 'en' ? 'Submit Review' : locale === 'ru' ? 'Отправить Отзыв' : 'Rəyi Göndər'}
                   </button>
                 </form>
               )}
@@ -2397,7 +2444,7 @@ function ProductDetailClientContentInner({
         <section className="space-y-6">
           <h3 className="text-xl md:text-2xl font-black text-foreground text-center md:text-left flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-rubik-brand" />
-            Oxşar və Tövsiyə Edilən Məhsullar
+            {locale === 'en' ? 'Similar & Recommended Products' : locale === 'ru' ? 'Похожие и Рекомендуемые Товары' : 'Oxşar və Tövsiyə Edilən Məhsullar'}
           </h3>
 
           {displayRelated.length > 0 ? (
@@ -2542,7 +2589,7 @@ function ProductDetailClientContentInner({
               className="fixed inset-0 m-auto z-50 max-w-xl h-fit max-h-[90vh] bg-card border border-border p-6 rounded-3xl shadow-soft-2xl space-y-4"
             >
               <div className="flex justify-between items-center border-b border-border pb-3">
-                <h3 className="font-bold text-foreground text-sm md:text-base">Məhsulun Baxış Videosu</h3>
+                <h3 className="font-bold text-foreground text-sm md:text-base">{locale === 'en' ? 'Product Overview Video' : locale === 'ru' ? 'Видео Обзор Товара' : 'Məhsulun Baxış Videosu'}</h3>
                 <button type="button" onClick={() => setShowVideoModal(false)} className="p-1 hover:bg-muted rounded-lg text-foreground cursor-pointer">X</button>
               </div>
               <div className="relative aspect-video w-full bg-slate-950 rounded-2xl flex flex-col items-center justify-center gap-3 overflow-hidden text-center p-4 border border-border/80">
@@ -2551,10 +2598,10 @@ function ProductDetailClientContentInner({
                   <Play className="h-8 w-8 fill-white" />
                 </div>
                 <span className="text-white text-xs font-black relative z-10 uppercase tracking-widest">
-                  Rubikshop Rəsmi Baxış Kanalı
+                  Rubikshop {locale === 'en' ? 'Official Review Channel' : locale === 'ru' ? 'Официальный Канал Обзоров' : 'Rəsmi Baxış Kanalı'}
                 </span>
                 <p className="text-[10px] text-gray-300 max-w-xs relative z-10">
-                  Bu video Azərbaycanın ən məşhur sürətli kub idmançısı tərəfindən test edilərək hazırlanmışdır.
+                  {locale === 'en' ? 'This video was tested and prepared by Azerbaijan\'s top speedcuber.' : locale === 'ru' ? 'Это видео протестировано и подготовлено ведущим спидкубером Азербайджана.' : 'Bu video Azərbaycanın ən məşhur sürətli kub idmançısı tərəfindən test edilərək hazırlanmışdır.'}
                 </p>
               </div>
             </motion.div>
@@ -2577,7 +2624,7 @@ function ProductDetailClientContentInner({
               type="button"
               onClick={() => setShowImageModal(false)}
               className="absolute top-4 right-4 z-50 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-200 cursor-pointer border border-white/20 shadow-xl"
-              title="Bağla"
+              title={locale === 'en' ? 'Close' : locale === 'ru' ? 'Закрыть' : 'Bağla'}
             >
               <X className="h-6 w-6" />
             </button>
@@ -2598,7 +2645,7 @@ function ProductDetailClientContentInner({
                     handlePrevImage();
                   }}
                   className="absolute left-2 sm:left-6 z-50 p-3 sm:p-4 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all duration-200 cursor-pointer border border-white/20 shadow-2xl backdrop-blur-md active:scale-90"
-                  title="Əvvəlki"
+                  title={locale === 'en' ? 'Previous' : locale === 'ru' ? 'Предыдущая' : 'Əvvəlki'}
                 >
                   <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
                 </button>
@@ -2629,7 +2676,7 @@ function ProductDetailClientContentInner({
                     handleNextImage();
                   }}
                   className="absolute right-2 sm:left-auto sm:right-6 z-50 p-3 sm:p-4 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all duration-200 cursor-pointer border border-white/20 shadow-2xl backdrop-blur-md active:scale-90"
-                  title="Növbəti"
+                  title={locale === 'en' ? 'Next' : locale === 'ru' ? 'Следующая' : 'Növbəti'}
                 >
                   <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
                 </button>
@@ -2700,14 +2747,14 @@ function ProductDetailClientContentInner({
                 {isPreorder ? (
                   <>
                     <Clock className="h-4 w-4" />
-                    <span className="hidden xs:inline">Ön sifariş et</span>
-                    <span className="xs:hidden">Ön sifariş et</span>
+                    <span className="hidden xs:inline">{locale === 'en' ? 'Pre-order' : locale === 'ru' ? 'Предзаказ' : 'Ön sifariş et'}</span>
+                    <span className="xs:hidden">{locale === 'en' ? 'Pre-order' : locale === 'ru' ? 'Предзаказ' : 'Ön sifariş et'}</span>
                   </>
                 ) : (
                   <>
                     <ShoppingBag className="h-4 w-4" />
-                    <span className="hidden xs:inline">Səbətə Əlavə Et</span>
-                    <span className="xs:hidden">Əlavə et</span>
+                    <span className="hidden xs:inline">{locale === 'en' ? 'Add to Cart' : locale === 'ru' ? 'Добавить в корзину' : 'Səbətə Əlavə Et'}</span>
+                    <span className="xs:hidden">{locale === 'en' ? 'Add' : locale === 'ru' ? 'Добавить' : 'Əlavə et'}</span>
                   </>
                 )}
               </button>
