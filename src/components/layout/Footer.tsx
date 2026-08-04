@@ -215,14 +215,20 @@ export function Footer({ dict, locale }: FooterProps) {
       <div className="border-t border-[#E5E7EB] bg-[#F6F6F8] pt-8 pb-32 md:pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <p className="text-xs text-[#4B5563] text-center md:text-left leading-relaxed font-medium">
-            © {currentYear} RubikShop.az. {dict.footer?.all_rights_reserved || (locale === 'en' ? "All rights reserved." : "Bütün hüquqlar qorunur.")} <br className="hidden sm:block" />
-            Azərbaycanlı sürətli kubçular üçün <Heart className="h-3 w-3 text-[#D8232A] inline fill-[#D8232A] mx-0.5" /> ilə hazırlanıb.
+            © {currentYear} RubikShop.az. {dict.footer?.all_rights_reserved || (locale === 'en' ? "All rights reserved." : (locale === 'ru' ? "Все права защищены." : "Bütün hüquqlar qorunur."))} <br className="hidden sm:block" />
+            {locale === 'en' ? (
+              <>Crafted with <Heart className="h-3 w-3 text-[#D8232A] inline fill-[#D8232A] mx-0.5" /> for speedcubers in Azerbaijan.</>
+            ) : locale === 'ru' ? (
+              <>Сделано с <Heart className="h-3 w-3 text-[#D8232A] inline fill-[#D8232A] mx-0.5" /> для спидкуберов Азербайджана.</>
+            ) : (
+              <>Azərbaycanlı sürətli kubçular üçün <Heart className="h-3 w-3 text-[#D8232A] inline fill-[#D8232A] mx-0.5" /> ilə hazırlanıb.</>
+            )}
           </p>
 
           {/* Secure Payment Badges */}
           <div className="flex flex-wrap items-center justify-center gap-2 pr-16 md:pr-0">
             <span className="text-[10px] uppercase text-[#374151] font-bold tracking-widest mr-2">
-              {dict.footer?.secure_payment || (locale === 'en' ? "Secure Payment" : "Təhlükəsiz Ödəniş")}
+              {dict.footer?.secure_payment || (locale === 'en' ? "Secure Payment" : (locale === 'ru' ? "Безопасная Оплата" : "Təhlükəsiz Ödəniş"))}
             </span>
             <div className="flex flex-wrap gap-2 justify-center">
               <span className="bg-[#FFFFFF] text-[#17181C] text-[10px] font-bold px-2.5 py-1.5 rounded border border-[#E5E7EB] tracking-wider shadow-sm">
@@ -232,7 +238,7 @@ export function Footer({ dict, locale }: FooterProps) {
                 📱 Apple Pay
               </span>
               <span className="bg-[#FFFFFF] text-[#17181C] text-[10px] font-bold px-2.5 py-1.5 rounded border border-[#E5E7EB] tracking-wider shadow-sm">
-                💵 Qapıda Ödəniş
+                💵 {locale === 'en' ? 'Cash on Delivery' : locale === 'ru' ? 'Оплата при получении' : 'Qapıda Ödəniş'}
               </span>
             </div>
           </div>
