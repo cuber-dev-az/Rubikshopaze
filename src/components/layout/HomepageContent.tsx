@@ -1006,15 +1006,15 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
               <div className="space-y-2 text-xs md:text-sm font-semibold">
                 <div className="flex items-center gap-2 text-rubik-brand">
                   <CheckCircle className="h-4 w-4" />
-                  <span>3x3 Başlanğıc LBL Metodu</span>
+                  <span>{t({ az: '3x3 Başlanğıc LBL Metodu', en: '3x3 Beginner LBL Method', ru: 'Метод LBL для начинающих 3x3' })}</span>
                 </div>
                 <div className="flex items-center gap-2 text-rubik-green">
                   <CheckCircle className="h-4 w-4" />
-                  <span>Peşəkar CFOP Alqoritmlər siyahısı (F2L/OLL/PLL)</span>
+                  <span>{t({ az: 'Peşəkar CFOP Alqoritmlər siyahısı (F2L/OLL/PLL)', en: 'Professional CFOP Algorithms List (F2L/OLL/PLL)', ru: 'Профессиональные алгоритмы CFOP (F2L/OLL/PLL)' })}</span>
                 </div>
                 <div className="flex items-center gap-2 text-rubik-yellow">
                   <CheckCircle className="h-4 w-4" />
-                  <span>Fingertricks (Sürətli barmaq hərəkətləri) qaydaları</span>
+                  <span>{t({ az: 'Fingertricks (Sürətli barmaq hərəkətləri) qaydaları', en: 'Fingertricks (Fast Finger Movements) Rules', ru: 'Правила Фингертриксов (быстрые движения пальцев)' })}</span>
                 </div>
               </div>
             </div>
