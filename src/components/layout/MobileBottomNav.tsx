@@ -72,7 +72,7 @@ export function MobileBottomNav({ dict, locale }: { dict: ApplicationDictionary;
 
   const navContent = (
     <div 
-      className="fixed bottom-0 left-0 right-0 z-[9999] flex md:hidden bg-[#FFFFFF] border-t border-[#EDEDED] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pointer-events-auto"
+      className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden bg-[#FFFFFF] border-t border-[#EDEDED] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] pointer-events-auto"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-around h-[64px] px-1 w-full max-w-7xl mx-auto">
