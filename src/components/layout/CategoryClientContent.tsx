@@ -1098,18 +1098,18 @@ function CategoryClientContentInner({
               animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileFilterOpen(false)}
-              className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 lg:hidden"
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs z-[100000] lg:hidden"
             />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 z-50 w-full max-h-[90vh] bg-white text-[#17181C] rounded-t-3xl border-t border-[#E5E7EB] shadow-2xl flex flex-col lg:hidden"
+              className="fixed bottom-0 left-0 right-0 z-[100001] w-full max-h-[85dvh] bg-white text-[#17181C] rounded-t-3xl border-t border-[#E5E7EB] shadow-2xl flex flex-col lg:hidden overscroll-contain"
             >
               <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 shrink-0" />
               
-              <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
+              <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4 shrink-0 bg-white rounded-t-3xl">
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal className="h-5 w-5 text-[#D8232A]" />
                   <h3 className="font-bold text-lg text-[#17181C]">Filtrlər</h3>
@@ -1133,17 +1133,17 @@ function CategoryClientContentInner({
               </div>
 
               {/* Scrollable Filters Body */}
-              <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="flex-1 overflow-y-auto px-6 py-4 overscroll-contain">
                 {renderFilterSections(true)}
               </div>
 
               {/* SpeedCubeShop "View results" Sticky CTA Button */}
-              <div className="p-4 border-t border-[#E5E7EB] bg-white">
+              <div className="p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] border-t border-[#E5E7EB] bg-white shrink-0 z-10 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
                 <button
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="w-full py-3.5 bg-[#FF5B00] hover:bg-[#E05000] text-white font-extrabold rounded-xl text-base transition-colors shadow-lg cursor-pointer"
+                  className="w-full py-3.5 bg-[#FF5B00] hover:bg-[#E05000] text-white font-extrabold rounded-xl text-base transition-colors shadow-lg cursor-pointer flex items-center justify-center gap-2"
                 >
-                  View results ({filteredProducts.length})
+                  Nəticələri göstər ({filteredProducts.length})
                 </button>
               </div>
             </motion.div>
@@ -1161,7 +1161,7 @@ function CategoryClientContentInner({
               animate={{ opacity: 0.6 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileSortOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 lg:hidden"
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[100000] lg:hidden"
             />
             <motion.div
               key="sort-sheet"
@@ -1169,9 +1169,9 @@ function CategoryClientContentInner({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-x-0 bottom-0 z-50 bg-white text-[#17181C] rounded-t-3xl overflow-hidden lg:hidden flex flex-col max-h-[85vh] shadow-2xl border-t border-[#E5E7EB]"
+              className="fixed inset-x-0 bottom-0 z-[100001] bg-white text-[#17181C] rounded-t-3xl overflow-hidden lg:hidden flex flex-col max-h-[85dvh] shadow-2xl border-t border-[#E5E7EB] overscroll-contain"
             >
-              <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-gray-50">
+              <div className="flex items-center justify-between p-4 border-b border-[#E5E7EB] bg-gray-50 shrink-0">
                 <h3 className="font-bold text-lg text-[#17181C]">Sıralama</h3>
                 <button 
                   onClick={() => setIsMobileSortOpen(false)} 
@@ -1180,7 +1180,7 @@ function CategoryClientContentInner({
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="p-4 overflow-y-auto space-y-2 pb-12 bg-white">
+              <div className="p-4 overflow-y-auto space-y-2 pb-[max(2.5rem,env(safe-area-inset-bottom))] bg-white overscroll-contain">
                 {[
                   { id: 'newest', label: 'Ən Yenilər' },
                   { id: 'price_asc', label: 'Qiymət: Ucuzdan bahaya' },
