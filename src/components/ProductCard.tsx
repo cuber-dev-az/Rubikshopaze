@@ -134,15 +134,15 @@ export function ProductCard({ product, dict }: ProductCardProps) {
   let typeLabel = '';
 
   if (titleLower.includes('açarlıq') || titleLower.includes('keychain') || titleLower.includes('key chain') || titleLower.includes('acarliq') || titleLower.includes('brelok') || titleLower.includes('брелок')) {
-    typeLabel = 'Açarlıq';
+    typeLabel = locale === 'en' ? 'Keychain' : locale === 'ru' ? 'Брелок' : 'Açarlıq';
   } else if (titleLower.includes('mat') || titleLower.includes('pad') || titleLower.includes('xalça') || titleLower.includes('xalca') || titleLower.includes('kovrik') || titleLower.includes('коврик')) {
-    typeLabel = 'Mat';
+    typeLabel = locale === 'en' ? 'Mat' : locale === 'ru' ? 'Коврик' : 'Mat';
   } else if (titleLower.includes('yağ') || titleLower.includes('yag') || titleLower.includes('lube') || titleLower.includes('lubricant') || titleLower.includes('смазка')) {
-    typeLabel = 'Yağ';
+    typeLabel = locale === 'en' ? 'Lube' : locale === 'ru' ? 'Смазка' : 'Yağ';
   } else if (titleLower.includes('taymer') || titleLower.includes('timer') || titleLower.includes('секундомер')) {
-    typeLabel = 'Taymer';
+    typeLabel = locale === 'en' ? 'Timer' : locale === 'ru' ? 'Таймер' : 'Taymer';
   } else if (titleLower.includes('stend') || titleLower.includes('stand ') || titleLower.includes('çanta') || titleLower.includes('canta') || titleLower.includes('pouch') || titleLower.includes('törpü')) {
-    typeLabel = 'Aksessuar';
+    typeLabel = locale === 'en' ? 'Accessory' : locale === 'ru' ? 'Аксессуар' : 'Aksessuar';
   } else if (/\b3x3(x3)?\b/i.test(productTitle)) {
     typeLabel = '3x3';
   } else if (/\b2x2(x2)?\b/i.test(productTitle)) {
@@ -180,7 +180,9 @@ export function ProductCard({ product, dict }: ProductCardProps) {
 
     const isMagnetic = !isExplicitlyNonMagnetic && ((product.is_magnetic === true || String(product.is_magnetic) === 'true') || hasMagneticText);
 
-    typeLabel = isMagnetic ? 'Maqnitli' : 'Standart';
+    typeLabel = isMagnetic 
+      ? (locale === 'en' ? 'Magnetic' : locale === 'ru' ? 'Магнитный' : 'Maqnitli')
+      : (locale === 'en' ? 'Standard' : locale === 'ru' ? 'Стандартный' : 'Standart');
   }
 
   const badgeSubtitle = [brandName, typeLabel].filter(Boolean).join(' • ');
@@ -224,7 +226,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
       ) : hasDiscount && discountPercent > 0 ? (
         <div className="absolute top-2.5 left-2.5 z-20 bg-[#D8232A] text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-wider shadow-sm pointer-events-none flex items-center gap-1 whitespace-nowrap">
           <Sparkles className="w-3 h-3 animate-bounce shrink-0" />
-          <span>-{discountPercent}% ENDİRİM</span>
+          <span>-{discountPercent}% {locale === 'en' ? 'OFF' : locale === 'ru' ? 'СКИДКА' : 'ENDİRİM'}</span>
         </div>
       ) : null}
 
@@ -284,7 +286,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
           </div>
           {hasDiscount && (
             <span className="block text-[10px] font-bold text-[#16A34A] font-mono">
-              Qənaət: {(oldPrice - currentPrice).toFixed(2)} AZN
+              {locale === 'en' ? 'Save:' : locale === 'ru' ? 'Экономия:' : 'Qənaət:'} {(oldPrice - currentPrice).toFixed(2)} AZN
             </span>
           )}
         </div>
@@ -306,7 +308,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
             ) : isPreorder ? (
               <>
                 <Clock className="w-4 h-4" />
-                Ön sifariş et
+                {locale === 'en' ? 'Pre-order' : locale === 'ru' ? 'Предзаказать' : 'Ön sifariş et'}
               </>
             ) : (
               dict.product.add_to_cart
@@ -315,7 +317,7 @@ export function ProductCard({ product, dict }: ProductCardProps) {
 
           {isPreorder && (
             <p className="text-[12px] text-[#6B7280] text-center mt-1 font-normal">
-              14-28 iş günü ərzində çatdırılacaq
+              {locale === 'en' ? 'Delivered in 14-28 business days' : locale === 'ru' ? 'Доставка в течение 14-28 рабочих дней' : '14-28 iş günü ərzində çatdırılacaq'}
             </p>
           )}
         </div>
