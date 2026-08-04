@@ -1135,16 +1135,18 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
                         <Wallet className="h-4.5 w-4.5" />
                       </div>
                       <span className="text-[10px] bg-amber-500/20 text-amber-700 font-extrabold px-2 py-0.5 rounded uppercase">
-                        Deaktivdir
+                        {locale === 'en' ? 'Disabled' : locale === 'ru' ? 'Деактивировано' : 'Deaktivdir'}
                       </span>
                     </div>
-                    <h4 className="text-xs font-black text-amber-900 dark:text-amber-300">Qapıda Ödəniş</h4>
+                    <h4 className="text-xs font-black text-amber-900 dark:text-amber-300">
+                      {locale === 'en' ? 'Cash on Delivery' : locale === 'ru' ? 'Оплата при получении' : 'Qapıda Ödəniş'}
+                    </h4>
                     <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium leading-snug">
-                      Ön sifariş məhsullarında 100% ön ödəniş tələb olunduğundan qapıda nəğd ödəniş seçimi bu sifariş üçün gizlədilmişdir.
+                      {locale === 'en' ? 'Pre-order items require 100% advance payment, so cash on delivery is disabled for this order.' : locale === 'ru' ? 'Для предзаказа требуется 100% предоплата, поэтому оплата при получении недоступна.' : 'Ön sifariş məhsullarında 100% ön ödəniş tələb olunduğundan qapıda nəğd ödəniş seçimi bu sifariş üçün gizlədilmişdir.'}
                     </p>
                   </div>
                   <span className="block mt-4 text-[9px] font-black text-amber-600 uppercase tracking-wider">
-                    Ön Sifariş Şərti
+                    {locale === 'en' ? 'Pre-order Condition' : locale === 'ru' ? 'Условие Предзаказа' : 'Ön Sifariş Şərti'}
                   </span>
                 </div>
               )}
