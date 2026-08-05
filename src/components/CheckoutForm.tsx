@@ -482,12 +482,24 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
         
         message += `\n📦 *${tMsg.products}:*\n`;
         items.forEach((item) => {
-          const preNote = item.is_preorder ? ` [ÖN SİFARİŞ - ${item.preorder_lead_time || '14-28 iş günü'}]` : '';
+          const preNote = item.is_preorder 
+            ? ` [${t({ az: 'ÖN SİFARİŞ', en: 'PRE-ORDER', ru: 'ПРЕДЗАКАЗ' })} - ${
+                locale === 'en' 
+                  ? (item.preorder_lead_time || '14-28 business days').replace(/14-28 iş günü/g, '14-28 business days').replace(/iş günü/g, 'business days').replace(/gün/g, 'days')
+                  : locale === 'ru'
+                  ? (item.preorder_lead_time || '14-28 рабочих дней').replace(/14-28 iş günü/g, '14-28 рабочих дней').replace(/iş günü/g, 'рабочих дней').replace(/gün/g, 'дней')
+                  : (item.preorder_lead_time || '14-28 iş günü')
+              }]` 
+            : '';
           message += `• ${item.title}${preNote} (x${item.quantity}) — ${(item.price_azn * item.quantity).toFixed(2)} AZN\n`;
         });
 
         if (hasPreorderItems) {
-          message += `\n⏳ *ƏSAS QEYD:* Bu sifarişdə ön sifariş məhsulları mövcuddur (Çatdırılma: 14-28 iş günü). WhatsApp üzərindən 100% ön ödəniş tələb olunur.\n`;
+          message += `\n⏳ *${t({ az: 'ƏSAS QEYD', en: 'IMPORTANT NOTE', ru: 'ВАЖНОЕ ПРИМЕЧАНИЕ' })}:* ${t({
+            az: 'Bu sifarişdə ön sifariş məhsulları mövcuddur (Çatdırılma: 14-28 iş günü). WhatsApp üzərindən 100% ön ödəniş tələb olunur.',
+            en: 'This order contains pre-order items (Delivery: 14-28 business days). 100% advance payment via WhatsApp is required.',
+            ru: 'В этом заказе есть товары по предзаказу (Доставка: 14-28 рабочих дней). Требуется 100% предоплата через WhatsApp.'
+          })}\n`;
         }
 
         if (appliedCoupon) {
@@ -550,10 +562,14 @@ export function CheckoutForm({ dict, locale }: CheckoutFormProps) {
             <div className="p-5 bg-amber-500/10 border-2 border-amber-500/40 rounded-3xl space-y-2 text-amber-900 dark:text-amber-300 shadow-soft-sm">
               <div className="flex items-center gap-2 font-black text-xs md:text-sm text-amber-600 dark:text-amber-400 uppercase tracking-wide">
                 <Clock className="w-5 h-5 text-amber-500 shrink-0" />
-                <span>SƏBƏTDƏ ÖN SİFARİŞ MƏHSULU MÖVCUDDUR</span>
+                <span>{t({ az: 'SƏBƏTDƏ ÖN SİFARİŞ MƏHSULU MÖVCUDDUR', en: 'PRE-ORDER ITEM IN CART', ru: 'В КОРЗИНЕ ЕСТЬ ТОВАР ПО ПРЕДЗАКАЗУ' })}</span>
               </div>
               <p className="text-xs md:text-sm font-bold leading-relaxed">
-                Səbətinizdə ön sifarişlə təmin edilən məhsullar var. Çatdırılma müddəti <strong>14-28 iş günüdür</strong>. Ön sifarişin rəsmiləşdirilməsi üçün WhatsApp vasitəsilə <strong>100% ön ödəniş</strong> tələb olunur (Qapıda ödəniş seçimi deaktivdir).
+                {t({
+                  az: 'Səbətinizdə ön sifarişlə təmin edilən məhsullar var. Çatdırılma müddəti 14-28 iş günüdür. Ön sifarişin rəsmiləşdirilməsi üçün WhatsApp vasitəsilə 100% ön ödəniş tələb olunur (Qapıda ödəniş seçimi deaktivdir).',
+                  en: 'Your cart contains pre-order items. Delivery time is 14-28 business days. 100% advance payment via WhatsApp is required for pre-orders (Cash on delivery disabled).',
+                  ru: 'В вашей корзине есть товары по предзаказу. Срок доставки составляет 14-28 рабочих дней. Для оформления предзаказа требуется 100% предоплата через WhatsApp (Оплата при получении отключена).'
+                })}
               </p>
             </div>
           )}
