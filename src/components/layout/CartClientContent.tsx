@@ -300,10 +300,14 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                     <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                     <div className="space-y-0.5 text-xs font-bold leading-relaxed">
                       <p className="font-black uppercase tracking-wide text-amber-600 dark:text-amber-400">
-                        Səbətinizdə Ön Sifariş Məhsulu Var
+                        {locale === 'en' ? 'Pre-order item in cart' : locale === 'ru' ? 'В корзине есть товар по предзаказу' : 'Səbətinizdə Ön Sifariş Məhsulu Var'}
                       </p>
                       <p>
-                        Ön sifarişlə təmin edilən məhsulların çatdırılması 14-28 iş günü çəkir. WhatsApp üzərindən 100% ön ödəniş tələb olunur.
+                        {locale === 'en' 
+                          ? 'Delivery for pre-order items takes 14-28 business days. 100% advance payment via WhatsApp is required.' 
+                          : locale === 'ru' 
+                          ? 'Доставка товаров по предзаказу занимает 14-28 рабочих дней. Требуется 100% предоплата через WhatsApp.' 
+                          : 'Ön sifarişlə təmin edilən məhsulların çatdırılması 14-28 iş günü çəkir. WhatsApp üzərindən 100% ön ödəniş tələb olunur.'}
                       </p>
                     </div>
                   </div>
@@ -333,7 +337,13 @@ export function CartClientContent({ locale, dict }: CartClientContentProps) {
                           <div className="mt-1">
                             <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
                               <Clock className="w-3 h-3" />
-                              Ön Sifariş ({item.preorder_lead_time || '14-28 iş günü'})
+                              {locale === 'en' ? 'Pre-Order' : locale === 'ru' ? 'Предзаказ' : 'Ön Sifariş'} ({
+                                locale === 'en' 
+                                  ? (item.preorder_lead_time || '14-28 business days').replace(/14-28 iş günü/g, '14-28 business days').replace(/iş günü/g, 'business days').replace(/gün/g, 'days')
+                                  : locale === 'ru'
+                                  ? (item.preorder_lead_time || '14-28 рабочих дней').replace(/14-28 iş günü/g, '14-28 рабочих дней').replace(/iş günü/g, 'рабочих дней').replace(/gün/g, 'дней')
+                                  : (item.preorder_lead_time || '14-28 iş günü')
+                              })
                             </span>
                           </div>
                         ) : (
