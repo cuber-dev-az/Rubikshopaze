@@ -28,6 +28,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { useAuthModalStore } from '@/store/useAuthModalStore';
 import type { ApplicationDictionary } from '@/types/application.types';
 import { CartDrawer } from '@/components/CartDrawer';
+import { SearchBar } from '@/components/layout/SearchBar';
 
 interface HeaderProps {
   dict: ApplicationDictionary;
@@ -104,7 +105,7 @@ export function Header({ dict, locale }: HeaderProps) {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    router.push(`/${locale}?search=${encodeURIComponent(searchQuery)}`);
+    router.push(`/${locale}/search?q=${encodeURIComponent(searchQuery)}`);
   };
 
   React.useEffect(() => {
@@ -168,22 +169,11 @@ export function Header({ dict, locale }: HeaderProps) {
 
           {/* MIDDLE SECTION */}
           <div className="flex-1 max-w-xl mx-auto">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
-              <Search className="absolute left-4 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
-              <input
-                type="search"
-                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-24 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-xl text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#D8232A] focus:bg-white transition-all"
-              />
-              <button
-                type="submit"
-                className="absolute right-2 px-4 py-1.5 bg-[#D8232A] hover:bg-[#B31B21] text-white text-xs font-black rounded-lg transition-colors cursor-pointer h-[34px] flex items-center justify-center"
-              >
-                {dict.header?.search_button || "Axtar"}
-              </button>
-            </form>
+            <SearchBar
+              locale={locale}
+              placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
+              buttonText={dict.header?.search_button || "Axtar"}
+            />
           </div>
 
           {/* RIGHT SECTION */}
@@ -248,16 +238,11 @@ export function Header({ dict, locale }: HeaderProps) {
         {/* Conditional Sub-Row Search visibility (Mobile only) */}
         {showMobileSearch && (
           <div className="md:hidden px-4 pb-3 pt-1 bg-[#FFFFFF]">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full">
-              <Search className="absolute left-3.5 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
-              <input
-                type="search"
-                placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-[#F6F6F8] border border-[#E5E7EB] rounded-lg text-sm text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#D8232A] transition-all"
-              />
-            </form>
+            <SearchBar
+              locale={locale}
+              placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
+              showButton={false}
+            />
           </div>
         )}
 
@@ -346,23 +331,13 @@ export function Header({ dict, locale }: HeaderProps) {
                 {/* Inline Quick Search Field when Search Icon clicked */}
                 {isDrawerSearchOpen && (
                   <div className="px-4 py-2 bg-[#F9FAFB] border-b border-[#EDEDED] shrink-0">
-                    <form 
-                      onSubmit={(e) => {
-                        handleSearchSubmit(e);
-                        setIsMenuOpen(false);
-                      }} 
-                      className="relative flex items-center w-full"
-                    >
-                      <Search className="absolute left-3 h-4 w-4 text-[#9CA3AF] pointer-events-none" />
-                      <input
-                        type="search"
-                        autoFocus
-                        placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-xs text-[#17181C] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#D8232A]"
-                      />
-                    </form>
+                    <SearchBar
+                      locale={locale}
+                      placeholder={dict.header?.search_placeholder || "Məhsul axtar..."}
+                      showButton={false}
+                      autoFocus
+                      onSearchSubmit={() => setIsMenuOpen(false)}
+                    />
                   </div>
                 )}
 
@@ -388,14 +363,14 @@ export function Header({ dict, locale }: HeaderProps) {
                       <span className="truncate">{t({ az: 'Ən Çox Satılanlar', en: 'Best Sellers', ru: 'Хиты продаж' })}</span>
                     </Link>
 
-                    {/* 2. Kublar (Speedcubes) - Accordion */}
+                    {/* 2. Kublar - Accordion */}
                     <div>
                       <button
                         type="button"
                         onClick={toggleCubes}
                         className="w-full group flex items-center justify-between py-3 px-3 rounded-xl text-sm font-semibold text-[#17181C] hover:bg-[#F6F6F8] hover:text-[#D8232A] transition-all cursor-pointer text-left"
                       >
-                        <span className="truncate">{t({ az: 'Kublar (Speedcubes)', en: 'Speedcubes', ru: 'Кубики (Speedcubes)' })}</span>
+                        <span className="truncate">{t({ az: 'Kublar', en: 'Speedcubes', ru: 'Кубики' })}</span>
                         <ChevronDown className={`h-4 w-4 text-[#9CA3AF] group-hover:text-[#D8232A] transition-transform duration-200 shrink-0 ml-2 ${isCubesExpanded ? 'rotate-180' : ''}`} />
                       </button>
                       
@@ -409,13 +384,13 @@ export function Header({ dict, locale }: HeaderProps) {
                             className="overflow-hidden pl-4 pr-2 py-1 space-y-1 border-l-2 border-[#E5E7EB] ml-3 my-1"
                           >
                             {[
-                              { name: t({ az: '2x2 Kublar', en: '2x2 Speedcubes', ru: 'Кубики 2x2' }), slug: '2x2' },
-                              { name: t({ az: '3x3 Kublar', en: '3x3 Speedcubes', ru: 'Кубики 3x3' }), slug: '3x3' },
-                              { name: t({ az: '4x4 Kublar', en: '4x4 Speedcubes', ru: 'Кубики 4x4' }), slug: '4x4' },
-                              { name: t({ az: '5x5 Kublar', en: '5x5 Speedcubes', ru: 'Кубики 5x5' }), slug: '5x5' },
-                              { name: t({ az: '6x6 Kublar', en: '6x6 Speedcubes', ru: 'Кубики 6x6' }), slug: '6x6' },
-                              { name: t({ az: '7x7 Kublar', en: '7x7 Speedcubes', ru: 'Кубики 7x7' }), slug: '7x7' },
-                              { name: t({ az: 'Böyük Kublar (8x8+)', en: 'Big Cubes (8x8+)', ru: 'Большие кубы (8x8+)' }), slug: 'big-cubes' },
+                              { name: t({ az: '2x2', en: '2x2', ru: '2x2' }), slug: '2x2' },
+                              { name: t({ az: '3x3', en: '3x3', ru: '3x3' }), slug: '3x3' },
+                              { name: t({ az: '4x4', en: '4x4', ru: '4x4' }), slug: '4x4' },
+                              { name: t({ az: '5x5', en: '5x5', ru: '5x5' }), slug: '5x5' },
+                              { name: t({ az: '6x6', en: '6x6', ru: '6x6' }), slug: '6x6' },
+                              { name: t({ az: '7x7', en: '7x7', ru: '7x7' }), slug: '7x7' },
+                              { name: t({ az: 'Böyük Kublar', en: 'Big Cubes', ru: 'Большие кубики' }), slug: 'big-cubes' },
                               { name: t({ az: 'Pyraminx', en: 'Pyraminx', ru: 'Пираминкс' }), slug: 'pyraminx' },
                               { name: t({ az: 'Megaminx', en: 'Megaminx', ru: 'Мегаминкс' }), slug: 'megaminx' },
                               { name: t({ az: 'Skewb', en: 'Skewb', ru: 'Скьюб' }), slug: 'skewb' },
