@@ -37,10 +37,10 @@ function getSmartCategory(dbProduct: any) {
   if (titleLower.includes('taymer') || titleLower.includes('timer')) {
     return { name: 'Taymerlər', slug: 'timers' };
   }
-  if (titleLower.includes('2x2')) return { name: '2x2 Kublar', slug: '2x2' };
-  if (titleLower.includes('3x3')) return { name: '3x3 Kublar', slug: '3x3' };
-  if (titleLower.includes('4x4')) return { name: '4x4 Kublar', slug: '4x4' };
-  if (titleLower.includes('5x5')) return { name: '5x5 Kublar', slug: '5x5' };
+  if (titleLower.includes('2x2')) return { name: '2x2', slug: '2x2' };
+  if (titleLower.includes('3x3')) return { name: '3x3', slug: '3x3' };
+  if (titleLower.includes('4x4')) return { name: '4x4', slug: '4x4' };
+  if (titleLower.includes('5x5')) return { name: '5x5', slug: '5x5' };
   if (titleLower.includes('pyraminx') || titleLower.includes('piramida')) return { name: 'Pyraminx', slug: 'pyraminx' };
   if (titleLower.includes('megaminx')) return { name: 'Megaminx', slug: 'megaminx' };
   if (titleLower.includes('skewb')) return { name: 'Skewb', slug: 'skewb' };
