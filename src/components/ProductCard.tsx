@@ -317,7 +317,15 @@ export function ProductCard({ product, dict }: ProductCardProps) {
 
           {isPreorder && (
             <p className="text-[12px] text-[#6B7280] text-center mt-1 font-normal">
-              {locale === 'en' ? 'Delivered in 14-28 business days' : locale === 'ru' ? 'Доставка в течение 14-28 рабочих дней' : '14-28 iş günü ərzində çatdırılacaq'}
+              {product.preorder_lead_time && product.preorder_lead_time !== '14-28 iş günü' ? (
+                locale === 'en'
+                  ? `Delivered in ${product.preorder_lead_time.replace(/iş günü/g, 'business days').replace(/gün/g, 'days')}`
+                  : locale === 'ru'
+                  ? `Доставка в течение ${product.preorder_lead_time.replace(/iş günü/g, 'рабочих дней').replace(/gün/g, 'дней')}`
+                  : `${product.preorder_lead_time} ərzində çatdırılacaq`
+              ) : (
+                locale === 'en' ? 'Delivered in 14-28 business days' : locale === 'ru' ? 'Доставка в течение 14-28 рабочих дней' : '14-28 iş günü ərzində çatdırılacaq'
+              )}
             </p>
           )}
         </div>
