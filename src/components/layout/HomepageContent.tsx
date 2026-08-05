@@ -729,10 +729,10 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
                         className="w-full bg-[#FFFFFF] text-[#D8232A] border-[1.5px] border-[#D8232A] hover:bg-[#FDECEC] font-bold py-3 px-4 rounded-xl text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 shadow-sm"
                       >
                         <Clock className="h-4 w-4" />
-                        <span>Ön sifariş et</span>
+                        <span>{locale === 'en' ? 'Pre-order' : locale === 'ru' ? 'Предзаказать' : 'Ön sifariş et'}</span>
                       </button>
                       <p className="text-[12px] text-[#6B7280] text-center mt-1 font-normal">
-                        14-28 iş günü ərzində çatdırılacaq
+                        {locale === 'en' ? 'Delivered in 14-28 business days' : locale === 'ru' ? 'Доставка в течение 14-28 рабочих дней' : '14-28 iş günü ərzində çatdırılacaq'}
                       </p>
                     </div>
                   ) : (
@@ -773,7 +773,7 @@ export function HomepageContent({ products = [], dict, locale, banners = [] }: H
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
-            { id: '3x3', slug: '3x3', icon: Grid3X3, title: { az: '3x3 Kublar', en: '3x3 Cubes', ru: 'Кубы 3x3' } },
+            { id: '3x3', slug: '3x3', icon: Grid3X3, title: { az: '3x3', en: '3x3', ru: '3x3' } },
             { id: 'big-cubes', slug: '4x4', icon: Layers, title: { az: 'Böyük Kublar', en: 'Big Cubes', ru: 'Большие кубики' } },
             { id: 'minx-skewb', slug: 'pyraminx', icon: Award, title: { az: 'Piramida / Skewb', en: 'Pyraminx & Skewb', ru: 'Пирамидка / Скьюб' } },
             { id: 'lubes', slug: 'lubes', icon: Droplet, title: { az: 'Kub Yağları', en: 'Silicone Lubes', ru: 'Смазки для куба' } },
