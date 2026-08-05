@@ -219,18 +219,24 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
                             Canlı Növbə Sıranız: #{result.data.queue_position}
                           </h4>
                           <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                            Ödənişi təsdiqlənmiş ön sifarişlər arasında cari növbə yeriniz.
+                            {locale === 'en' ? 'Your position in line among confirmed pre-orders.' : locale === 'ru' ? 'Ваша очередь среди подтвержденных предзаказов.' : 'Ödənişi təsdiqlənmiş ön sifarişlər arasında cari növbə yeriniz.'}
                           </p>
                         </div>
                       </div>
 
                       <span className="text-xs font-extrabold text-amber-800 dark:text-amber-300 bg-amber-500/20 px-3 py-1.5 rounded-xl self-start sm:self-auto shrink-0">
-                        Çatdırılma: {result.data.product?.preorder_lead_time || '14-28 iş günü'}
+                        {locale === 'en' ? 'Delivery:' : locale === 'ru' ? 'Доставка:' : 'Çatdırılma:'} {
+                          locale === 'en'
+                            ? (result.data.product?.preorder_lead_time || '14-28 business days').replace(/14-28 iş günü/g, '14-28 business days').replace(/iş günü/g, 'business days').replace(/gün/g, 'days')
+                            : locale === 'ru'
+                            ? (result.data.product?.preorder_lead_time || '14-28 рабочих дней').replace(/14-28 iş günü/g, '14-28 рабочих дней').replace(/iş günü/g, 'рабочих дней').replace(/gün/g, 'дней')
+                            : (result.data.product?.preorder_lead_time || '14-28 iş günü')
+                        }
                       </span>
                     </div>
                   ) : (
                     <div className="p-4 bg-muted/40 border border-border rounded-2xl text-xs font-bold text-muted-foreground">
-                      ℹ️ Ödəniş təsdiqləndikdən sonra canlı növbə sıranız avtomatik olaraq burada aktivləşəcəkdir.
+                      ℹ️ {locale === 'en' ? 'Once payment is confirmed, your live queue position will automatically activate here.' : locale === 'ru' ? 'После подтверждения оплаты ваша позиция в очереди автоматически появится здесь.' : 'Ödəniş təsdiqləndikdən sonra canlı növbə sıranız avtomatik olaraq burada aktivləşəcəkdir.'}
                     </div>
                   )}
 
@@ -322,3 +328,4 @@ export function TrackOrderClient({ locale }: TrackOrderClientProps) {
     </div>
   );
 }
+
