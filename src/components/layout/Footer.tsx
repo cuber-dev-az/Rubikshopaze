@@ -7,6 +7,8 @@ import type { ApplicationDictionary } from '@/types/application.types';
 import { useAuthUser } from '@/hooks/useAuthUser';
 import { subscribeToNewsletter } from '@/lib/actions/community';
 
+import { supabase } from '@/lib/supabase/client';
+
 interface FooterProps {
   dict: ApplicationDictionary;
   locale: string;
@@ -29,17 +31,22 @@ export function Footer({ dict, locale }: FooterProps) {
   React.useEffect(() => {
     async function loadFooterSettings() {
       try {
-        const { getSettings } = await import('@/lib/actions/settings');
-        const res = await getSettings('general');
-        if (res.success && res.data) {
-          if (res.data.contactPhone && !res.data.contactPhone.includes('000 00') && res.data.contactPhone !== '+994 50 000 00 00') {
-            setPhone(res.data.contactPhone);
+        const { data, error } = await supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'general')
+          .maybeSingle();
+
+        if (!error && data?.value) {
+          const val = data.value;
+          if (val.contactPhone && !val.contactPhone.includes('000 00') && val.contactPhone !== '+994 50 000 00 00') {
+            setPhone(val.contactPhone);
           }
-          if (res.data.contactEmail) setEmailVal(res.data.contactEmail);
-          if (res.data.address) setAddressVal(res.data.address);
+          if (val.contactEmail) setEmailVal(val.contactEmail);
+          if (val.address) setAddressVal(val.address);
         }
-      } catch (err) {
-        console.error('Error loading footer settings:', err);
+      } catch (err: any) {
+        console.warn('Could not load footer settings, using default:', err?.message || err);
       }
     }
     loadFooterSettings();
