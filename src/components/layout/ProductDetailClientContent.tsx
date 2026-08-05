@@ -1509,7 +1509,11 @@ function ProductDetailClientContentInner({
                 isPreorder ? 'text-amber-600 dark:text-amber-400' : isTrulyOutOfStock ? 'text-red-600' : 'text-emerald-600'
               }`}>
                 {isPreorder
-                  ? `Öncədən Sifarişdədir (${product?.preorder_lead_time || '14-28 iş günü'})`
+                  ? (locale === 'en'
+                      ? `On Pre-order (${(product?.preorder_lead_time || '14-28 business days').replace(/14-28 iş günü/g, '14-28 business days').replace(/iş günü/g, 'business days').replace(/gün/g, 'days')})`
+                      : locale === 'ru'
+                      ? `На предзаказе (${(product?.preorder_lead_time || '14-28 рабочих дней').replace(/14-28 iş günü/g, '14-28 рабочих дней').replace(/iş günü/g, 'рабочих дней').replace(/gün/g, 'дней')})`
+                      : `Öncədən Sifarişdədir (${product?.preorder_lead_time || '14-28 iş günü'})`)
                   : isTrulyOutOfStock
                   ? (locale === 'en' ? 'Out of Stock' : locale === 'ru' ? 'Нет в наличии' : 'Bitib (Müvəqqəti yoxdur)')
                   : (locale === 'en' ? `In Stock (${effectiveStock} pcs)` : locale === 'ru' ? `В наличии (${effectiveStock} шт.)` : `Stokda var (${effectiveStock} ədəd)`)}
@@ -1524,7 +1528,11 @@ function ProductDetailClientContentInner({
                   <span>{locale === 'en' ? 'Pre-order Information & Terms' : locale === 'ru' ? 'Информация и Условия Предзаказа' : 'Ön Sifariş Məlumatı Və Şərtləri'}</span>
                 </div>
                 <p className="text-xs md:text-sm font-bold leading-relaxed">
-                  {locale === 'en' ? `This product is on pre-order, delivered in ${product?.preorder_lead_time || '14-28 business days'}. 100% advance payment required via WhatsApp.` : locale === 'ru' ? `Этот товар по предзаказу, доставка за ${product?.preorder_lead_time || '14-28 рабочих дней'}. Требуется 100% предоплата в WhatsApp.` : `Bu məhsul ön sifarişdədir, ${product?.preorder_lead_time || '14-28 iş gününə'} çatdırılır. WhatsApp üzərindən 100% ön ödəniş tələb olunur.`}
+                  {locale === 'en' 
+                    ? `This product is on pre-order, delivered in ${(product?.preorder_lead_time || '14-28 business days').replace(/14-28 iş günü/g, '14-28 business days').replace(/iş günü/g, 'business days').replace(/gün/g, 'days')}. 100% advance payment required via WhatsApp.` 
+                    : locale === 'ru' 
+                    ? `Этот товар по предзаказу, доставка за ${(product?.preorder_lead_time || '14-28 рабочих дней').replace(/14-28 iş günü/g, '14-28 рабочих дней').replace(/iş günü/g, 'рабочих дней').replace(/gün/g, 'дней')}. Требуется 100% предоплата в WhatsApp.` 
+                    : `Bu məhsul ön sifarişdədir, ${product?.preorder_lead_time || '14-28 iş gününə'} çatdırılır. WhatsApp üzərindən 100% ön ödəniş tələb olunur.`}
                 </p>
               </div>
             )}
