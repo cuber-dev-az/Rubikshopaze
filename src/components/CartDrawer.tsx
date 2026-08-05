@@ -70,12 +70,12 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
               <div className="flex items-center justify-between px-6 py-5 border-b border-border/80">
                 <h2 className="text-base font-black text-foreground flex items-center gap-2.5">
                   <ShoppingBag className="w-5 h-5 text-rubik-brand" />
-                  <span>Səbətiniz ({items.length})</span>
+                  <span>{locale === 'en' ? 'Your Cart' : locale === 'ru' ? 'Ваша Корзина' : 'Səbətiniz'} ({items.length})</span>
                 </h2>
                 <button
                   onClick={onClose}
                   className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-all duration-200 cursor-pointer"
-                  aria-label="Səbəti bağla"
+                  aria-label={locale === 'en' ? 'Close cart' : locale === 'ru' ? 'Закрыть корзину' : 'Səbəti bağla'}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -89,11 +89,13 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                       <Truck className="h-4 w-4 text-rubik-brand animate-pulse" />
                       {remainingForFreeShipping > 0 ? (
                         <span>
-                          Pulsuz çatdırılma üçün daha <span className="text-rubik-brand">{remainingForFreeShipping.toFixed(2)} AZN</span> lazımdır
+                          {locale === 'en' ? 'Add ' : locale === 'ru' ? 'Добавьте еще на ' : 'Pulsuz çatdırılma üçün daha '}
+                          <span className="text-rubik-brand">{remainingForFreeShipping.toFixed(2)} AZN</span>
+                          {locale === 'en' ? ' more for free shipping' : locale === 'ru' ? ' для бесплатной доставки' : ' lazımdır'}
                         </span>
                       ) : (
                         <span className="text-green-600 font-black flex items-center gap-1">
-                          Təbriklər! Pulsuz çatdırılma qazandınız! <Check className="h-3.5 w-3.5" />
+                          {locale === 'en' ? 'Congratulations! You earned free shipping!' : locale === 'ru' ? 'Поздравляем! Вы получили бесплатную доставку!' : 'Təbriklər! Pulsuz çatdırılma qazandınız!'} <Check className="h-3.5 w-3.5" />
                         </span>
                       )}
                     </div>
@@ -115,15 +117,17 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                     <div className="p-4 bg-muted rounded-full">
                       <ShoppingBag className="w-10 h-10 text-muted-foreground" />
                     </div>
-                    <h3 className="font-black text-base text-foreground">Səbətiniz boşdur</h3>
+                    <h3 className="font-black text-base text-foreground">
+                      {locale === 'en' ? 'Your cart is empty' : locale === 'ru' ? 'Ваша корзина пуста' : 'Səbətiniz boşdur'}
+                    </h3>
                     <p className="text-xs text-muted-foreground max-w-[240px] leading-relaxed">
-                      Səbətinizdə hazırda məhsul yoxdur. Sürətli flaqman kublarımıza baxaraq fərqi yaşayın!
+                      {locale === 'en' ? 'There are currently no items in your cart. Explore our flagship speedcubes!' : locale === 'ru' ? 'В вашей корзине пока нет товаров. Исследуйте наши кубики!' : 'Səbətinizdə hazırda məhsul yoxdur. Sürətli flaqman kublarımıza baxaraq fərqi yaşayın!'}
                     </p>
                     <button
                       onClick={onClose}
                       className="mt-2 px-5 py-2.5 bg-rubik-brand text-white text-xs font-black rounded-xl hover:bg-rubik-brand-dark transition-colors cursor-pointer"
                     >
-                      Alış-verişə davam et
+                      {locale === 'en' ? 'Continue Shopping' : locale === 'ru' ? 'Продолжить покупки' : 'Alış-verişə davam et'}
                     </button>
                   </div>
                 ) : (
@@ -152,14 +156,20 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                               {item.is_preorder && (
                                 <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
                                   <Clock className="w-3 h-3" />
-                                  Ön Sifariş ({item.preorder_lead_time || '14-28 iş günü'})
+                                  {locale === 'en' ? 'Pre-Order' : locale === 'ru' ? 'Предзаказ' : 'Ön Sifariş'} ({
+                                    locale === 'en' 
+                                      ? (item.preorder_lead_time || '14-28 business days').replace(/14-28 iş günü/g, '14-28 business days').replace(/iş günü/g, 'business days').replace(/gün/g, 'days')
+                                      : locale === 'ru'
+                                      ? (item.preorder_lead_time || '14-28 рабочих дней').replace(/14-28 iş günü/g, '14-28 рабочих дней').replace(/iş günü/g, 'рабочих дней').replace(/gün/g, 'дней')
+                                      : (item.preorder_lead_time || '14-28 iş günü')
+                                  })
                                 </span>
                               )}
                             </div>
                             <button
                               onClick={() => removeItem(item.id)}
                               className="text-muted-foreground hover:text-red-500 p-0.5 rounded-lg hover:bg-muted transition-all cursor-pointer shrink-0"
-                              aria-label="Məhsulu sil"
+                              aria-label={locale === 'en' ? 'Remove product' : locale === 'ru' ? 'Удалить товар' : 'Məhsulu sil'}
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -173,7 +183,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                                 className="p-1 px-2 text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
-                                aria-label="Sayı azalt"
+                                aria-label={locale === 'en' ? 'Decrease quantity' : locale === 'ru' ? 'Уменьшить количество' : 'Sayı azalt'}
                               >
                                 <Minus className="w-3 h-3" />
                               </button>
@@ -183,7 +193,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                               <button
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
                                 className="p-1 px-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-                                aria-label="Sayı artır"
+                                aria-label={locale === 'en' ? 'Increase quantity' : locale === 'ru' ? 'Увеличить количество' : 'Sayı artır'}
                               >
                                 <Plus className="w-3 h-3" />
                               </button>
@@ -214,7 +224,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                   {items.some(i => i.is_preorder) && (
                     <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 dark:text-amber-300 text-xs font-bold leading-relaxed flex items-start gap-2">
                       <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                      <span>Səbətdə ön sifariş məhsulu var. Çatdırılma müddəti: 14-28 iş günü (100% ön ödənişli).</span>
+                      <span>{locale === 'en' ? 'Cart contains pre-order items. Delivery: 14-28 business days (100% prepayment).' : locale === 'ru' ? 'В корзине есть товар по предзаказу. Срок доставки: 14-28 рабочих дней (100% предоплата).' : 'Səbətdə ön sifariş məhsulu var. Çatdırılma müddəti: 14-28 iş günü (100% ön ödənişli).'}</span>
                     </div>
                   )}
 
@@ -222,7 +232,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                     <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Məhsul Endirim Qazancı:</span>
+                        <span>{locale === 'en' ? 'Product Savings:' : locale === 'ru' ? 'Скидка на товары:' : 'Məhsul Endirim Qazancı:'}</span>
                       </span>
                       <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">-{getProductSavings().toFixed(2)} AZN</span>
                     </div>
@@ -230,15 +240,15 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
-                      <span>Məhsul sayı</span>
-                      <span>{items.reduce((sum, item) => sum + item.quantity, 0)} ədəd</span>
+                      <span>{locale === 'en' ? 'Total items' : locale === 'ru' ? 'Всего товаров' : 'Məhsul sayı'}</span>
+                      <span>{items.reduce((sum, item) => sum + item.quantity, 0)} {locale === 'en' ? 'pcs' : locale === 'ru' ? 'шт.' : 'ədəd'}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm font-black text-foreground">
-                      <span>Yekun Cəm</span>
+                      <span>{locale === 'en' ? 'Grand Total' : locale === 'ru' ? 'Итого' : 'Yekun Cəm'}</span>
                       <span className="font-mono text-base">{subtotal.toFixed(2)} AZN</span>
                     </div>
                     <p className="text-[10px] text-muted-foreground">
-                      * Çatdırılma və endirim kuponları növbəti mərhələdə hesablanacaqdır.
+                      {locale === 'en' ? '* Shipping and promo coupons will be calculated at checkout.' : locale === 'ru' ? '* Доставка и купоны будут рассчитаны на этапе оформления.' : '* Çatdırılma və endirim kuponları növbəti mərhələdə hesablanacaqdır.'}
                     </p>
                   </div>
                   
@@ -250,7 +260,7 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                       }}
                       className="w-full mb-3 py-2.5 text-xs font-black text-rubik-brand bg-rubik-brand/10 hover:bg-rubik-brand/20 rounded-xl transition-colors cursor-pointer block text-center"
                     >
-                      Daxil ol və sürətli rəsmiləşdir
+                      {locale === 'en' ? 'Log in for fast checkout' : locale === 'ru' ? 'Войти и оформить' : 'Daxil ol və sürətli rəsmiləşdir'}
                     </button>
                   )}
                   
@@ -260,14 +270,14 @@ export function CartDrawer({ isOpen, onClose, dict, locale }: CartDrawerProps) {
                       onClick={onClose}
                       className="w-full inline-flex items-center justify-center py-3 bg-muted hover:bg-muted/80 text-foreground text-xs font-black rounded-xl border border-border transition-colors cursor-pointer"
                     >
-                      Səbətə bax
+                      {locale === 'en' ? 'View Cart' : locale === 'ru' ? 'В корзину' : 'Səbətə bax'}
                     </Link>
                     <Link
                       href={`/${locale}/checkout`}
                       onClick={onClose}
                       className="w-full inline-flex items-center justify-center py-3 bg-rubik-brand hover:bg-rubik-brand-dark text-white text-xs font-black rounded-xl hover:shadow-soft-md transition-all cursor-pointer flex gap-1 items-center"
                     >
-                      <span>Sifariş et</span>
+                      <span>{locale === 'en' ? 'Checkout' : locale === 'ru' ? 'Оформить' : 'Sifariş et'}</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
