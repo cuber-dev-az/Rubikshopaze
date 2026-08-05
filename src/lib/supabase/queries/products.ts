@@ -432,3 +432,135 @@ export function mapProductToLocale(raw: RawProduct, locale: string): Product & {
     product_family: raw.product_family || raw.family_slug || undefined,
   };
 }
+
+/**
+ * Perform flexible product search across title, name, brand, tags, keywords, slug with typo resiliency.
+ */
+export async function searchProducts(query: string, locale: string = 'az', limit?: number): Promise<Product[]> {
+  if (!query || !query.trim()) return [];
+
+  const trimmed = query.trim();
+  const lowerQuery = trimmed.toLowerCase();
+  const cleanQuery = lowerQuery.replace(/[\s\-_]+/g, '');
+
+  try {
+    const s = `%${trimmed}%`;
+    const sClean = `%${cleanQuery}%`;
+
+    // 1. Database query with ILIKE across multi-language title, name, keywords, tags, slug, brand
+    let { data, error } = await supabase
+      .from('products')
+      .select('*, brands(*), variants(*)')
+      .eq('is_active', true)
+      .or(`title_az.ilike.${s},title_en.ilike.${s},title_ru.ilike.${s},name.ilike.${s},keywords.ilike.${s},tags.ilike.${s},slug.ilike.${s},brand_name.ilike.${s}`);
+
+    if (error || !data || data.length === 0) {
+      // Try fallback with cleaned query without spaces/hyphens
+      const fallbackResult = await supabase
+        .from('products')
+        .select('*, brands(*), variants(*)')
+        .eq('is_active', true)
+        .or(`title_az.ilike.${sClean},title_en.ilike.${sClean},name.ilike.${sClean},keywords.ilike.${sClean},slug.ilike.${sClean}`);
+
+      if (!fallbackResult.error && fallbackResult.data && fallbackResult.data.length > 0) {
+        data = fallbackResult.data;
+      }
+    }
+
+    // 2. If still no data or for typo resiliency, fetch all active products to do intelligent fuzzy matching
+    if (!data || data.length === 0) {
+      const allActive = await getActiveProducts();
+      data = allActive.filter((p: any) => {
+        const fullText = [
+          p.title_az, p.title_en, p.title_ru, p.name, p.keywords, p.tags, p.slug, p.brand_name, p.brands?.name
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        const fullTextClean = fullText.replace(/[\s\-_]+/g, '');
+
+        // Check if words match or normalized string matches
+        if (fullTextClean.includes(cleanQuery)) return true;
+
+        // Check individual words
+        const queryWords = lowerQuery.split(/\s+/).filter(w => w.length > 1);
+        if (queryWords.length > 0 && queryWords.every(w => fullText.includes(w))) return true;
+
+        // Typo tolerance: edit distance / Levenshtein check for short queries
+        if (trimmed.length >= 3) {
+          const wordsInText = fullText.split(/[\s\-_,.]+/);
+          for (const word of wordsInText) {
+            if (word.length >= 3) {
+              if (levenshteinDistance(word, lowerQuery) <= 2) return true;
+              for (const qW of queryWords) {
+                if (qW.length >= 3 && levenshteinDistance(word, qW) <= 1) return true;
+              }
+            }
+          }
+        }
+
+        return false;
+      });
+    }
+
+    if (!data || data.length === 0) return [];
+
+    // Deduplicate
+    const uniqueMap = new Map<string, any>();
+    data.forEach((p: any) => uniqueMap.set(p.id, p));
+    const rawList = Array.from(uniqueMap.values());
+
+    // Map to localized product
+    const localized = rawList.map(raw => mapProductToLocale(raw, locale));
+
+    // Flatten variants if available
+    const flattened = flattenProductsWithVariants(localized);
+
+    // Re-score/rank results according to relevancy to lowerQuery
+    const scored = flattened.map(item => {
+      const t = (item.title || item.name || '').toLowerCase();
+      const tClean = t.replace(/[\s\-_]+/g, '');
+      let score = 0;
+
+      if (t === lowerQuery) score += 100;
+      else if (tClean === cleanQuery) score += 90;
+      else if (t.startsWith(lowerQuery)) score += 80;
+      else if (tClean.startsWith(cleanQuery)) score += 70;
+      else if (t.includes(lowerQuery)) score += 60;
+      else if (tClean.includes(cleanQuery)) score += 50;
+      else score += 10;
+
+      return { item, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const result = scored.map(s => s.item);
+    return limit ? result.slice(0, limit) : result;
+  } catch (err) {
+    console.error('searchProducts exception:', err);
+    return [];
+  }
+}
+
+// Simple Levenshtein distance for typo resiliency
+function levenshteinDistance(a: string, b: string): number {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix: number[][] = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
